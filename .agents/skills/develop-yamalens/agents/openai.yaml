@@ -1,0 +1,4 @@
+interface:
+  display_name: "YamaLensを開発する"
+  short_description: "YamaLensのiOS MVPを仕様に沿って実装・検証する"
+  default_prompt: "$develop-yamalens を使用して、仕様書に沿ったYamaLens MVPの次の実装単位を開発してください。"

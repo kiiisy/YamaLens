@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Xcode user data and build products
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.xcresult
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.p8
+*.mobileprovision
+
+# Temporary and generated files
+*.tmp
+*.log
+Data/Generated/
+
+# Agent customizations
+.agents/
+
+# UI reference images
+doc/ui_images/
