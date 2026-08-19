@@ -1,0 +1,62 @@
+import Foundation
+
+struct BootstrapMountainRepository: MountainRepository {
+    func fetchMountains() -> [Mountain] {
+        [
+            Mountain(
+                id: "蛭ヶ岳",
+                name: "蛭ヶ岳",
+                aliases: ["ひるがたけ"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1673,
+                coordinate: GeoCoordinate(latitude: 35.4886, longitude: 139.1304)
+            ),
+            Mountain(
+                id: "丹沢山",
+                name: "丹沢山",
+                aliases: ["たんざわさん"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1567,
+                coordinate: GeoCoordinate(latitude: 35.4742, longitude: 139.1627)
+            ),
+            Mountain(
+                id: "塔ノ岳",
+                name: "塔ノ岳",
+                aliases: ["とうのだけ", "塔ヶ岳"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1491,
+                coordinate: GeoCoordinate(latitude: 35.4743, longitude: 139.1486)
+            ),
+            Mountain(
+                id: "檜洞丸",
+                name: "檜洞丸",
+                aliases: ["ひのきぼらまる"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1601,
+                coordinate: GeoCoordinate(latitude: 35.4678, longitude: 139.0815)
+            ),
+            Mountain(
+                id: "鍋割山",
+                name: "鍋割山",
+                aliases: ["なべわりやま"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1273,
+                coordinate: GeoCoordinate(latitude: 35.4537, longitude: 139.1272)
+            ),
+            Mountain(
+                id: "大山",
+                name: "大山",
+                aliases: ["おおやま", "阿夫利山"],
+                regionName: "丹沢山地",
+                prefectureName: "神奈川県",
+                elevationMeters: 1252,
+                coordinate: GeoCoordinate(latitude: 35.4394, longitude: 139.2311)
+            ),
+        ]
+    }
+}

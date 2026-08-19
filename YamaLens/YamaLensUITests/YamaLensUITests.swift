@@ -34,6 +34,63 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testHomeShowsTanzawaMountains() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["蛭ヶ岳"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testSearchFiltersMountains() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let searchButton = app.buttons["search-button"]
+        XCTAssertTrue(searchButton.waitForExistence(timeout: 2))
+        searchButton.tap()
+
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.tap()
+        searchField.typeText("塔ノ岳")
+
+        XCTAssertTrue(app.buttons["search-result-塔ノ岳"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.buttons["search-result-蛭ヶ岳"].exists)
+    }
+
+    @MainActor
+    func testMountainDetailDismissesWithDownwardSwipe() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let mountainCard = app.buttons
+            .matching(identifier: "mountain-row-蛭ヶ岳")
+            .firstMatch
+        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
+        mountainCard.tap()
+
+        let mountainDetail = app.descendants(matching: .any)
+            .matching(identifier: "mountain-detail")
+            .firstMatch
+        XCTAssertTrue(mountainDetail.waitForExistence(timeout: 2))
+        let closeButton = app.buttons["detail-close-button"]
+        let favoriteButton = app.buttons["detail-favorite-button"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(favoriteButton.waitForExistence(timeout: 2))
+        XCTAssertGreaterThanOrEqual(closeButton.frame.minY, 44)
+        XCTAssertTrue(app.staticTexts["山小屋情報を準備中"].exists)
+        XCTAssertTrue(app.staticTexts["登山口情報を準備中"].exists)
+
+        mountainDetail.swipeDown()
+
+        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
+        XCTAssertFalse(mountainDetail.exists)
+        XCTAssertFalse(closeButton.exists)
+        XCTAssertFalse(favoriteButton.exists)
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
