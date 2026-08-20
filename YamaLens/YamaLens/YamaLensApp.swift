@@ -23,7 +23,7 @@ struct YamaLensApp: App {
 struct MountainDetailPresentation: Identifiable, Equatable {
     let mountain: Mountain
     let sourceID: String
-    let sourceFrame: CGRect
+    let sourceArtworkFrame: CGRect
 
     var id: String { sourceID }
 }
@@ -39,10 +39,9 @@ private struct YamaLensRootView: View {
         GeometryReader { geometry in
             ZStack {
                 TabView(selection: $selectedTab) {
-                    HomeView(
-                        repository: repository,
-                        detailPresentation: $detailPresentation
-                    )
+                    HomeView(repository: repository) { presentation in
+                        openDetail(presentation)
+                    }
                     .tabItem {
                         Image(systemName: "mountain.2")
                             .accessibilityLabel("ホーム")
@@ -66,34 +65,30 @@ private struct YamaLensRootView: View {
                 .tint(YamaColor.forest)
 
                 if let detailPresentation {
+                    let containerFrame = geometry.frame(in: .global)
+                    let artworkFrame = transitionArtworkFrame(
+                        presentation: detailPresentation,
+                        containerFrame: containerFrame,
+                        topInset: geometry.safeAreaInsets.top
+                    )
+
                     MountainDetailView(
                         mountain: detailPresentation.mountain,
                         overlayTopInset: geometry.safeAreaInsets.top
                     ) { style in
                         closeDetail(style: style)
                     }
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius: 24 * (1 - detailTransitionProgress),
-                            style: .continuous
-                        )
-                    )
-                    .scaleEffect(
-                        transitionScale(
-                            presentation: detailPresentation,
-                            containerFrame: geometry.frame(in: .global)
-                        )
-                    )
-                    .offset(
-                        transitionOffset(
-                            presentation: detailPresentation,
-                            containerFrame: geometry.frame(in: .global)
-                        )
-                    )
+                    .opacity(detailContentOpacity)
                     .zIndex(1)
+
+                    transitionArtwork(
+                        mountain: detailPresentation.mountain,
+                        frame: artworkFrame,
+                        containerFrame: containerFrame
+                    )
+                    .zIndex(2)
                     .task(id: detailPresentation.id) {
-                        detailTransitionProgress = reduceMotion ? 1 : 0
-                        guard !reduceMotion else { return }
+                        guard !reduceMotion, detailTransitionProgress < 1 else { return }
                         await Task.yield()
                         withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) {
                             detailTransitionProgress = 1
@@ -102,6 +97,21 @@ private struct YamaLensRootView: View {
                 }
             }
         }
+    }
+
+    private var detailContentOpacity: CGFloat {
+        guard !reduceMotion else { return 1 }
+        return min(max((detailTransitionProgress - 0.35) / 0.5, 0), 1)
+    }
+
+    private var transitionArtworkOpacity: CGFloat {
+        guard !reduceMotion else { return 0 }
+        return min(max((1 - detailTransitionProgress) / 0.15, 0), 1)
+    }
+
+    private func openDetail(_ presentation: MountainDetailPresentation) {
+        detailTransitionProgress = reduceMotion ? 1 : 0
+        detailPresentation = presentation
     }
 
     private func closeDetail(style: MountainDetailDismissalStyle) {
@@ -123,27 +133,78 @@ private struct YamaLensRootView: View {
         }
     }
 
-    private func transitionScale(
+    private func transitionArtworkFrame(
         presentation: MountainDetailPresentation,
-        containerFrame: CGRect
-    ) -> CGFloat {
-        guard !reduceMotion, containerFrame.width > 0, presentation.sourceFrame.width > 0 else {
-            return 1
+        containerFrame: CGRect,
+        topInset: CGFloat
+    ) -> CGRect {
+        let destinationFrame = CGRect(
+            x: containerFrame.minX,
+            y: containerFrame.minY - topInset,
+            width: containerFrame.width,
+            height: 350
+        )
+
+        guard
+            !reduceMotion,
+            presentation.sourceArtworkFrame.width > 0,
+            presentation.sourceArtworkFrame.height > 0
+        else {
+            return destinationFrame
         }
-        let sourceScale = min(max(presentation.sourceFrame.width / containerFrame.width, 0.2), 1)
-        return sourceScale + ((1 - sourceScale) * detailTransitionProgress)
+
+        return CGRect(
+            x: interpolated(
+                from: presentation.sourceArtworkFrame.minX,
+                to: destinationFrame.minX
+            ),
+            y: interpolated(
+                from: presentation.sourceArtworkFrame.minY,
+                to: destinationFrame.minY
+            ),
+            width: interpolated(
+                from: presentation.sourceArtworkFrame.width,
+                to: destinationFrame.width
+            ),
+            height: interpolated(
+                from: presentation.sourceArtworkFrame.height,
+                to: destinationFrame.height
+            )
+        )
     }
 
-    private func transitionOffset(
-        presentation: MountainDetailPresentation,
+    private func transitionArtwork(
+        mountain: Mountain,
+        frame: CGRect,
         containerFrame: CGRect
-    ) -> CGSize {
-        guard !reduceMotion else { return .zero }
-        let remainingTransition = 1 - detailTransitionProgress
-        return CGSize(
-            width: (presentation.sourceFrame.midX - containerFrame.midX) * remainingTransition,
-            height: (presentation.sourceFrame.midY - containerFrame.midY) * remainingTransition
-        )
+    ) -> some View {
+        MountainArtworkView(mountain: mountain, height: frame.height)
+            .overlay {
+                LinearGradient(
+                    colors: [.clear, YamaColor.canvas],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                .opacity(detailTransitionProgress)
+            }
+            .frame(width: frame.width, height: frame.height)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 20 * (1 - detailTransitionProgress),
+                    style: .continuous
+                )
+            )
+            .position(
+                x: frame.midX - containerFrame.minX,
+                y: frame.midY - containerFrame.minY
+            )
+            .opacity(transitionArtworkOpacity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private func interpolated(from start: CGFloat, to end: CGFloat) -> CGFloat {
+        start + ((end - start) * detailTransitionProgress)
     }
 }
 

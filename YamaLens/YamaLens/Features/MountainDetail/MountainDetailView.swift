@@ -48,6 +48,8 @@ struct MountainDetailView: View {
                     .padding(.bottom, 40)
                 }
                 .scrollIndicators(.hidden)
+                .scrollDisabled(isDraggingToDismiss)
+                .offset(y: scrollBounceCompensation)
                 .accessibilityIdentifier("mountain-detail")
                 .onScrollGeometryChange(for: CGFloat.self) { scrollGeometry in
                     scrollGeometry.contentOffset.y + scrollGeometry.contentInsets.top
@@ -107,6 +109,11 @@ struct MountainDetailView: View {
     private var detailCornerRadius: CGFloat {
         guard !reduceMotion else { return 0 }
         return min(dismissDragDistance / 8, 30)
+    }
+
+    private var scrollBounceCompensation: CGFloat {
+        guard isDraggingToDismiss else { return 0 }
+        return min(scrollOffset, 0)
     }
 
     private func dismissGesture(containerHeight: CGFloat) -> some Gesture {

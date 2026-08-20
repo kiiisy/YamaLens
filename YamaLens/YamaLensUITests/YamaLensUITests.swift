@@ -16,6 +16,7 @@ final class YamaLensUITests: XCTestCase {
         continueAfterFailure = false
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        XCUIDevice.shared.orientation = .portrait
     }
 
     override func tearDownWithError() throws {
@@ -82,12 +83,37 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["山小屋情報を準備中"].exists)
         XCTAssertTrue(app.staticTexts["登山口情報を準備中"].exists)
 
-        mountainDetail.swipeDown()
+        mountainDetail.swipeDown(velocity: .slow)
 
         XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
         XCTAssertFalse(mountainDetail.exists)
         XCTAssertFalse(closeButton.exists)
         XCTAssertFalse(favoriteButton.exists)
+    }
+
+    @MainActor
+    func testMountainDetailClosesWithBackButton() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let mountainCard = app.buttons
+            .matching(identifier: "mountain-row-蛭ヶ岳")
+            .firstMatch
+        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
+        mountainCard.tap()
+
+        let mountainDetail = app.descendants(matching: .any)
+            .matching(identifier: "mountain-detail")
+            .firstMatch
+        XCTAssertTrue(mountainDetail.waitForExistence(timeout: 2))
+
+        let closeButton = app.buttons["detail-close-button"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 2))
+        closeButton.tap()
+
+        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
+        XCTAssertFalse(mountainDetail.exists)
+        XCTAssertFalse(closeButton.exists)
     }
 
     @MainActor

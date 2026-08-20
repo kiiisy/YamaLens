@@ -3,18 +3,17 @@ import SwiftUI
 
 struct HomeView: View {
     private let mountains: [Mountain]
-    @Binding private var detailPresentation: MountainDetailPresentation?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let onSelectMountain: (MountainDetailPresentation) -> Void
     @Query private var records: [UserMountainRecord]
     @State private var isSearchPresented = false
     @State private var mountainCardFrames: [String: CGRect] = [:]
 
     init(
         repository: any MountainRepository,
-        detailPresentation: Binding<MountainDetailPresentation?>
+        onSelectMountain: @escaping (MountainDetailPresentation) -> Void
     ) {
         mountains = repository.fetchMountains()
-        _detailPresentation = detailPresentation
+        self.onSelectMountain = onSelectMountain
     }
 
     private var favorites: [Mountain] {
@@ -179,13 +178,13 @@ struct HomeView: View {
                     ForEach(mountains) { mountain in
                         let sourceID = "\(title)-\(mountain.id)"
                         Button {
-                            withAnimation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.88)) {
-                                detailPresentation = MountainDetailPresentation(
+                            onSelectMountain(
+                                MountainDetailPresentation(
                                     mountain: mountain,
                                     sourceID: sourceID,
-                                    sourceFrame: mountainCardFrames[sourceID] ?? .zero
+                                    sourceArtworkFrame: artworkFrame(for: sourceID)
                                 )
-                            }
+                            )
                         } label: {
                             MountainPosterCard(mountain: mountain, badge: badge)
                                 .onGeometryChange(for: CGRect.self) { geometry in
@@ -202,6 +201,16 @@ struct HomeView: View {
             }
             .scrollIndicators(.hidden)
         }
+    }
+
+    private func artworkFrame(for sourceID: String) -> CGRect {
+        guard let cardFrame = mountainCardFrames[sourceID] else { return .zero }
+        return CGRect(
+            x: cardFrame.minX,
+            y: cardFrame.minY,
+            width: cardFrame.width,
+            height: min(cardFrame.height, 148)
+        )
     }
 }
 
