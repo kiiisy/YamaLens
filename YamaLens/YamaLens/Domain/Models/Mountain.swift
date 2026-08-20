@@ -1,6 +1,6 @@
 import Foundation
 
-struct Mountain: Identifiable, Equatable, Hashable, Sendable {
+nonisolated struct Mountain: Identifiable, Equatable, Hashable, Sendable {
     let id: String
     let name: String
     let aliases: [String]

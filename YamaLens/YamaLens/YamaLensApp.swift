@@ -5,8 +5,8 @@
 //  Created by kisaya on 2026/08/19.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct YamaLensApp: App {
@@ -14,7 +14,13 @@ struct YamaLensApp: App {
 
     var body: some Scene {
         WindowGroup {
-            YamaLensRootView(repository: appContainer.mountainRepository)
+            YamaLensRootView(
+                repository: appContainer.mountainRepository,
+                locationObservationProvider: appContainer.locationObservationProvider,
+                proximityCalculator: appContainer.proximityCalculator,
+                cameraObservationProvider: appContainer.cameraObservationProvider,
+                cameraPreview: appContainer.cameraPreview
+            )
                 .modelContainer(for: UserMountainRecord.self)
         }
     }
@@ -30,16 +36,50 @@ struct MountainDetailPresentation: Identifiable, Equatable {
 
 private struct YamaLensRootView: View {
     let repository: any MountainRepository
+    let proximityCalculator: MountainProximityCalculator
+    let cameraPreview: AnyView
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedTab: YamaTab = .home
     @State private var detailPresentation: MountainDetailPresentation?
     @State private var detailTransitionProgress: CGFloat = 1
+    @State private var locationModel: LocationSessionModel
+    @State private var cameraModel: CameraScreenModel
+
+    init(
+        repository: any MountainRepository,
+        locationObservationProvider: any LocationObservationProvider,
+        proximityCalculator: MountainProximityCalculator,
+        cameraObservationProvider: any CameraObservationProvider,
+        cameraPreview: AnyView
+    ) {
+        self.repository = repository
+        self.proximityCalculator = proximityCalculator
+        self.cameraPreview = cameraPreview
+        _locationModel = State(
+            initialValue: LocationSessionModel(
+                provider: locationObservationProvider,
+                proximityCalculator: proximityCalculator
+            )
+        )
+        _cameraModel = State(
+            initialValue: CameraScreenModel(
+                provider: cameraObservationProvider,
+                mountains: repository.fetchMountains(),
+                selector: HeadingCandidateSelector(proximityCalculator: proximityCalculator)
+            )
+        )
+    }
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 TabView(selection: $selectedTab) {
-                    HomeView(repository: repository) { presentation in
+                    HomeView(
+                        repository: repository,
+                        locationModel: locationModel,
+                        proximityCalculator: proximityCalculator
+                    ) { presentation in
                         openDetail(presentation)
                     }
                     .tabItem {
@@ -48,7 +88,20 @@ private struct YamaLensRootView: View {
                     }
                     .tag(YamaTab.home)
 
-                    CameraPlaceholderView(selectedTab: $selectedTab)
+                    CameraView(
+                        selectedTab: $selectedTab,
+                        model: cameraModel,
+                        locationModel: locationModel,
+                        preview: cameraPreview
+                    ) { mountain in
+                        openDetail(
+                            MountainDetailPresentation(
+                                mountain: mountain,
+                                sourceID: "camera-\(mountain.id)",
+                                sourceArtworkFrame: .zero
+                            )
+                        )
+                    }
                         .tabItem {
                             Image(systemName: "camera.viewfinder")
                                 .accessibilityLabel("カメラ")
@@ -74,6 +127,8 @@ private struct YamaLensRootView: View {
 
                     MountainDetailView(
                         mountain: detailPresentation.mountain,
+                        currentLocationState: locationModel.state,
+                        proximityCalculator: proximityCalculator,
                         overlayTopInset: geometry.safeAreaInsets.top
                     ) { style in
                         closeDetail(style: style)
@@ -96,6 +151,10 @@ private struct YamaLensRootView: View {
                     }
                 }
             }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await locationModel.refreshAfterReturningFromSettings() }
         }
     }
 

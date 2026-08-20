@@ -1,0 +1,36 @@
+{
+  "sourceLanguage" : "ja",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラ映像に山の候補を重ねて表示するために使用します。映像は保存・送信しません。"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地から山までの距離・方角と、カメラ上の山候補を計算するために使用します。位置履歴は保存しません。"
+          }
+        }
+      }
+    },
+    "NSMotionUsageDescription" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端末の向きと傾きを使って、カメラ上の山候補の位置を計算するために使用します。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

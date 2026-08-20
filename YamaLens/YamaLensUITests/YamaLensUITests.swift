@@ -15,8 +15,6 @@ final class YamaLensUITests: XCTestCase {
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
 
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-        XCUIDevice.shared.orientation = .portrait
     }
 
     override func tearDownWithError() throws {
@@ -26,7 +24,7 @@ final class YamaLensUITests: XCTestCase {
     @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+        let app = makeApplication()
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
@@ -36,7 +34,7 @@ final class YamaLensUITests: XCTestCase {
 
     @MainActor
     func testHomeShowsTanzawaMountains() throws {
-        let app = XCUIApplication()
+        let app = makeApplication()
         app.launch()
 
         XCTAssertTrue(app.staticTexts["蛭ヶ岳"].waitForExistence(timeout: 2))
@@ -44,7 +42,7 @@ final class YamaLensUITests: XCTestCase {
 
     @MainActor
     func testSearchFiltersMountains() throws {
-        let app = XCUIApplication()
+        let app = makeApplication()
         app.launch()
 
         let searchButton = app.buttons["search-button"]
@@ -61,8 +59,74 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testNearbyMountainsAppearOnlyAfterLocationAction() throws {
+        let app = makeApplication(launchArguments: ["-ui-test-location-granted"])
+        app.launch()
+
+        let locationButton = app.buttons["nearby-location-button"]
+        XCTAssertTrue(locationButton.waitForExistence(timeout: 2))
+        XCTAssertFalse(app.descendants(matching: .any)["nearby-mountain-list"].exists)
+
+        locationButton.tap()
+
+        let nearbyList = app.descendants(matching: .any)["nearby-mountain-list"]
+        XCTAssertTrue(nearbyList.waitForExistence(timeout: 2))
+        let nearbyMountain = app.buttons["nearby-mountain-塔ノ岳"]
+        XCTAssertTrue(nearbyMountain.waitForExistence(timeout: 2))
+        nearbyMountain.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["mountain-detail-proximity"]
+                .waitForExistence(timeout: 2)
+        )
+    }
+
+    @MainActor
+    func testDeniedLocationKeepsSearchAvailable() throws {
+        let app = makeApplication(launchArguments: ["-ui-test-location-denied"])
+        app.launch()
+
+        let locationButton = app.buttons["nearby-location-button"]
+        XCTAssertTrue(locationButton.waitForExistence(timeout: 2))
+        locationButton.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["nearby-location-recovery"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.buttons["search-button"].exists)
+        XCTAssertTrue(app.staticTexts["位置情報が許可されていません"].exists)
+    }
+
+    @MainActor
+    func testCameraShowsHeadingCandidatesWithFixedSensors() throws {
+        let app = makeApplication(
+            launchArguments: ["-ui-test-location-granted", "-ui-test-camera-active"]
+        )
+        app.launch()
+
+        let cameraTab = app.buttons["カメラ"]
+        XCTAssertTrue(cameraTab.waitForExistence(timeout: 2))
+        cameraTab.tap()
+
+        let startButton = app.buttons["camera-start-button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 2))
+        startButton.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["camera-active-view"]
+                .waitForExistence(timeout: 3)
+        )
+        XCTAssertTrue(app.buttons["camera-candidate-塔ノ岳"].waitForExistence(timeout: 2))
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "カメラ方位候補"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testMountainDetailDismissesWithDownwardSwipe() throws {
-        let app = XCUIApplication()
+        let app = makeApplication()
         app.launch()
 
         let mountainCard = app.buttons
@@ -93,7 +157,7 @@ final class YamaLensUITests: XCTestCase {
 
     @MainActor
     func testMountainDetailClosesWithBackButton() throws {
-        let app = XCUIApplication()
+        let app = makeApplication()
         app.launch()
 
         let mountainCard = app.buttons
@@ -120,7 +184,15 @@ final class YamaLensUITests: XCTestCase {
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+            makeApplication().launch()
         }
+    }
+
+    @MainActor
+    private func makeApplication(launchArguments: [String] = []) -> XCUIApplication {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments
+        return app
     }
 }

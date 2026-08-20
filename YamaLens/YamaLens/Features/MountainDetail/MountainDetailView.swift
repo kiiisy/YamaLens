@@ -8,6 +8,8 @@ enum MountainDetailDismissalStyle {
 
 struct MountainDetailView: View {
     let mountain: Mountain
+    private let currentLocationState: CurrentLocationState
+    private let proximityCalculator: MountainProximityCalculator
     private let onClose: ((MountainDetailDismissalStyle) -> Void)?
     private let overlayTopInset: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -20,10 +22,14 @@ struct MountainDetailView: View {
 
     init(
         mountain: Mountain,
+        currentLocationState: CurrentLocationState = .notRequested,
+        proximityCalculator: MountainProximityCalculator = MountainProximityCalculator(),
         overlayTopInset: CGFloat? = nil,
         onClose: ((MountainDetailDismissalStyle) -> Void)? = nil
     ) {
         self.mountain = mountain
+        self.currentLocationState = currentLocationState
+        self.proximityCalculator = proximityCalculator
         self.overlayTopInset = overlayTopInset
         self.onClose = onClose
     }
@@ -212,11 +218,58 @@ struct MountainDetailView: View {
                     Text("標高 \(mountain.elevationMeters.formatted())m ・ \(mountain.prefectureName)")
                         .font(.subheadline)
                         .foregroundStyle(YamaColor.secondaryText)
+                    locationSummary
                 }
                 .foregroundStyle(YamaColor.primaryText)
                 .padding(.horizontal, 18)
                 .padding(.bottom, 8)
             }
+    }
+
+    @ViewBuilder
+    private var locationSummary: some View {
+        switch currentLocationState {
+        case .available(let observation, let quality):
+            if let proximity = proximityCalculator.proximity(
+                from: observation.coordinate,
+                to: mountain.coordinate
+            ) {
+                HStack(spacing: 6) {
+                    Image(systemName: "location.fill")
+                    Text(MountainProximityText.summary(proximity))
+                    if quality == .reduced {
+                        Text("目安")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(YamaColor.amber.opacity(0.18), in: Capsule())
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(quality == .good ? YamaColor.alpineTeal : YamaColor.amber)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    quality == .good
+                        ? "現在地から\(MountainProximityText.summary(proximity))"
+                        : "現在地から\(MountainProximityText.summary(proximity))、位置精度が低いため目安"
+                )
+                .accessibilityIdentifier("mountain-detail-proximity")
+            } else {
+                unavailableLocationSummary("距離・方角を計算できません")
+            }
+        case .loading:
+            unavailableLocationSummary("距離・方角を確認中")
+        case .notRequested:
+            unavailableLocationSummary("距離・方角は未取得")
+        case .denied, .restricted, .insufficientAccuracy, .unavailable:
+            unavailableLocationSummary("距離・方角を利用できません")
+        }
+    }
+
+    private func unavailableLocationSummary(_ message: String) -> some View {
+        Label(message, systemImage: "location.slash")
+            .font(.caption)
+            .foregroundStyle(YamaColor.secondaryText)
     }
 
     private var statusCard: some View {

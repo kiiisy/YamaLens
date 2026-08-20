@@ -396,6 +396,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "カメラ映像に山の候補を重ねて表示するために使用します。映像は保存・送信しません。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地から山までの距離・方角と、カメラ上の山候補を計算するために使用します。位置履歴は保存しません。";
+				INFOPLIST_KEY_NSMotionUsageDescription = "端末の向きと傾きを使って、カメラ上の山候補の位置を計算するために使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -440,6 +443,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "カメラ映像に山の候補を重ねて表示するために使用します。映像は保存・送信しません。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地から山までの距離・方角と、カメラ上の山候補を計算するために使用します。位置履歴は保存しません。";
+				INFOPLIST_KEY_NSMotionUsageDescription = "端末の向きと傾きを使って、カメラ上の山候補の位置を計算するために使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
