@@ -3,11 +3,19 @@ import SwiftUI
 
 struct MyView: View {
     private let mountains: [Mountain]
+    private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    private let cameraProjector: MountainCameraProjector
     @Query private var records: [UserMountainRecord]
     @State private var isSettingsPresented = false
 
-    init(repository: any MountainRepository) {
+    init(
+        repository: any MountainRepository,
+        diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
+        cameraProjector: MountainCameraProjector = MountainCameraProjector()
+    ) {
         mountains = repository.fetchMountains()
+        self.diagnosticLogRepository = diagnosticLogRepository
+        self.cameraProjector = cameraProjector
     }
 
     private var favorites: [Mountain] { mountains(matching: records.filter(\.isFavorite)) }
@@ -37,7 +45,11 @@ struct MyView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Mountain.self) { MountainDetailView(mountain: $0) }
             .sheet(isPresented: $isSettingsPresented) {
-                SettingsPlaceholderView()
+                SettingsPlaceholderView(
+                    diagnosticLogRepository: diagnosticLogRepository,
+                    mountains: mountains,
+                    cameraProjector: cameraProjector
+                )
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }

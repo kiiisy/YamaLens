@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated struct LocationObservation: Equatable, Sendable {
+nonisolated struct LocationObservation: Codable, Equatable, Sendable {
     let coordinate: GeoCoordinate
     let altitudeMeters: Double?
     let horizontalAccuracyMeters: Double
@@ -22,7 +22,7 @@ nonisolated struct LocationObservation: Equatable, Sendable {
     }
 }
 
-nonisolated enum LocationObservationQuality: Equatable, Sendable {
+nonisolated enum LocationObservationQuality: Codable, Equatable, Sendable {
     case good
     case reduced
 }

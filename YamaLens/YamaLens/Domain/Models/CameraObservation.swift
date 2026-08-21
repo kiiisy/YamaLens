@@ -1,12 +1,12 @@
 import Foundation
 
-nonisolated enum CameraTrackingQuality: Equatable, Sendable {
+nonisolated enum CameraTrackingQuality: Codable, Equatable, Sendable {
     case normal
     case limited
     case unavailable
 }
 
-nonisolated struct CameraPoseObservation: Equatable, Sendable {
+nonisolated struct CameraPoseObservation: Codable, Equatable, Sendable {
     let trueBearingDegrees: Double
     let pitchDegrees: Double
     let headingAccuracyDegrees: Double

@@ -11,6 +11,7 @@ struct CameraView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var adjustmentStartDegrees: Double?
+    @State private var isDiagnosticDiscardConfirmationPresented = false
 
     var body: some View {
         NavigationStack {
@@ -147,6 +148,9 @@ struct CameraView: View {
                     right: qualityText(quality),
                     symbol: quality == .good ? "location.north.fill" : "exclamationmark.triangle"
                 )
+                if let recorder = model.diagnosticRecorder {
+                    diagnosticControls(recorder: recorder, candidates: candidates)
+                }
                 Spacer()
                 if quality == .reduced {
                     Label(
@@ -170,6 +174,132 @@ struct CameraView: View {
             .padding(.top, 12)
             .padding(.bottom, 84)
         }
+        .alert(
+            "保存せずに診断記録を破棄しますか？",
+            isPresented: $isDiagnosticDiscardConfirmationPresented
+        ) {
+            Button("破棄", role: .destructive) {
+                model.discardDiagnosticRecording()
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("記録中の位置・方位・姿勢・候補は端末内に残りません。")
+        }
+    }
+
+    private func diagnosticControls(
+        recorder: CameraDiagnosticRecorder,
+        candidates: [CameraMountainCandidate]
+    ) -> some View {
+        Group {
+            if recorder.isRecording {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "record.circle.fill")
+                            .foregroundStyle(.red)
+                            .symbolEffect(.pulse)
+                            .accessibilityHidden(true)
+                        Text(
+                            recorder.didReachSampleLimit
+                                ? "上限到達・保存してください"
+                                : "診断記録中 \(recorder.sampleCount)件"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        Spacer()
+                        Button {
+                            Task { await model.saveDiagnosticRecording() }
+                        } label: {
+                            Image(systemName: "square.and.arrow.down")
+                                .frame(width: 44, height: 44)
+                        }
+                        .disabled(recorder.isSaving || recorder.sampleCount == 0)
+                        .accessibilityLabel("診断記録を保存")
+                        .accessibilityIdentifier("camera-diagnostic-save")
+                        Button(role: .destructive) {
+                            isDiagnosticDiscardConfirmationPresented = true
+                        } label: {
+                            Image(systemName: "xmark")
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel("診断記録を破棄")
+                        .accessibilityIdentifier("camera-diagnostic-discard")
+                    }
+
+                    HStack(spacing: 8) {
+                        Menu {
+                            ForEach(CameraDiagnosticEventKind.allCases, id: \.self) { kind in
+                                Button(kind.title) {
+                                    model.markDiagnosticIssue(kind)
+                                }
+                            }
+                        } label: {
+                            Label("問題を記録", systemImage: "exclamationmark.bubble")
+                                .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Menu {
+                            Button("未選択") {
+                                model.setDiagnosticConfirmedMountain(nil)
+                            }
+                            ForEach(candidates, id: \.mountain.id) { candidate in
+                                Button(candidate.mountain.name) {
+                                    model.setDiagnosticConfirmedMountain(candidate.mountain.id)
+                                }
+                            }
+                        } label: {
+                            Label(
+                                confirmedMountainTitle(recorder, candidates: candidates),
+                                systemImage: "eye"
+                            )
+                            .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(candidates.isEmpty && recorder.confirmedMountainID == nil)
+                    }
+
+                    if let errorMessage = recorder.errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(YamaColor.amber)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    .regularMaterial,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .accessibilityElement(children: .contain)
+            } else {
+                HStack {
+                    Spacer()
+                    Button {
+                        model.startDiagnosticRecording()
+                    } label: {
+                        Label("診断記録", systemImage: "record.circle")
+                            .font(.caption.weight(.semibold))
+                            .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.white)
+                    .accessibilityHint("直前\(Int(CameraDiagnosticPolicy.default.inMemoryBufferSeconds))秒の観測を含めて、位置・方位・姿勢・候補の記録を開始します")
+                    .accessibilityIdentifier("camera-diagnostic-start")
+                }
+            }
+        }
+    }
+
+    private func confirmedMountainTitle(
+        _ recorder: CameraDiagnosticRecorder,
+        candidates: [CameraMountainCandidate]
+    ) -> String {
+        guard let mountainID = recorder.confirmedMountainID else {
+            return "目視した山"
+        }
+        return candidates.first { $0.mountain.id == mountainID }?.mountain.name
+            ?? "目視した山を選択済み"
     }
 
     private var headingRecoveryNotice: some View {

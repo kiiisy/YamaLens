@@ -2,6 +2,19 @@ import SwiftUI
 
 struct SettingsPlaceholderView: View {
     @Environment(\.dismiss) private var dismiss
+    let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let mountains: [Mountain]
+    let cameraProjector: MountainCameraProjector
+
+    init(
+        diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
+        mountains: [Mountain] = [],
+        cameraProjector: MountainCameraProjector = MountainCameraProjector()
+    ) {
+        self.diagnosticLogRepository = diagnosticLogRepository
+        self.mountains = mountains
+        self.cameraProjector = cameraProjector
+    }
 
     var body: some View {
         NavigationStack {
@@ -36,6 +49,24 @@ struct SettingsPlaceholderView: View {
                     SettingsLink(title: "権限", value: nil, systemImage: "hand.raised")
                     SettingsLink(title: "データと出典", value: nil, systemImage: "book.closed")
                     SettingsLink(title: "YamaLensについて", value: "0.1.0", systemImage: "info.circle")
+                }
+
+                if let diagnosticLogRepository {
+                    Section {
+                        NavigationLink {
+                            DiagnosticLogsView(
+                                repository: diagnosticLogRepository,
+                                mountains: mountains,
+                                projector: cameraProjector
+                            )
+                        } label: {
+                            SettingsLabel(title: "診断ログ", systemImage: "waveform.path.ecg")
+                        }
+                    } header: {
+                        Text("開発用")
+                    } footer: {
+                        Text("Debugビルドでだけ表示されます。正確な位置を含むログは、明示的に保存した場合だけ端末内へ残ります。")
+                    }
                 }
 
                 Section("このiPhone内のデータ") {

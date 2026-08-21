@@ -31,6 +31,7 @@ final class CameraScreenModel {
     private let projector: MountainCameraProjector
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
+    let diagnosticRecorder: CameraDiagnosticRecorder?
     private var locationState: CurrentLocationState = .notRequested
     private var lastObservation: CameraPoseObservation?
     private var lastObservationEvaluationDate: Date?
@@ -48,12 +49,14 @@ final class CameraScreenModel {
         mountains: [Mountain],
         projector: MountainCameraProjector,
         tuning: CandidateTuning = .default,
+        diagnosticRecorder: CameraDiagnosticRecorder? = nil,
         now: @escaping @MainActor () -> Date = { .now }
     ) {
         self.provider = provider
         self.mountains = mountains
         self.projector = projector
         self.tuning = tuning
+        self.diagnosticRecorder = diagnosticRecorder
         self.now = now
     }
 
@@ -85,6 +88,7 @@ final class CameraScreenModel {
     func stop() {
         pauseForDetail()
         manualHeadingCorrectionDegrees = 0
+        diagnosticRecorder?.discardRecording()
     }
 
     func pauseForDetail() {
@@ -106,6 +110,7 @@ final class CameraScreenModel {
 
     func finishManualHeadingAdjustment() {
         isManualHeadingAdjustmentActive = false
+        recordCurrentDiagnosticSnapshot()
     }
 
     func adjustManualHeadingByStep(_ stepCount: Int) {
@@ -159,7 +164,7 @@ final class CameraScreenModel {
             observation.trackingQuality != .unavailable
         else {
             retainedSheetMountainIDs = []
-            state = .active(
+            setActiveState(
                 observation,
                 labels: [],
                 candidates: [],
@@ -183,7 +188,7 @@ final class CameraScreenModel {
             && observation.headingAccuracyDegrees <= tuning.goodHeadingAccuracyDegrees
             && observation.trackingQuality == .normal
             && hasGoodAltitude(location)
-        state = .active(
+        setActiveState(
             observation,
             labels: projection.labels,
             candidates: projection.sheetCandidates,
@@ -207,7 +212,7 @@ final class CameraScreenModel {
                 state = .waitingForSensors
                 return
             }
-            state = .active(
+            setActiveState(
                 lastObservation,
                 labels: [],
                 candidates: [],
@@ -222,10 +227,74 @@ final class CameraScreenModel {
         locationRefreshRequestID += 1
     }
 
+    func startDiagnosticRecording() {
+        diagnosticRecorder?.startRecording()
+    }
+
+    func saveDiagnosticRecording() async {
+        recordCurrentDiagnosticSnapshot()
+        await diagnosticRecorder?.saveRecording()
+    }
+
+    func discardDiagnosticRecording() {
+        diagnosticRecorder?.discardRecording()
+    }
+
+    func markDiagnosticIssue(_ kind: CameraDiagnosticEventKind) {
+        diagnosticRecorder?.markIssue(kind)
+    }
+
+    func setDiagnosticConfirmedMountain(_ mountainID: String?) {
+        diagnosticRecorder?.setConfirmedMountainID(mountainID)
+    }
+
     private func reprojectLastObservation() {
         retainedSheetMountainIDs = []
         guard let lastObservation, let lastObservationEvaluationDate else { return }
         receive(lastObservation, evaluatedAt: lastObservationEvaluationDate)
+    }
+
+    private func setActiveState(
+        _ observation: CameraPoseObservation,
+        labels: [CameraMountainCandidate],
+        candidates: [CameraMountainCandidate],
+        quality: CameraEstimateQuality
+    ) {
+        state = .active(
+            observation,
+            labels: labels,
+            candidates: candidates,
+            quality: quality
+        )
+        guard case .available(let location, let locationQuality) = locationState else { return }
+        diagnosticRecorder?.observe(
+            location: location,
+            locationQuality: locationQuality,
+            camera: observation,
+            labels: labels,
+            candidates: candidates,
+            quality: quality,
+            manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees
+        )
+    }
+
+    private func recordCurrentDiagnosticSnapshot() {
+        guard
+            case .active(let observation, let labels, let candidates, let quality) = state,
+            case .available(let location, let locationQuality) = locationState
+        else {
+            return
+        }
+        diagnosticRecorder?.observe(
+            location: location,
+            locationQuality: locationQuality,
+            camera: observation,
+            labels: labels,
+            candidates: candidates,
+            quality: quality,
+            manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees,
+            force: true
+        )
     }
 
     private func hasGoodAltitude(_ location: LocationObservation) -> Bool {

@@ -19,7 +19,9 @@ struct YamaLensApp: App {
                 locationObservationProvider: appContainer.locationObservationProvider,
                 proximityCalculator: appContainer.proximityCalculator,
                 cameraObservationProvider: appContainer.cameraObservationProvider,
-                cameraPreview: appContainer.cameraPreview
+                cameraPreview: appContainer.cameraPreview,
+                cameraDiagnosticLogRepository: appContainer.cameraDiagnosticLogRepository,
+                cameraDiagnosticDevice: appContainer.cameraDiagnosticDevice
             )
                 .modelContainer(for: UserMountainRecord.self)
         }
@@ -56,6 +58,8 @@ private struct YamaLensRootView: View {
     let repository: any MountainRepository
     let proximityCalculator: MountainProximityCalculator
     let cameraPreview: AnyView
+    let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let cameraProjector: MountainCameraProjector
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedTab: YamaTab = .home
@@ -69,7 +73,9 @@ private struct YamaLensRootView: View {
         locationObservationProvider: any LocationObservationProvider,
         proximityCalculator: MountainProximityCalculator,
         cameraObservationProvider: any CameraObservationProvider,
-        cameraPreview: AnyView
+        cameraPreview: AnyView,
+        cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?,
+        cameraDiagnosticDevice: CameraDiagnosticDevice?
     ) {
         self.repository = repository
         self.proximityCalculator = proximityCalculator
@@ -80,15 +86,28 @@ private struct YamaLensRootView: View {
                 proximityCalculator: proximityCalculator
             )
         )
+        let projector = MountainCameraProjector(
+            proximityCalculator: proximityCalculator
+        )
+        let diagnosticRecorder: CameraDiagnosticRecorder?
+        if let cameraDiagnosticLogRepository, let cameraDiagnosticDevice {
+            diagnosticRecorder = CameraDiagnosticRecorder(
+                repository: cameraDiagnosticLogRepository,
+                device: cameraDiagnosticDevice
+            )
+        } else {
+            diagnosticRecorder = nil
+        }
         _cameraModel = State(
             initialValue: CameraScreenModel(
                 provider: cameraObservationProvider,
                 mountains: repository.fetchMountains(),
-                projector: MountainCameraProjector(
-                    proximityCalculator: proximityCalculator
-                )
+                projector: projector,
+                diagnosticRecorder: diagnosticRecorder
             )
         )
+        self.cameraDiagnosticLogRepository = cameraDiagnosticLogRepository
+        self.cameraProjector = projector
     }
 
     var body: some View {
@@ -129,7 +148,11 @@ private struct YamaLensRootView: View {
                         }
                         .tag(YamaTab.camera)
 
-                    MyView(repository: repository)
+                    MyView(
+                        repository: repository,
+                        diagnosticLogRepository: cameraDiagnosticLogRepository,
+                        cameraProjector: cameraProjector
+                    )
                         .tabItem {
                             Image(systemName: "person.crop.circle")
                                 .accessibilityLabel("マイ")

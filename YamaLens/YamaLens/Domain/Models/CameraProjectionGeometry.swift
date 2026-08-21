@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated struct SpatialVector: Equatable, Sendable {
+nonisolated struct SpatialVector: Codable, Equatable, Sendable {
     let x: Double
     let y: Double
     let z: Double
@@ -10,17 +10,17 @@ nonisolated struct SpatialVector: Equatable, Sendable {
     }
 }
 
-nonisolated struct ViewportPoint: Equatable, Sendable {
+nonisolated struct ViewportPoint: Codable, Equatable, Sendable {
     let x: Double
     let y: Double
 }
 
-nonisolated struct ViewportSize: Equatable, Sendable {
+nonisolated struct ViewportSize: Codable, Equatable, Sendable {
     let width: Double
     let height: Double
 }
 
-nonisolated struct NormalizedImageTransform: Equatable, Sendable {
+nonisolated struct NormalizedImageTransform: Codable, Equatable, Sendable {
     let a: Double
     let b: Double
     let c: Double
@@ -36,7 +36,7 @@ nonisolated struct NormalizedImageTransform: Equatable, Sendable {
     }
 }
 
-nonisolated struct CameraProjectionGeometry: Equatable, Sendable {
+nonisolated struct CameraProjectionGeometry: Codable, Equatable, Sendable {
     let cameraRightInWorld: SpatialVector
     let cameraUpInWorld: SpatialVector
     let cameraBackInWorld: SpatialVector

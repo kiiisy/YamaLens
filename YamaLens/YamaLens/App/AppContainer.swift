@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 struct AppContainer {
@@ -8,6 +9,8 @@ struct AppContainer {
     let proximityCalculator: MountainProximityCalculator
     let cameraObservationProvider: any CameraObservationProvider
     let cameraPreview: AnyView
+    let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let cameraDiagnosticDevice: CameraDiagnosticDevice?
 
     init(
         mountainRepository: any MountainRepository = BootstrapMountainRepository(),
@@ -21,6 +24,19 @@ struct AppContainer {
         let cameraDependencies = Self.makeCameraDependencies()
         cameraObservationProvider = cameraDependencies.provider
         cameraPreview = cameraDependencies.preview
+#if DEBUG
+        cameraDiagnosticLogRepository = FileCameraDiagnosticLogRepository()
+        cameraDiagnosticDevice = CameraDiagnosticDevice(
+            appVersion: Bundle.main.object(
+                forInfoDictionaryKey: "CFBundleShortVersionString"
+            ) as? String ?? "未取得",
+            operatingSystemVersion: UIDevice.current.systemVersion,
+            deviceModel: UIDevice.current.model
+        )
+#else
+        cameraDiagnosticLogRepository = nil
+        cameraDiagnosticDevice = nil
+#endif
     }
 
     private static func makeLocationObservationProvider() -> any LocationObservationProvider {

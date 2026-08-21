@@ -200,6 +200,35 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testCameraDiagnosticRecordingRequiresExplicitStartAndDiscardConfirmation() throws {
+        let app = makeApplication(
+            launchArguments: ["-ui-test-location-granted", "-ui-test-camera-active"]
+        )
+        app.launch()
+
+        app.buttons["カメラ"].tap()
+        let cameraStartButton = app.buttons["camera-start-button"]
+        XCTAssertTrue(cameraStartButton.waitForExistence(timeout: 2))
+        cameraStartButton.tap()
+
+        let diagnosticStartButton = app.buttons["camera-diagnostic-start"]
+        XCTAssertTrue(diagnosticStartButton.waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["camera-diagnostic-save"].exists)
+        diagnosticStartButton.tap()
+
+        let saveButton = app.buttons["camera-diagnostic-save"]
+        let discardButton = app.buttons["camera-diagnostic-discard"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(discardButton.isHittable)
+        discardButton.tap()
+        XCTAssertTrue(app.alerts["保存せずに診断記録を破棄しますか？"].waitForExistence(timeout: 2))
+        app.alerts.buttons["破棄"].tap()
+
+        XCTAssertTrue(diagnosticStartButton.waitForExistence(timeout: 2))
+        XCTAssertFalse(saveButton.exists)
+    }
+
+    @MainActor
     func testMountainDetailDismissesWithDownwardSwipe() throws {
         let app = makeApplication()
         app.launch()
