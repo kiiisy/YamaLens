@@ -7,7 +7,8 @@ enum CameraScreenState: Equatable {
     case waitingForSensors
     case active(
         CameraPoseObservation,
-        candidates: [HeadingCandidate],
+        labels: [CameraMountainCandidate],
+        candidates: [CameraMountainCandidate],
         quality: CameraEstimateQuality
     )
     case cameraDenied
@@ -27,25 +28,31 @@ enum CameraEstimateQuality: Equatable {
 final class CameraScreenModel {
     private let provider: any CameraObservationProvider
     private let mountains: [Mountain]
-    private let selector: HeadingCandidateSelector
+    private let projector: MountainCameraProjector
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
     private var locationState: CurrentLocationState = .notRequested
     private var lastObservation: CameraPoseObservation?
+    private var lastObservationEvaluationDate: Date?
     private var observationTask: Task<Void, Never>?
+    private var retainedSheetMountainIDs: [String] = []
+    private var locationTimestampRequestedForRefresh: Date?
 
     private(set) var state: CameraScreenState = .idle
+    private(set) var locationRefreshRequestID = 0
+    private(set) var manualHeadingCorrectionDegrees: Double = 0
+    private(set) var isManualHeadingAdjustmentActive = false
 
     init(
         provider: any CameraObservationProvider,
         mountains: [Mountain],
-        selector: HeadingCandidateSelector,
+        projector: MountainCameraProjector,
         tuning: CandidateTuning = .default,
         now: @escaping @MainActor () -> Date = { .now }
     ) {
         self.provider = provider
         self.mountains = mountains
-        self.selector = selector
+        self.projector = projector
         self.tuning = tuning
         self.now = now
     }
@@ -59,9 +66,9 @@ final class CameraScreenModel {
             state = .waitingForSensors
             observationTask?.cancel()
             observationTask = Task { [weak self, provider] in
-                for await observation in provider.observations() {
+                for await update in provider.observations() {
                     guard !Task.isCancelled else { return }
-                    self?.receive(observation)
+                    self?.receive(update)
                 }
             }
         case .failure(let failure):
@@ -76,26 +83,72 @@ final class CameraScreenModel {
     }
 
     func stop() {
+        pauseForDetail()
+        manualHeadingCorrectionDegrees = 0
+    }
+
+    func pauseForDetail() {
         observationTask?.cancel()
         observationTask = nil
         provider.stop()
         lastObservation = nil
+        lastObservationEvaluationDate = nil
+        retainedSheetMountainIDs = []
+        locationTimestampRequestedForRefresh = nil
+        isManualHeadingAdjustmentActive = false
         state = .idle
     }
 
+    func beginManualHeadingAdjustment() {
+        guard case .active(_, _, _, let quality) = state, quality != .unavailable else { return }
+        isManualHeadingAdjustmentActive = true
+    }
+
+    func finishManualHeadingAdjustment() {
+        isManualHeadingAdjustmentActive = false
+    }
+
+    func adjustManualHeadingByStep(_ stepCount: Int) {
+        let change = Double(stepCount) * tuning.manualHeadingCorrectionStepDegrees
+        setManualHeadingCorrection(degrees: manualHeadingCorrectionDegrees + change)
+    }
+
+    func setManualHeadingCorrection(degrees: Double) {
+        guard degrees.isFinite else { return }
+        manualHeadingCorrectionDegrees = min(
+            max(degrees, -tuning.maximumManualHeadingCorrectionDegrees),
+            tuning.maximumManualHeadingCorrectionDegrees
+        )
+        reprojectLastObservation()
+    }
+
+    func resetManualHeadingCorrection() {
+        setManualHeadingCorrection(degrees: 0)
+    }
+
     func receive(_ observation: CameraPoseObservation) {
+        receive(observation, evaluatedAt: now())
+    }
+
+    private func receive(
+        _ observation: CameraPoseObservation,
+        evaluatedAt evaluationDate: Date
+    ) {
         lastObservation = observation
+        lastObservationEvaluationDate = evaluationDate
         guard case .available(let location, let locationQuality) = locationState else {
             state = .waitingForSensors
             return
         }
 
-        let locationAge = now().timeIntervalSince(location.observedAt)
+        let locationAge = evaluationDate.timeIntervalSince(location.observedAt)
         guard locationAge >= -1, locationAge <= tuning.maximumLocationAgeSeconds else {
             state = .waitingForSensors
+            requestLocationRefreshIfNeeded(for: location.observedAt)
             return
         }
-        let poseAge = now().timeIntervalSince(observation.observedAt)
+        locationTimestampRequestedForRefresh = nil
+        let poseAge = evaluationDate.timeIntervalSince(observation.observedAt)
 
         guard
             poseAge >= -1,
@@ -105,26 +158,86 @@ final class CameraScreenModel {
             observation.headingAccuracyDegrees <= tuning.maximumHeadingAccuracyDegrees,
             observation.trackingQuality != .unavailable
         else {
-            state = .active(observation, candidates: [], quality: .unavailable)
+            retainedSheetMountainIDs = []
+            state = .active(
+                observation,
+                labels: [],
+                candidates: [],
+                quality: .unavailable
+            )
             return
         }
 
-        let candidates = selector.candidates(
-            from: location.coordinate,
-            facing: observation.trueBearingDegrees,
+        let projection = projector.projectCandidates(
+            location: location,
+            camera: observation,
             mountains: mountains,
-            maximumCount: tuning.maximumSheetCandidateCount
+            retainedSheetMountainIDs: retainedSheetMountainIDs,
+            manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees,
+            now: evaluationDate
         )
+        retainedSheetMountainIDs = projection.sheetCandidates.map(\.mountain.id)
         let isGood = locationQuality == .good
             && locationAge <= tuning.freshLocationAgeSeconds
             && poseAge <= tuning.freshPoseAgeSeconds
             && observation.headingAccuracyDegrees <= tuning.goodHeadingAccuracyDegrees
             && observation.trackingQuality == .normal
+            && hasGoodAltitude(location)
         state = .active(
             observation,
-            candidates: candidates,
+            labels: projection.labels,
+            candidates: projection.sheetCandidates,
             quality: isGood ? .good : .reduced
         )
+    }
+
+    func receive(_ update: CameraObservationUpdate) {
+        switch update {
+        case .pose(let observation):
+            receive(observation)
+        case .temporarilyUnavailable:
+            retainedSheetMountainIDs = []
+            if case .available(let location, _) = locationState {
+                let locationAge = now().timeIntervalSince(location.observedAt)
+                if locationAge > tuning.freshLocationAgeSeconds {
+                    requestLocationRefreshIfNeeded(for: location.observedAt)
+                }
+            }
+            guard let lastObservation else {
+                state = .waitingForSensors
+                return
+            }
+            state = .active(
+                lastObservation,
+                labels: [],
+                candidates: [],
+                quality: .unavailable
+            )
+        }
+    }
+
+    private func requestLocationRefreshIfNeeded(for observedAt: Date) {
+        guard locationTimestampRequestedForRefresh != observedAt else { return }
+        locationTimestampRequestedForRefresh = observedAt
+        locationRefreshRequestID += 1
+    }
+
+    private func reprojectLastObservation() {
+        retainedSheetMountainIDs = []
+        guard let lastObservation, let lastObservationEvaluationDate else { return }
+        receive(lastObservation, evaluatedAt: lastObservationEvaluationDate)
+    }
+
+    private func hasGoodAltitude(_ location: LocationObservation) -> Bool {
+        guard
+            location.altitudeMeters?.isFinite == true,
+            let verticalAccuracy = location.verticalAccuracyMeters,
+            verticalAccuracy.isFinite,
+            verticalAccuracy >= 0
+        else {
+            return false
+        }
+        return verticalAccuracy <= tuning.goodVerticalAccuracyMeters
     }
 
     private func state(for failure: CameraSessionFailure) -> CameraScreenState {

@@ -2,8 +2,24 @@ import Foundation
 
 nonisolated struct LocationObservation: Equatable, Sendable {
     let coordinate: GeoCoordinate
+    let altitudeMeters: Double?
     let horizontalAccuracyMeters: Double
+    let verticalAccuracyMeters: Double?
     let observedAt: Date
+
+    init(
+        coordinate: GeoCoordinate,
+        altitudeMeters: Double? = nil,
+        horizontalAccuracyMeters: Double,
+        verticalAccuracyMeters: Double? = nil,
+        observedAt: Date
+    ) {
+        self.coordinate = coordinate
+        self.altitudeMeters = altitudeMeters
+        self.horizontalAccuracyMeters = horizontalAccuracyMeters
+        self.verticalAccuracyMeters = verticalAccuracyMeters
+        self.observedAt = observedAt
+    }
 }
 
 nonisolated enum LocationObservationQuality: Equatable, Sendable {

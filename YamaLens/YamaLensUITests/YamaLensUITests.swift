@@ -113,15 +113,82 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(startButton.waitForExistence(timeout: 2))
         startButton.tap()
 
-        XCTAssertTrue(
-            app.descendants(matching: .any)["camera-active-view"]
-                .waitForExistence(timeout: 3)
-        )
+        XCTAssertTrue(app.buttons["camera-label-塔ノ岳"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["camera-candidate-塔ノ岳"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["camera-search-button"].isHittable)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "カメラ方位候補"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+    }
+
+    @MainActor
+    func testCameraExplainsHowToRecoverFromHeadingInterference() throws {
+        let app = makeApplication(
+            launchArguments: [
+                "-ui-test-location-granted",
+                "-ui-test-camera-heading-unavailable"
+            ]
+        )
+        app.launch()
+
+        app.buttons["カメラ"].tap()
+        let startButton = app.buttons["camera-start-button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 2))
+        startButton.tap()
+
+        let recoveryNotice = app.descendants(matching: .any)["camera-heading-recovery"]
+        XCTAssertTrue(recoveryNotice.waitForExistence(timeout: 3))
+        XCTAssertEqual(
+            recoveryNotice.label,
+            "方位を再確認しています。金属や磁石を端末から離し、端末をゆっくり上下左右に動かしてください"
+        )
+        XCTAssertFalse(app.buttons["camera-label-塔ノ岳"].exists)
+    }
+
+    @MainActor
+    func testCameraRestartsAfterReturningFromItsMountainDetail() throws {
+        let app = makeApplication(
+            launchArguments: ["-ui-test-location-granted", "-ui-test-camera-active"]
+        )
+        app.launch()
+
+        app.buttons["カメラ"].tap()
+        let startButton = app.buttons["camera-start-button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 2))
+        startButton.tap()
+
+        let cameraLabel = app.buttons["camera-label-塔ノ岳"]
+        XCTAssertTrue(cameraLabel.waitForExistence(timeout: 3))
+        let adjustmentButton = app.buttons["camera-heading-adjust-button"]
+        XCTAssertTrue(adjustmentButton.waitForExistence(timeout: 2))
+        adjustmentButton.tap()
+        app.buttons["camera-heading-east-button"].tap()
+        XCTAssertEqual(
+            app.descendants(matching: .any)["camera-heading-correction-value"].label,
+            "東へ1°"
+        )
+        let adjustmentScreenshot = XCTAttachment(screenshot: app.screenshot())
+        adjustmentScreenshot.name = "手動方位補正"
+        adjustmentScreenshot.lifetime = .keepAlways
+        add(adjustmentScreenshot)
+        app.buttons["camera-heading-adjust-done-button"].tap()
+
+        cameraLabel.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["mountain-detail"].waitForExistence(timeout: 2))
+
+        app.buttons["detail-close-button"].tap()
+
+        XCTAssertTrue(cameraLabel.waitForExistence(timeout: 3))
+        XCTAssertFalse(startButton.exists)
+        XCTAssertTrue(adjustmentButton.label.contains("東へ1°"))
+
+        adjustmentButton.tap()
+        app.buttons["camera-heading-reset-button"].tap()
+        XCTAssertEqual(
+            app.descendants(matching: .any)["camera-heading-correction-value"].label,
+            "補正なし"
+        )
     }
 
     @MainActor

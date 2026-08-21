@@ -27,9 +27,27 @@ struct YamaLensApp: App {
 }
 
 struct MountainDetailPresentation: Identifiable, Equatable {
+    enum Origin: Equatable {
+        case browsing
+        case camera
+    }
+
     let mountain: Mountain
     let sourceID: String
     let sourceArtworkFrame: CGRect
+    let origin: Origin
+
+    init(
+        mountain: Mountain,
+        sourceID: String,
+        sourceArtworkFrame: CGRect,
+        origin: Origin = .browsing
+    ) {
+        self.mountain = mountain
+        self.sourceID = sourceID
+        self.sourceArtworkFrame = sourceArtworkFrame
+        self.origin = origin
+    }
 
     var id: String { sourceID }
 }
@@ -66,7 +84,9 @@ private struct YamaLensRootView: View {
             initialValue: CameraScreenModel(
                 provider: cameraObservationProvider,
                 mountains: repository.fetchMountains(),
-                selector: HeadingCandidateSelector(proximityCalculator: proximityCalculator)
+                projector: MountainCameraProjector(
+                    proximityCalculator: proximityCalculator
+                )
             )
         )
     }
@@ -98,7 +118,8 @@ private struct YamaLensRootView: View {
                             MountainDetailPresentation(
                                 mountain: mountain,
                                 sourceID: "camera-\(mountain.id)",
-                                sourceArtworkFrame: .zero
+                                sourceArtworkFrame: .zero,
+                                origin: .camera
                             )
                         )
                     }
@@ -174,21 +195,37 @@ private struct YamaLensRootView: View {
     }
 
     private func closeDetail(style: MountainDetailDismissalStyle) {
+        let shouldResumeCamera = detailPresentation?.origin == .camera
+            && selectedTab == .camera
+
         switch style {
         case .zoomToSource:
             if reduceMotion {
                 detailPresentation = nil
+                resumeCameraIfNeeded(shouldResumeCamera)
             } else {
                 withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) {
                     detailTransitionProgress = 0
                 } completion: {
                     detailPresentation = nil
                     detailTransitionProgress = 1
+                    resumeCameraIfNeeded(shouldResumeCamera)
                 }
             }
         case .dragged:
             detailPresentation = nil
             detailTransitionProgress = 1
+            resumeCameraIfNeeded(shouldResumeCamera)
+        }
+    }
+
+    private func resumeCameraIfNeeded(_ shouldResumeCamera: Bool) {
+        guard shouldResumeCamera else { return }
+        Task {
+            await cameraModel.start()
+            if cameraModel.state == .waitingForSensors {
+                await locationModel.requestLocation()
+            }
         }
     }
 

@@ -12,6 +12,7 @@ nonisolated struct CameraPoseObservation: Equatable, Sendable {
     let headingAccuracyDegrees: Double
     let observedAt: Date
     let trackingQuality: CameraTrackingQuality
+    let projectionGeometry: CameraProjectionGeometry
 }
 
 nonisolated enum CameraSessionFailure: Error, Equatable, Sendable {

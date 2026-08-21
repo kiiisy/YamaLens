@@ -4,6 +4,8 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
     let maximumSearchDistanceMeters: Double
     let goodHorizontalAccuracyMeters: Double
     let maximumHorizontalAccuracyMeters: Double
+    let goodVerticalAccuracyMeters: Double
+    let maximumVerticalAccuracyMeters: Double
     let goodHeadingAccuracyDegrees: Double
     let maximumHeadingAccuracyDegrees: Double
     let freshLocationAgeSeconds: TimeInterval
@@ -11,18 +13,46 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
     let freshPoseAgeSeconds: TimeInterval
     let maximumPoseAgeSeconds: TimeInterval
     let maximumSheetCandidateCount: Int
+    let maximumCameraLabelCount: Int
+    let manualHeadingCorrectionStepDegrees: Double
+    let maximumManualHeadingCorrectionDegrees: Double
+    let fieldOfViewMarginDegrees: Double
+    let strongCandidateScore: Double
+    let cameraCandidateScore: Double
+    let sheetCandidateScore: Double
+    let bearingScoreWeight: Double
+    let elevationScoreWeight: Double
+    let observationQualityScoreWeight: Double
+    let distanceScoreWeight: Double
+    let reducedQualityMinimumScore: Double
+    let altitudeUnavailableQualityScore: Double
 
     static let `default` = CandidateTuning(
         maximumSearchDistanceMeters: 150_000,
         goodHorizontalAccuracyMeters: 25,
         maximumHorizontalAccuracyMeters: 100,
+        goodVerticalAccuracyMeters: 30,
+        maximumVerticalAccuracyMeters: 75,
         goodHeadingAccuracyDegrees: 10,
         maximumHeadingAccuracyDegrees: 25,
         freshLocationAgeSeconds: 15,
         maximumLocationAgeSeconds: 60,
         freshPoseAgeSeconds: 1,
         maximumPoseAgeSeconds: 3,
-        maximumSheetCandidateCount: 10
+        maximumSheetCandidateCount: 10,
+        maximumCameraLabelCount: 5,
+        manualHeadingCorrectionStepDegrees: 1,
+        maximumManualHeadingCorrectionDegrees: 30,
+        fieldOfViewMarginDegrees: 3,
+        strongCandidateScore: 0.75,
+        cameraCandidateScore: 0.50,
+        sheetCandidateScore: 0.35,
+        bearingScoreWeight: 0.45,
+        elevationScoreWeight: 0.30,
+        observationQualityScoreWeight: 0.15,
+        distanceScoreWeight: 0.10,
+        reducedQualityMinimumScore: 0.4,
+        altitudeUnavailableQualityScore: 0.6
     )
 }
 

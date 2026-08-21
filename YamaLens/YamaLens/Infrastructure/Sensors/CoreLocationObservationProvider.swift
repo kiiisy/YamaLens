@@ -5,16 +5,19 @@ import Foundation
 final class CoreLocationObservationProvider: NSObject, LocationObservationProvider {
     private let locationManager: CLLocationManager
     private let maximumObservationAgeSeconds: TimeInterval
+    private let maximumVerticalAccuracyMeters: Double
     private var continuation: CheckedContinuation<
         Result<LocationObservation, LocationObservationFailure>,
         Never
     >?
 
     init(
-        maximumObservationAgeSeconds: TimeInterval = CandidateTuning.default.maximumLocationAgeSeconds
+        maximumObservationAgeSeconds: TimeInterval = CandidateTuning.default.maximumLocationAgeSeconds,
+        maximumVerticalAccuracyMeters: Double = CandidateTuning.default.maximumVerticalAccuracyMeters
     ) {
         locationManager = CLLocationManager()
         self.maximumObservationAgeSeconds = maximumObservationAgeSeconds
+        self.maximumVerticalAccuracyMeters = maximumVerticalAccuracyMeters
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -95,7 +98,9 @@ extension CoreLocationObservationProvider: CLLocationManagerDelegate {
                 latitude: location.coordinate.latitude,
                 longitude: location.coordinate.longitude
             ),
+            altitudeMeters: validAltitude(from: location),
             horizontalAccuracyMeters: location.horizontalAccuracy,
+            verticalAccuracyMeters: validVerticalAccuracy(from: location),
             observedAt: location.timestamp
         )
         finish(with: .success(observation))
@@ -107,5 +112,21 @@ extension CoreLocationObservationProvider: CLLocationManagerDelegate {
         } else {
             finish(with: .failure(.unavailable))
         }
+    }
+
+    private func validAltitude(from location: CLLocation) -> Double? {
+        guard
+            location.verticalAccuracy >= 0,
+            location.verticalAccuracy <= maximumVerticalAccuracyMeters,
+            location.altitude.isFinite
+        else {
+            return nil
+        }
+        return location.altitude
+    }
+
+    private func validVerticalAccuracy(from location: CLLocation) -> Double? {
+        guard location.verticalAccuracy >= 0, location.verticalAccuracy.isFinite else { return nil }
+        return location.verticalAccuracy
     }
 }
