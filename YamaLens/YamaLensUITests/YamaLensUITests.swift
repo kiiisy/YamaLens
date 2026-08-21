@@ -163,9 +163,17 @@ final class YamaLensUITests: XCTestCase {
         let adjustmentButton = app.buttons["camera-heading-adjust-button"]
         XCTAssertTrue(adjustmentButton.waitForExistence(timeout: 2))
         adjustmentButton.tap()
-        app.buttons["camera-heading-east-button"].tap()
+        let eastButton = app.buttons["camera-heading-east-button"]
+        let correctionValue = app.descendants(matching: .any)["camera-heading-correction-value"]
+        eastButton.press(forDuration: 1.2)
+        XCTAssertNotEqual(correctionValue.label, "補正なし")
+        XCTAssertNotEqual(correctionValue.label, "東へ1°")
+
+        app.buttons["camera-heading-reset-button"].tap()
+        XCTAssertEqual(correctionValue.label, "補正なし")
+        eastButton.tap()
         XCTAssertEqual(
-            app.descendants(matching: .any)["camera-heading-correction-value"].label,
+            correctionValue.label,
             "東へ1°"
         )
         let adjustmentScreenshot = XCTAttachment(screenshot: app.screenshot())
@@ -186,7 +194,7 @@ final class YamaLensUITests: XCTestCase {
         adjustmentButton.tap()
         app.buttons["camera-heading-reset-button"].tap()
         XCTAssertEqual(
-            app.descendants(matching: .any)["camera-heading-correction-value"].label,
+            correctionValue.label,
             "補正なし"
         )
     }

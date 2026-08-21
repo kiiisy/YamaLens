@@ -482,9 +482,11 @@ struct CameraView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
+        .buttonRepeatBehavior(.enabled)
         .tint(YamaColor.alpineTeal)
         .controlSize(.large)
         .accessibilityLabel("方位を\(title)補正")
+        .accessibilityHint("1回押すと1度、押し続けると連続して補正します")
         .accessibilityIdentifier(step < 0 ? "camera-heading-west-button" : "camera-heading-east-button")
     }
 
