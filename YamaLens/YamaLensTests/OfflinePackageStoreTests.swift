@@ -110,6 +110,20 @@ struct OfflinePackageStoreTests {
         #expect(!FileManager.default.fileExists(atPath: packageRoot.appending(path: "install-journal.json").path))
     }
 
+    @Test("一時領域以外を破棄対象として受け付けない")
+    func rejectsDiscardOutsideStagingRoot() async throws {
+        let root = try makeTemporaryDirectory(named: "discard-scope")
+        defer { removeTemporaryDirectory(root) }
+        let store = OfflinePackageStore(
+            rootURL: root.appending(path: "OfflinePackages"),
+            validator: OfflinePackageValidator(publicKeys: [:])
+        )
+
+        await #expect(throws: OfflinePackageStoreError.invalidStagingLocation) {
+            try await store.discardStagingDirectory(root.appending(path: "unrelated"))
+        }
+    }
+
     private func makeTemporaryDirectory(named name: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "YamaLensOfflinePackageStoreTests")

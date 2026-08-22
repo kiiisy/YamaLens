@@ -22,7 +22,17 @@ struct AppContainer {
         self.locationObservationProvider = locationObservationProvider
             ?? Self.makeLocationObservationProvider()
         self.proximityCalculator = proximityCalculator
-        terrainVisibilityResolver = nil
+        if let offlinePackageRootURL = Self.offlinePackageRootURL() {
+            let offlinePackageStore = OfflinePackageStore(
+                rootURL: offlinePackageRootURL,
+                validator: OfflinePackageValidator(publicKeys: [:])
+            )
+            terrainVisibilityResolver = ActiveOfflinePackageTerrainVisibilityResolver(
+                store: offlinePackageStore
+            )
+        } else {
+            terrainVisibilityResolver = nil
+        }
         let cameraDependencies = Self.makeCameraDependencies()
         cameraObservationProvider = cameraDependencies.provider
         cameraPreview = cameraDependencies.preview
@@ -39,6 +49,13 @@ struct AppContainer {
         cameraDiagnosticLogRepository = nil
         cameraDiagnosticDevice = nil
 #endif
+    }
+
+    private static func offlinePackageRootURL() -> URL? {
+        FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first?.appending(path: "OfflinePackages", directoryHint: .isDirectory)
     }
 
     private static func makeLocationObservationProvider() -> any LocationObservationProvider {

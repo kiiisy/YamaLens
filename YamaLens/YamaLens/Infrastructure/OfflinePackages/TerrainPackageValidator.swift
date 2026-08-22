@@ -47,6 +47,18 @@ nonisolated struct OfflinePackageValidator: Sendable {
     }
 
     func validatePackage(at directoryURL: URL) throws -> ValidatedOfflinePackage {
+        let manifest = try validatePackageMetadata(at: directoryURL)
+        try validateFiles(in: directoryURL, manifest: manifest)
+
+        let catalogURL = directoryURL.appending(path: "catalog.sqlite")
+        let terrainURL = directoryURL.appending(path: "terrain.lzfse")
+        let catalog = try validateCatalog(at: catalogURL, manifest: manifest)
+        try validateTerrain(at: terrainURL, tiles: catalog.tiles)
+        return ValidatedOfflinePackage(manifest: manifest, directoryURL: directoryURL)
+    }
+
+    /// 大容量ファイルの取得前に、manifestの署名と宣言値を検証する。
+    func validatePackageMetadata(at directoryURL: URL) throws -> OfflinePackageManifest {
         let manifestURL = directoryURL.appending(path: "manifest.json")
         let signatureURL = directoryURL.appending(path: "manifest.sig")
         let manifestData = try readRegularFile(
@@ -65,13 +77,8 @@ nonisolated struct OfflinePackageValidator: Sendable {
 
         let manifest = try decodeAndValidateManifest(manifestData)
         try validateSignature(signatureData, manifestData: manifestData, manifest: manifest)
-        try validateFiles(in: directoryURL, manifest: manifest)
-
-        let catalogURL = directoryURL.appending(path: "catalog.sqlite")
-        let terrainURL = directoryURL.appending(path: "terrain.lzfse")
-        let catalog = try validateCatalog(at: catalogURL, manifest: manifest)
-        try validateTerrain(at: terrainURL, tiles: catalog.tiles)
-        return ValidatedOfflinePackage(manifest: manifest, directoryURL: directoryURL)
+        try validateFileDeclarations(manifest)
+        return manifest
     }
 
     private func decodeAndValidateManifest(_ data: Data) throws -> OfflinePackageManifest {
@@ -144,6 +151,20 @@ nonisolated struct OfflinePackageValidator: Sendable {
         in directoryURL: URL,
         manifest: OfflinePackageManifest
     ) throws {
+        try validateFileDeclarations(manifest)
+        for record in manifest.files {
+            let fileURL = directoryURL.appending(path: record.path)
+            let size = try regularFileSize(at: fileURL, named: record.path)
+            guard size == record.byteCount else {
+                throw OfflinePackageValidationError.fileSizeMismatch(record.path)
+            }
+            guard try sha256Hex(of: fileURL, maximumBytes: record.byteCount) == record.sha256 else {
+                throw OfflinePackageValidationError.fileHashMismatch(record.path)
+            }
+        }
+    }
+
+    private func validateFileDeclarations(_ manifest: OfflinePackageManifest) throws {
         let expectedPaths = Set(["catalog.sqlite", "terrain.lzfse"])
         let declaredPaths = Set(manifest.files.map(\.path))
         guard manifest.files.count == 2, declaredPaths == expectedPaths else {
@@ -160,15 +181,6 @@ nonisolated struct OfflinePackageValidator: Sendable {
                 throw OfflinePackageValidationError.packageTooLarge
             }
             totalBytes = newTotal
-
-            let fileURL = directoryURL.appending(path: record.path)
-            let size = try regularFileSize(at: fileURL, named: record.path)
-            guard size == record.byteCount else {
-                throw OfflinePackageValidationError.fileSizeMismatch(record.path)
-            }
-            guard try sha256Hex(of: fileURL, maximumBytes: record.byteCount) == record.sha256 else {
-                throw OfflinePackageValidationError.fileHashMismatch(record.path)
-            }
         }
     }
 

@@ -192,6 +192,29 @@ struct CameraScreenModelTests {
         Issue.record("地形判定がカメラ候補へ反映されませんでした")
     }
 
+    @Test("方位復帰待ちを古い地形判定結果で上書きしない")
+    func keepsHeadingUnavailableAfterTerrainEvaluationCompletes() async {
+        let resolver = FixedTerrainVisibilityResolver(
+            result: ["north": .occluded(maximumExcessHeightMeters: 80)]
+        )
+        let model = makeModel(terrainVisibilityResolver: resolver)
+        model.updateLocationState(.available(location(age: 0), quality: .good))
+        model.receive(pose(age: 0, headingAccuracy: 5))
+
+        model.receive(.temporarilyUnavailable)
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+
+        guard case .active(_, let labels, let candidates, let quality) = model.state else {
+            Issue.record("方位利用不能状態を維持できません")
+            return
+        }
+        #expect(labels.isEmpty)
+        #expect(candidates.isEmpty)
+        #expect(quality == .unavailable)
+    }
+
     private func makeModel(
         terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil
     ) -> CameraScreenModel {

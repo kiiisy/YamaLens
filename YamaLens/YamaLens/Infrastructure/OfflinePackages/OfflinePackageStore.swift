@@ -13,6 +13,11 @@ nonisolated struct InstalledOfflinePackage: Equatable, Sendable {
     let directoryURL: URL
 }
 
+nonisolated enum OfflinePackageStagingState: String, Codable, Equatable, Sendable {
+    case downloading
+    case verifying
+}
+
 actor OfflinePackageStore {
     private let rootURL: URL
     private let validator: OfflinePackageValidator
@@ -51,6 +56,7 @@ actor OfflinePackageStore {
 
         let validated = try validator.validatePackage(at: stagedURL)
         let manifest = validated.manifest
+        try removeStagingJournal(from: stagedURL)
         try applyOfflinePackageAttributesRecursively(to: stagedURL)
 
         let packageRoot = installedRootURL
@@ -87,6 +93,31 @@ actor OfflinePackageStore {
             contentVersion: manifest.contentVersion,
             directoryURL: versionURL
         )
+    }
+
+    func setStagingState(
+        _ state: OfflinePackageStagingState,
+        for directoryURL: URL
+    ) throws {
+        let stagedURL = directoryURL.standardizedFileURL
+        guard stagedURL.deletingLastPathComponent() == stagingRootURL,
+              fileManager.fileExists(atPath: stagedURL.path) else {
+            throw OfflinePackageStoreError.invalidStagingLocation
+        }
+        let journal = StagingJournal(state: state, updatedAt: .now)
+        let data = try JSONEncoder().encode(journal)
+        let journalURL = stagedURL.appending(path: "staging-journal.json")
+        try data.write(to: journalURL, options: [.atomic])
+        try applyOfflinePackageAttributes(to: journalURL)
+    }
+
+    func discardStagingDirectory(_ directoryURL: URL) throws {
+        let stagedURL = directoryURL.standardizedFileURL
+        guard stagedURL.deletingLastPathComponent() == stagingRootURL else {
+            throw OfflinePackageStoreError.invalidStagingLocation
+        }
+        guard fileManager.fileExists(atPath: stagedURL.path) else { return }
+        try fileManager.removeItem(at: stagedURL)
     }
 
     func activePackageURL(packageID: String) throws -> URL? {
@@ -219,6 +250,13 @@ actor OfflinePackageStore {
         }
     }
 
+    private func removeStagingJournal(from stagedURL: URL) throws {
+        let journalURL = stagedURL.appending(path: "staging-journal.json")
+        if fileManager.fileExists(atPath: journalURL.path) {
+            try fileManager.removeItem(at: journalURL)
+        }
+    }
+
     private static func isSafePathComponent(_ value: String) -> Bool {
         guard !value.isEmpty, value.utf8.count <= 128 else { return false }
         let allowed = CharacterSet(
@@ -238,4 +276,9 @@ private nonisolated struct InstallJournal: Codable, Sendable {
     nonisolated enum State: String, Codable, Sendable {
         case readyToInstall
     }
+}
+
+private nonisolated struct StagingJournal: Codable, Sendable {
+    let state: OfflinePackageStagingState
+    let updatedAt: Date
 }

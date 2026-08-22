@@ -217,6 +217,8 @@ final class CameraScreenModel {
             receive(observation)
         case .temporarilyUnavailable:
             retainedSheetMountainIDs = []
+            // 方位を失う前に開始した地形判定が、復帰待ち表示を上書きしないようにする。
+            resetTerrainEvaluation()
             if case .available(let location, _) = locationState {
                 let locationAge = now().timeIntervalSince(location.observedAt)
                 if locationAge > tuning.freshLocationAgeSeconds {
