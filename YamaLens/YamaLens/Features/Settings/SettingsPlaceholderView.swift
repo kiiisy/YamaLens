@@ -5,15 +5,18 @@ struct SettingsPlaceholderView: View {
     let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let mountains: [Mountain]
     let cameraProjector: MountainCameraProjector
+    let offlinePackageModel: OfflinePackageScreenModel
 
     init(
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         mountains: [Mountain] = [],
-        cameraProjector: MountainCameraProjector = MountainCameraProjector()
+        cameraProjector: MountainCameraProjector = MountainCameraProjector(),
+        offlinePackageModel: OfflinePackageScreenModel
     ) {
         self.diagnosticLogRepository = diagnosticLogRepository
         self.mountains = mountains
         self.cameraProjector = cameraProjector
+        self.offlinePackageModel = offlinePackageModel
     }
 
     var body: some View {
@@ -39,6 +42,7 @@ struct SettingsPlaceholderView: View {
                 Section("オフライン") {
                     NavigationLink {
                         OfflineView(
+                            model: offlinePackageModel,
                             coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
                             surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
                         )

@@ -124,6 +124,69 @@ struct OfflinePackageStoreTests {
         }
     }
 
+    @Test("保存済みパックの表示情報を返してパック領域だけを削除する")
+    func reportsAndDeletesInstalledPackage() async throws {
+        let root = try makeTemporaryDirectory(named: "summary-delete")
+        defer { removeTemporaryDirectory(root) }
+        let storeRoot = root.appending(path: "OfflinePackages")
+        let staging = storeRoot
+            .appending(path: "Staging")
+            .appending(path: "download-v1")
+        let fixture = try OfflinePackageFixture.make(at: staging)
+        let store = OfflinePackageStore(
+            rootURL: storeRoot,
+            validator: OfflinePackageValidator(publicKeys: fixture.publicKeys)
+        )
+        _ = try await store.install(stagedPackageURL: staging)
+
+        let summary = try #require(
+            try await store.activePackageSummary(packageID: fixture.packageID)
+        )
+        #expect(summary.contentVersion == fixture.contentVersion)
+        #expect(summary.byteCount > 0)
+
+        try await store.deletePackage(packageID: fixture.packageID)
+
+        #expect(try await store.activePackageURL(packageID: fixture.packageID) == nil)
+    }
+
+    @Test("24時間を超えた孤立一時領域だけを削除する")
+    func discardsOnlyExpiredOrphanedStagingDirectories() async throws {
+        let root = try makeTemporaryDirectory(named: "orphan-cleanup")
+        defer { removeTemporaryDirectory(root) }
+        let store = OfflinePackageStore(
+            rootURL: root.appending(path: "OfflinePackages"),
+            validator: OfflinePackageValidator(publicKeys: [:])
+        )
+        let expired = try await store.prepareStagingDirectory(identifier: "expired")
+        let preserved = try await store.prepareStagingDirectory(identifier: "preserved")
+        let recent = try await store.prepareStagingDirectory(identifier: "recent")
+        let cutoff = Date(timeIntervalSince1970: 1_800_000_000)
+        let oldDate = cutoff.addingTimeInterval(-1)
+        try FileManager.default.setAttributes(
+            [.modificationDate: oldDate],
+            ofItemAtPath: expired.path
+        )
+        try FileManager.default.setAttributes(
+            [.modificationDate: oldDate],
+            ofItemAtPath: preserved.path
+        )
+        try FileManager.default.setAttributes(
+            [.modificationDate: cutoff],
+            ofItemAtPath: recent.path
+        )
+
+        let removed = try await store.discardOrphanedStagingDirectories(
+            olderThan: cutoff,
+            preserving: ["preserved"]
+        )
+
+        #expect(removed == 1)
+        #expect(!FileManager.default.fileExists(atPath: expired.path))
+        #expect(FileManager.default.fileExists(atPath: preserved.path))
+        #expect(FileManager.default.fileExists(atPath: recent.path))
+    }
+
     private func makeTemporaryDirectory(named name: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "YamaLensOfflinePackageStoreTests")

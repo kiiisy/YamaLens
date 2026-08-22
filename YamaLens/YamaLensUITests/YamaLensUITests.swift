@@ -75,6 +75,33 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testInstalledOfflinePackageCanBeDeletedWithoutDeletingPersonalData() throws {
+        let app = makeApplication(launchArguments: ["-ui-test-offline-installed"])
+        app.launch()
+
+        app.buttons["マイ"].tap()
+        let offlineLink = app.buttons["offline-pack-link"]
+        XCTAssertTrue(offlineLink.waitForExistence(timeout: 2))
+        offlineLink.tap()
+
+        XCTAssertTrue(app.staticTexts["保存済み"].waitForExistence(timeout: 3))
+        let deleteButton = app.buttons["offline-delete-button"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 2))
+        if !deleteButton.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(deleteButton.isHittable)
+        deleteButton.tap()
+
+        let confirmation = app.alerts.buttons["削除"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 2))
+        confirmation.tap()
+
+        XCTAssertTrue(app.staticTexts["未導入"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["基本データ利用可能"].exists)
+    }
+
+    @MainActor
     func testSearchFiltersMountains() throws {
         let app = makeApplication()
         app.launch()

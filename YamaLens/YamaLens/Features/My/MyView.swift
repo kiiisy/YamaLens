@@ -5,17 +5,20 @@ struct MyView: View {
     private let mountains: [Mountain]
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     private let cameraProjector: MountainCameraProjector
+    private let offlinePackageModel: OfflinePackageScreenModel
     @Query private var records: [UserMountainRecord]
     @State private var isSettingsPresented = false
 
     init(
         repository: any MountainRepository,
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
-        cameraProjector: MountainCameraProjector = MountainCameraProjector()
+        cameraProjector: MountainCameraProjector = MountainCameraProjector(),
+        offlinePackageModel: OfflinePackageScreenModel
     ) {
         mountains = repository.fetchMountains()
         self.diagnosticLogRepository = diagnosticLogRepository
         self.cameraProjector = cameraProjector
+        self.offlinePackageModel = offlinePackageModel
     }
 
     private var favorites: [Mountain] { mountains(matching: records.filter(\.isFavorite)) }
@@ -48,7 +51,8 @@ struct MyView: View {
                 SettingsPlaceholderView(
                     diagnosticLogRepository: diagnosticLogRepository,
                     mountains: mountains,
-                    cameraProjector: cameraProjector
+                    cameraProjector: cameraProjector,
+                    offlinePackageModel: offlinePackageModel
                 )
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
@@ -139,6 +143,7 @@ struct MyView: View {
             YamaSectionHeader(title: "オフライン")
             NavigationLink {
                 OfflineView(
+                    model: offlinePackageModel,
                     coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
                     surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
                 )

@@ -66,6 +66,32 @@ struct OfflinePackageInstallerTests {
         #expect(await context.retryWaiter.waitCount == 0)
     }
 
+    @Test("宣言容量より空き容量が少ない場合は本体取得前に停止する")
+    func stopsBeforePackageBodyWhenStorageIsInsufficient() async throws {
+        let context = try makeContext(
+            named: "insufficient-storage",
+            availableCapacityBytes: 1
+        )
+        defer { removeTemporaryDirectory(context.rootURL) }
+        let catalogBytes = try #require(
+            context.fixture.catalogURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
+        )
+        let terrainBytes = try #require(
+            context.fixture.terrainURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
+        )
+
+        await #expect(
+            throws: OfflinePackageInstallationError.insufficientStorage(
+                requiredBytes: Int64(catalogBytes + terrainBytes),
+                availableBytes: 1
+            )
+        ) {
+            try await context.installer.install(from: context.source)
+        }
+
+        #expect(await context.downloader.requestCount == 2)
+    }
+
     @Test("署名不正では導入せず一時ファイルを破棄する")
     func discardsStagingAfterInvalidSignature() async throws {
         let context = try makeContext(named: "invalid-signature")
@@ -87,6 +113,36 @@ struct OfflinePackageInstallerTests {
         )
     }
 
+    @Test("中断後は同じ一時領域と取得済みmetadataを再利用する")
+    func resumesInterruptedStagingWithoutRedownloadingMetadata() async throws {
+        let context = try makeContext(
+            named: "resume-staging",
+            temporaryFailures: ["terrain.lzfse": 1]
+        )
+        defer { removeTemporaryDirectory(context.rootURL) }
+
+        await #expect(throws: OfflinePackageDownloadError.temporaryFailure) {
+            try await context.installer.install(from: context.source)
+        }
+        let remainingBytes = try #require(
+            context.fixture.terrainURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
+        )
+
+        let resumedInstaller = OfflinePackageInstaller(
+            store: context.store,
+            validator: OfflinePackageValidator(publicKeys: context.fixture.publicKeys),
+            fileDownloader: context.downloader,
+            retryWaiter: context.retryWaiter,
+            capacityChecker: FixedOfflinePackageStorageCapacityChecker(
+                availableBytes: Int64(remainingBytes)
+            )
+        )
+        let installed = try await resumedInstaller.install(from: context.source)
+
+        #expect(installed.contentVersion == context.fixture.contentVersion)
+        #expect(await context.downloader.requestCount == 5)
+    }
+
     @Test("HTTPや認証情報入りURLを配布元として受け付けない")
     func rejectsUnsafeSourceURLs() throws {
         let HTTPURL = try #require(URL(string: "http://example.com/tanzawa/1.0.0/"))
@@ -105,9 +161,33 @@ struct OfflinePackageInstallerTests {
         }
     }
 
+    @Test("ダウンロード容量と検証段階を順に通知する")
+    func reportsInstallationProgress() async throws {
+        let context = try makeContext(named: "progress")
+        defer { removeTemporaryDirectory(context.rootURL) }
+        let recorder = OfflinePackageProgressRecorder()
+
+        _ = try await context.installer.install(from: context.source) { progress in
+            await recorder.record(progress)
+        }
+
+        let values = await recorder.values
+        #expect(values.first == .downloading(completedBytes: 0, totalBytes: nil))
+        #expect(values.last == .verifying)
+        #expect(
+            values.contains {
+                if case .downloading(let completed, let total) = $0 {
+                    return total != nil && completed == total
+                }
+                return false
+            }
+        )
+    }
+
     private func makeContext(
         named name: String,
-        temporaryFailures: [String: Int] = [:]
+        temporaryFailures: [String: Int] = [:],
+        availableCapacityBytes: Int64 = 1_000_000_000
     ) throws -> InstallerTestContext {
         let rootURL = FileManager.default.temporaryDirectory
             .appending(path: "YamaLensOfflinePackageInstallerTests")
@@ -130,6 +210,9 @@ struct OfflinePackageInstallerTests {
             validator: validator,
             fileDownloader: downloader,
             retryWaiter: retryWaiter,
+            capacityChecker: FixedOfflinePackageStorageCapacityChecker(
+                availableBytes: availableCapacityBytes
+            ),
             makeIdentifier: {
                 UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
             }
@@ -184,7 +267,8 @@ private actor CopyingOfflinePackageFileDownloader: OfflinePackageFileDownloading
         from sourceURL: URL,
         to destinationURL: URL,
         maximumBytes: Int64,
-        requestTimeoutSeconds: TimeInterval
+        requestTimeoutSeconds: TimeInterval,
+        progress: @escaping @Sendable (Int64, Int64?) -> Void
     ) async throws {
         requestCount += 1
         let fileName = sourceURL.lastPathComponent
@@ -198,6 +282,7 @@ private actor CopyingOfflinePackageFileDownloader: OfflinePackageFileDownloading
             throw OfflinePackageDownloadError.responseTooLarge
         }
         try FileManager.default.copyItem(at: localSourceURL, to: destinationURL)
+        progress(Int64(size), Int64(size))
     }
 }
 
@@ -206,5 +291,21 @@ private actor ImmediateOfflinePackageRetryWaiter: OfflinePackageRetryWaiting {
 
     func waitBeforeRetry() async throws {
         waitCount += 1
+    }
+}
+
+private struct FixedOfflinePackageStorageCapacityChecker: OfflinePackageStorageCapacityChecking {
+    let availableBytes: Int64
+
+    func availableCapacity(at directoryURL: URL) throws -> Int64 {
+        availableBytes
+    }
+}
+
+private actor OfflinePackageProgressRecorder {
+    private(set) var values: [OfflinePackageOperationProgress] = []
+
+    func record(_ progress: OfflinePackageOperationProgress) {
+        values.append(progress)
     }
 }

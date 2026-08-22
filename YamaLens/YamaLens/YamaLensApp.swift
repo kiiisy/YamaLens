@@ -10,19 +10,20 @@ import SwiftUI
 
 @main
 struct YamaLensApp: App {
-    private let appContainer = AppContainer()
+    @UIApplicationDelegateAdaptor(YamaLensAppDelegate.self) private var appDelegate
 
     var body: some Scene {
         WindowGroup {
             YamaLensRootView(
-                repository: appContainer.mountainRepository,
-                locationObservationProvider: appContainer.locationObservationProvider,
-                proximityCalculator: appContainer.proximityCalculator,
-                cameraObservationProvider: appContainer.cameraObservationProvider,
-                cameraPreview: appContainer.cameraPreview,
-                cameraDiagnosticLogRepository: appContainer.cameraDiagnosticLogRepository,
-                cameraDiagnosticDevice: appContainer.cameraDiagnosticDevice,
-                terrainVisibilityResolver: appContainer.terrainVisibilityResolver
+                repository: appDelegate.appContainer.mountainRepository,
+                locationObservationProvider: appDelegate.appContainer.locationObservationProvider,
+                proximityCalculator: appDelegate.appContainer.proximityCalculator,
+                cameraObservationProvider: appDelegate.appContainer.cameraObservationProvider,
+                cameraPreview: appDelegate.appContainer.cameraPreview,
+                cameraDiagnosticLogRepository: appDelegate.appContainer.cameraDiagnosticLogRepository,
+                cameraDiagnosticDevice: appDelegate.appContainer.cameraDiagnosticDevice,
+                terrainVisibilityResolver: appDelegate.appContainer.terrainVisibilityResolver,
+                offlinePackageManager: appDelegate.appContainer.offlinePackageManager
             )
                 .modelContainer(for: UserMountainRecord.self)
         }
@@ -68,6 +69,7 @@ private struct YamaLensRootView: View {
     @State private var detailTransitionProgress: CGFloat = 1
     @State private var locationModel: LocationSessionModel
     @State private var cameraModel: CameraScreenModel
+    @State private var offlinePackageModel: OfflinePackageScreenModel
 
     init(
         repository: any MountainRepository,
@@ -77,7 +79,8 @@ private struct YamaLensRootView: View {
         cameraPreview: AnyView,
         cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?,
         cameraDiagnosticDevice: CameraDiagnosticDevice?,
-        terrainVisibilityResolver: (any TerrainVisibilityResolving)?
+        terrainVisibilityResolver: (any TerrainVisibilityResolving)?,
+        offlinePackageManager: any OfflinePackageManaging
     ) {
         self.repository = repository
         self.proximityCalculator = proximityCalculator
@@ -108,6 +111,9 @@ private struct YamaLensRootView: View {
                 terrainVisibilityResolver: terrainVisibilityResolver,
                 diagnosticRecorder: diagnosticRecorder
             )
+        )
+        _offlinePackageModel = State(
+            initialValue: OfflinePackageScreenModel(manager: offlinePackageManager)
         )
         self.cameraDiagnosticLogRepository = cameraDiagnosticLogRepository
         self.cameraProjector = projector
@@ -154,7 +160,8 @@ private struct YamaLensRootView: View {
                     MyView(
                         repository: repository,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
-                        cameraProjector: cameraProjector
+                        cameraProjector: cameraProjector,
+                        offlinePackageModel: offlinePackageModel
                     )
                         .tabItem {
                             Image(systemName: "person.crop.circle")
@@ -202,6 +209,9 @@ private struct YamaLensRootView: View {
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             Task { await locationModel.refreshAfterReturningFromSettings() }
+        }
+        .task {
+            await offlinePackageModel.load()
         }
     }
 

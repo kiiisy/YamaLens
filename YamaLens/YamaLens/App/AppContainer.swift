@@ -12,11 +12,13 @@ struct AppContainer {
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let cameraDiagnosticDevice: CameraDiagnosticDevice?
     let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
+    let offlinePackageManager: any OfflinePackageManaging
 
     init(
         mountainRepository: any MountainRepository = BootstrapMountainRepository(),
         locationObservationProvider: (any LocationObservationProvider)? = nil,
-        proximityCalculator: MountainProximityCalculator = MountainProximityCalculator()
+        proximityCalculator: MountainProximityCalculator = MountainProximityCalculator(),
+        backgroundEventsDidFinish: @escaping @Sendable (String) async -> Void = { _ in }
     ) {
         self.mountainRepository = mountainRepository
         self.locationObservationProvider = locationObservationProvider
@@ -27,11 +29,20 @@ struct AppContainer {
                 rootURL: offlinePackageRootURL,
                 validator: OfflinePackageValidator(publicKeys: [:])
             )
+            let offlinePackageDownloader = BackgroundOfflinePackageFileDownloader(
+                rootURL: offlinePackageRootURL,
+                backgroundEventsDidFinish: backgroundEventsDidFinish
+            )
             terrainVisibilityResolver = ActiveOfflinePackageTerrainVisibilityResolver(
                 store: offlinePackageStore
             )
+            offlinePackageManager = Self.makeOfflinePackageManager(
+                store: offlinePackageStore,
+                downloader: offlinePackageDownloader
+            )
         } else {
             terrainVisibilityResolver = nil
+            offlinePackageManager = UnavailableOfflinePackageManager()
         }
         let cameraDependencies = Self.makeCameraDependencies()
         cameraObservationProvider = cameraDependencies.provider
@@ -56,6 +67,24 @@ struct AppContainer {
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first?.appending(path: "OfflinePackages", directoryHint: .isDirectory)
+    }
+
+    private static func makeOfflinePackageManager(
+        store: OfflinePackageStore,
+        downloader: BackgroundOfflinePackageFileDownloader
+    ) -> any OfflinePackageManaging {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ui-test-offline-installed") {
+            return FixedOfflinePackageManager()
+        }
+#endif
+        // 配布URLと公開鍵が確定するまでは、ローカル状態の確認と削除だけを有効にする。
+        return OfflinePackageManagementService(
+            store: store,
+            activeStagingIdentifiers: {
+                await downloader.activeStagingIdentifiers()
+            }
+        )
     }
 
     private static func makeLocationObservationProvider() -> any LocationObservationProvider {
@@ -236,5 +265,31 @@ private final class FixedCameraObservationProvider: CameraObservationProvider {
     }
 
     func stop() {}
+}
+
+private actor FixedOfflinePackageManager: OfflinePackageManaging {
+    private var installedPackage: OfflinePackageSummary? = OfflinePackageSummary(
+        packageID: "jp.kanagawa.tanzawa",
+        contentVersion: "1.0.0",
+        byteCount: 218_000_000,
+        createdAt: Date(timeIntervalSince1970: 1_787_011_200)
+    )
+
+    func refresh() async throws -> OfflinePackageManagementSnapshot {
+        OfflinePackageManagementSnapshot(
+            installedPackage: installedPackage,
+            distributionAvailability: .unavailable
+        )
+    }
+
+    func install(
+        progress: @escaping @Sendable (OfflinePackageOperationProgress) async -> Void
+    ) async throws -> OfflinePackageSummary {
+        throw OfflinePackageManagementFailure.distributionUnavailable
+    }
+
+    func deleteInstalledPackage() async throws {
+        installedPackage = nil
+    }
 }
 #endif

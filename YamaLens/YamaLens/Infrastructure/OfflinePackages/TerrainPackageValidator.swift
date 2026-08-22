@@ -81,6 +81,21 @@ nonisolated struct OfflinePackageValidator: Sendable {
         return manifest
     }
 
+    /// 再起動後に残った取得済みファイルを再利用する前に、宣言サイズとSHA-256を確認する。
+    func validateDownloadedFile(
+        _ record: OfflinePackageManifest.FileRecord,
+        in directoryURL: URL
+    ) throws {
+        let fileURL = directoryURL.appending(path: record.path)
+        let size = try regularFileSize(at: fileURL, named: record.path)
+        guard size == record.byteCount else {
+            throw OfflinePackageValidationError.fileSizeMismatch(record.path)
+        }
+        guard try sha256Hex(of: fileURL, maximumBytes: record.byteCount) == record.sha256 else {
+            throw OfflinePackageValidationError.fileHashMismatch(record.path)
+        }
+    }
+
     private func decodeAndValidateManifest(_ data: Data) throws -> OfflinePackageManifest {
         let manifest: OfflinePackageManifest
         do {
@@ -153,14 +168,7 @@ nonisolated struct OfflinePackageValidator: Sendable {
     ) throws {
         try validateFileDeclarations(manifest)
         for record in manifest.files {
-            let fileURL = directoryURL.appending(path: record.path)
-            let size = try regularFileSize(at: fileURL, named: record.path)
-            guard size == record.byteCount else {
-                throw OfflinePackageValidationError.fileSizeMismatch(record.path)
-            }
-            guard try sha256Hex(of: fileURL, maximumBytes: record.byteCount) == record.sha256 else {
-                throw OfflinePackageValidationError.fileHashMismatch(record.path)
-            }
+            try validateDownloadedFile(record, in: directoryURL)
         }
     }
 
