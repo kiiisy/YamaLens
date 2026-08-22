@@ -16,6 +16,7 @@ struct YamaLensApp: App {
         WindowGroup {
             YamaLensRootView(
                 repository: appDelegate.appContainer.mountainRepository,
+                pointOfInterestRepository: appDelegate.appContainer.mountainPointOfInterestRepository,
                 locationObservationProvider: appDelegate.appContainer.locationObservationProvider,
                 proximityCalculator: appDelegate.appContainer.proximityCalculator,
                 cameraObservationProvider: appDelegate.appContainer.cameraObservationProvider,
@@ -60,6 +61,7 @@ struct MountainDetailPresentation: Identifiable, Equatable {
 
 private struct YamaLensRootView: View {
     let repository: any MountainRepository
+    let pointOfInterestRepository: any MountainPointOfInterestRepository
     let proximityCalculator: MountainProximityCalculator
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
@@ -77,6 +79,7 @@ private struct YamaLensRootView: View {
 
     init(
         repository: any MountainRepository,
+        pointOfInterestRepository: any MountainPointOfInterestRepository,
         locationObservationProvider: any LocationObservationProvider,
         proximityCalculator: MountainProximityCalculator,
         cameraObservationProvider: any CameraObservationProvider,
@@ -89,6 +92,7 @@ private struct YamaLensRootView: View {
         mountainWeatherRepository: any MountainWeatherRepository
     ) {
         self.repository = repository
+        self.pointOfInterestRepository = pointOfInterestRepository
         self.proximityCalculator = proximityCalculator
         self.cameraPreview = cameraPreview
         self.mountainWeatherRepository = mountainWeatherRepository
@@ -133,6 +137,7 @@ private struct YamaLensRootView: View {
                 TabView(selection: $selectedTab) {
                     HomeView(
                         repository: repository,
+                        pointOfInterestRepository: pointOfInterestRepository,
                         mountainWeatherRepository: mountainWeatherRepository,
                         locationModel: locationModel,
                         proximityCalculator: proximityCalculator
@@ -169,6 +174,7 @@ private struct YamaLensRootView: View {
 
                     MyView(
                         repository: repository,
+                        pointOfInterestRepository: pointOfInterestRepository,
                         mountainWeatherRepository: mountainWeatherRepository,
                         showsTerrainHorizon: $showsTerrainHorizon,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
@@ -194,6 +200,7 @@ private struct YamaLensRootView: View {
                     MountainDetailView(
                         mountain: detailPresentation.mountain,
                         weatherRepository: mountainWeatherRepository,
+                        pointOfInterestRepository: pointOfInterestRepository,
                         currentLocationState: locationModel.state,
                         proximityCalculator: proximityCalculator,
                         overlayTopInset: geometry.safeAreaInsets.top

@@ -5,6 +5,7 @@ struct MyView: View {
     @Binding private var showsTerrainHorizon: Bool
     private let mountains: [Mountain]
     private let mountainWeatherRepository: any MountainWeatherRepository
+    private let pointOfInterestRepository: any MountainPointOfInterestRepository
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     private let cameraProjector: MountainCameraProjector
     private let offlinePackageModel: OfflinePackageScreenModel
@@ -13,6 +14,7 @@ struct MyView: View {
 
     init(
         repository: any MountainRepository,
+        pointOfInterestRepository: any MountainPointOfInterestRepository,
         mountainWeatherRepository: any MountainWeatherRepository,
         showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
@@ -22,6 +24,7 @@ struct MyView: View {
         _showsTerrainHorizon = showsTerrainHorizon
         mountains = repository.fetchMountains()
         self.mountainWeatherRepository = mountainWeatherRepository
+        self.pointOfInterestRepository = pointOfInterestRepository
         self.diagnosticLogRepository = diagnosticLogRepository
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
@@ -55,7 +58,8 @@ struct MyView: View {
             .navigationDestination(for: Mountain.self) {
                 MountainDetailView(
                     mountain: $0,
-                    weatherRepository: mountainWeatherRepository
+                    weatherRepository: mountainWeatherRepository,
+                    pointOfInterestRepository: pointOfInterestRepository
                 )
             }
             .sheet(isPresented: $isSettingsPresented) {

@@ -5,6 +5,7 @@ import UIKit
 struct HomeView: View {
     private let mountains: [Mountain]
     private let mountainWeatherRepository: any MountainWeatherRepository
+    private let pointOfInterestRepository: any MountainPointOfInterestRepository
     private let locationModel: LocationSessionModel
     private let proximityCalculator: MountainProximityCalculator
     private let onSelectMountain: (MountainDetailPresentation) -> Void
@@ -15,12 +16,14 @@ struct HomeView: View {
 
     init(
         repository: any MountainRepository,
+        pointOfInterestRepository: any MountainPointOfInterestRepository,
         mountainWeatherRepository: any MountainWeatherRepository,
         locationModel: LocationSessionModel,
         proximityCalculator: MountainProximityCalculator,
         onSelectMountain: @escaping (MountainDetailPresentation) -> Void
     ) {
         mountains = repository.fetchMountains()
+        self.pointOfInterestRepository = pointOfInterestRepository
         self.mountainWeatherRepository = mountainWeatherRepository
         self.locationModel = locationModel
         self.proximityCalculator = proximityCalculator
@@ -69,6 +72,7 @@ struct HomeView: View {
             .sheet(isPresented: $isSearchPresented) {
                 MountainSearchView(
                     mountains: mountains,
+                    pointOfInterestRepository: pointOfInterestRepository,
                     mountainWeatherRepository: mountainWeatherRepository,
                     currentLocationState: locationModel.state,
                     proximityCalculator: proximityCalculator
@@ -402,6 +406,7 @@ struct HomeView: View {
 
 private struct MountainSearchView: View {
     let mountains: [Mountain]
+    let pointOfInterestRepository: any MountainPointOfInterestRepository
     let mountainWeatherRepository: any MountainWeatherRepository
     let currentLocationState: CurrentLocationState
     let proximityCalculator: MountainProximityCalculator
@@ -448,6 +453,7 @@ private struct MountainSearchView: View {
                 MountainDetailView(
                     mountain: mountain,
                     weatherRepository: mountainWeatherRepository,
+                    pointOfInterestRepository: pointOfInterestRepository,
                     currentLocationState: currentLocationState,
                     proximityCalculator: proximityCalculator
                 )

@@ -5,6 +5,7 @@ import UIKit
 @MainActor
 struct AppContainer {
     let mountainRepository: any MountainRepository
+    let mountainPointOfInterestRepository: any MountainPointOfInterestRepository
     let locationObservationProvider: any LocationObservationProvider
     let proximityCalculator: MountainProximityCalculator
     let cameraObservationProvider: any CameraObservationProvider
@@ -23,6 +24,7 @@ struct AppContainer {
         backgroundEventsDidFinish: @escaping @Sendable (String) async -> Void = { _ in }
     ) {
         self.mountainRepository = mountainRepository
+        mountainPointOfInterestRepository = BootstrapMountainPointOfInterestRepository()
         self.locationObservationProvider = locationObservationProvider
             ?? Self.makeLocationObservationProvider()
         self.proximityCalculator = proximityCalculator

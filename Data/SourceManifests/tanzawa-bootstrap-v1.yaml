@@ -7,13 +7,34 @@ scope:
   - alias
   - summit_coordinate
   - elevation
+  - representative_facility
+  - official_facility_link
 sources:
   - provider: 国土地理院
     role: 正式照合に使用する一次情報
     url: https://maps.gsi.go.jp/
     terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
     download_service_url: https://service.gsi.go.jp/kiban/
+  - provider: 神奈川県
+    role: 丹沢の主要登山口と山小屋の一次案内
+    url: https://www.pref.kanagawa.jp/docs/f4y/02yama/tanzawa_tozan.html
+  - provider: 尊仏山荘
+    role: 尊仏山荘の運営者公式情報
+    url: https://sonbutsusanso.amebaownd.com/
+  - provider: 神奈川県公園協会
+    role: 秦野戸川公園の交通・駐車場公式情報
+    url: https://www.kanagawa-park.or.jp/hadanotokawa/access.html
+  - provider: 秦野市
+    role: 弘法の里湯の公式情報
+    url: https://www.city.hadano.kanagawa.jp/kanko/onsen/2674.html
+  - provider: 大山観光電鉄
+    role: 大山ケーブルカーの運営者公式情報
+    url: https://www.ooyama-cable.co.jp/access/
+  - provider: 伊勢原市
+    role: 市営大山第1駐車場の公式情報
+    url: https://www.city.isehara.kanagawa.jp/docs/2012032600026/index.html.r
 attribution: "出典：国土地理院ウェブサイト"
 processing_note: "国土地理院の情報を照合し、YamaLens向けSQLiteへ加工した場合は、その旨と対象データセットをアプリ内に表示する。"
 legal_note: "基盤地図情報等の測量成果を配布物へ収録する前に、測量法上の複製・使用承認の要否をデータセットと利用形態ごとに確認する。"
 verification_note: "丹沢中心6座の座標・標高は、国土地理院『日本の主な山岳標高一覧』および地理院地図検索で2026-08-22に照合した。周辺候補11座の名称、別名、座標、標高と配布許諾は正式配布前に一次情報で最終確認する。"
+facility_verification_note: "大山・塔ノ岳・鍋割山に紐づける代表施設8件の名称、用途、公式URLを2026-08-22に運営者・自治体等の公式ページで確認した。営業時間、料金、運行・営業状況は変動情報として固定せず、アプリから公式ページを確認する。"

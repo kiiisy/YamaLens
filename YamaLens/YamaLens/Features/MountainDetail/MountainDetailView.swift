@@ -10,6 +10,8 @@ struct MountainDetailView: View {
     let mountain: Mountain
     private let currentLocationState: CurrentLocationState
     private let proximityCalculator: MountainProximityCalculator
+    private let pointsOfInterest: [MountainPointOfInterest]
+    private let daylight: MountainDaylight?
     private let onClose: ((MountainDetailDismissalStyle) -> Void)?
     private let overlayTopInset: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -24,14 +26,24 @@ struct MountainDetailView: View {
     init(
         mountain: Mountain,
         weatherRepository: any MountainWeatherRepository,
+        pointOfInterestRepository: any MountainPointOfInterestRepository,
         currentLocationState: CurrentLocationState = .notRequested,
         proximityCalculator: MountainProximityCalculator = MountainProximityCalculator(),
+        daylightCalculator: MountainDaylightCalculator = MountainDaylightCalculator(),
+        daylightDate: Date = .now,
+        daylightTimeZone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .gmt,
         overlayTopInset: CGFloat? = nil,
         onClose: ((MountainDetailDismissalStyle) -> Void)? = nil
     ) {
         self.mountain = mountain
         self.currentLocationState = currentLocationState
         self.proximityCalculator = proximityCalculator
+        pointsOfInterest = pointOfInterestRepository.fetchPointsOfInterest(for: mountain.id)
+        daylight = daylightCalculator.daylight(
+            on: daylightDate,
+            at: mountain.coordinate,
+            timeZone: daylightTimeZone
+        )
         self.overlayTopInset = overlayTopInset
         self.onClose = onClose
         _weatherModel = State(
@@ -53,7 +65,10 @@ struct MountainDetailView: View {
                         surroundingCandidateNotice
                         statusCard
                         weatherSection
-                        facilitySection
+                        MountainDaylightSection(daylight: daylight)
+                            .padding(.horizontal, 18)
+                        MountainFacilitySection(pointsOfInterest: pointsOfInterest)
+                            .padding(.horizontal, 18)
                         accessSection
                         notesSection
                     }
@@ -326,40 +341,6 @@ struct MountainDetailView: View {
     private var weatherSection: some View {
         MountainWeatherSection(mountain: mountain, model: weatherModel)
         .padding(.horizontal, 18)
-    }
-
-    private var facilitySection: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            facilityEmptySection(
-                title: "山小屋",
-                emptyTitle: "山小屋情報を準備中",
-                message: "営業期間や予約方法を、公式情報と最終確認日付きで掲載します。",
-                icon: "house.lodge"
-            )
-            facilityEmptySection(
-                title: "登山口",
-                emptyTitle: "登山口情報を準備中",
-                message: "登山口、駐車場、公共交通の一次情報を確認後に掲載します。",
-                icon: "figure.hiking"
-            )
-        }
-        .padding(.horizontal, 18)
-    }
-
-    private func facilityEmptySection(
-        title: String,
-        emptyTitle: String,
-        message: String,
-        icon: String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            YamaSectionHeader(title: title)
-            YamaEmptyCard(
-                title: emptyTitle,
-                message: message,
-                systemImage: icon
-            )
-        }
     }
 
     private var accessSection: some View {

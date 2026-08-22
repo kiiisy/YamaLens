@@ -157,6 +157,44 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testMountainDetailShowsDaylightAndOfficialFacilities() throws {
+        let app = makeApplication()
+        app.launch()
+
+        app.buttons["search-button"].tap()
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.tap()
+        searchField.typeText("塔ノ岳")
+        let result = app.buttons["search-result-塔ノ岳"]
+        XCTAssertTrue(result.waitForExistence(timeout: 2))
+        result.tap()
+
+        let detail = app.descendants(matching: .any)["mountain-detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 2))
+        let daylight = app.descendants(matching: .any)["mountain-daylight-section"]
+        for _ in 0..<5 where !daylight.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(daylight.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["日の出・日の入り"].exists)
+
+        let facilityName = app.staticTexts["尊仏山荘"]
+        for _ in 0..<4 where !facilityName.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(facilityName.waitForExistence(timeout: 2))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["mountain-facility-section"].exists
+        )
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "日の出と公式施設情報"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     private func deleteDetailedPackage(in app: XCUIApplication) {
         let deleteButton = app.buttons["offline-delete-button"]
         if !deleteButton.isHittable {
@@ -432,8 +470,7 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(closeButton.waitForExistence(timeout: 2))
         XCTAssertTrue(favoriteButton.waitForExistence(timeout: 2))
         XCTAssertGreaterThanOrEqual(closeButton.frame.minY, 44)
-        XCTAssertTrue(app.staticTexts["山小屋情報を準備中"].exists)
-        XCTAssertTrue(app.staticTexts["登山口情報を準備中"].exists)
+        XCTAssertTrue(app.staticTexts["公式情報を確認中"].exists)
 
         mountainDetail.swipeDown(velocity: .slow)
 

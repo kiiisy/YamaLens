@@ -8,12 +8,23 @@ import json
 import math
 import sqlite3
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 
 SCHEMA_VERSION = 1
 MAX_MOUNTAINS = 10_000
+MAX_POINTS_OF_INTEREST = 10_000
+POINT_OF_INTEREST_TYPES = {
+    "mountainHut",
+    "trailhead",
+    "parking",
+    "publicTransport",
+    "cableway",
+    "hotSpring",
+}
 
 
 SCHEMA = """
@@ -127,6 +138,23 @@ def require_number(value: Any, field: str, minimum: float, maximum: float) -> fl
     return number
 
 
+def require_https_url(value: Any, field: str) -> str:
+    url = require_text(value, field, 2_048)
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError(f"{field} must be an HTTPS URL without user information")
+    return url
+
+
+def require_date(value: Any, field: str) -> str:
+    text = require_text(value, field, 10)
+    try:
+        date.fromisoformat(text)
+    except ValueError as error:
+        raise ValueError(f"{field} must be an ISO 8601 calendar date") from error
+    return text
+
+
 def load_source(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -178,6 +206,82 @@ def load_source(path: Path) -> dict[str, Any]:
             raise ValueError(f"mountains[{index}].aliases must be an array of at most 32 entries")
         for alias_index, alias in enumerate(aliases):
             require_text(alias, f"mountains[{index}].aliases[{alias_index}]", 128)
+
+    source_links = payload.get("sourceLinks", [])
+    if not isinstance(source_links, list) or len(source_links) > 128:
+        raise ValueError("sourceLinks must contain at most 128 records")
+    source_ids: set[str] = set()
+    for index, source in enumerate(source_links):
+        if not isinstance(source, dict):
+            raise ValueError(f"sourceLinks[{index}] must be an object")
+        source_id = require_text(source.get("id"), f"sourceLinks[{index}].id", 128)
+        if source_id in source_ids:
+            raise ValueError(f"duplicate source link id: {source_id}")
+        source_ids.add(source_id)
+        require_text(source.get("provider"), f"sourceLinks[{index}].provider", 128)
+        require_text(source.get("title"), f"sourceLinks[{index}].title", 256)
+        require_https_url(source.get("url"), f"sourceLinks[{index}].url")
+        require_date(source.get("checkedAt"), f"sourceLinks[{index}].checkedAt")
+        require_text(
+            source.get("attributionText"),
+            f"sourceLinks[{index}].attributionText",
+            512,
+        )
+
+    points_of_interest = payload.get("pointsOfInterest", [])
+    if not isinstance(points_of_interest, list) or len(points_of_interest) > MAX_POINTS_OF_INTEREST:
+        raise ValueError(f"pointsOfInterest must contain at most {MAX_POINTS_OF_INTEREST} records")
+    point_ids: set[str] = set()
+    for index, point in enumerate(points_of_interest):
+        if not isinstance(point, dict):
+            raise ValueError(f"pointsOfInterest[{index}] must be an object")
+        point_id = require_text(point.get("id"), f"pointsOfInterest[{index}].id", 128)
+        if point_id in point_ids:
+            raise ValueError(f"duplicate point of interest id: {point_id}")
+        point_ids.add(point_id)
+        region_id = require_text(point.get("regionID"), f"pointsOfInterest[{index}].regionID", 128)
+        if region_id not in region_ids:
+            raise ValueError(f"pointsOfInterest[{index}].regionID references an unknown region")
+        if point.get("type") not in POINT_OF_INTEREST_TYPES:
+            raise ValueError(f"pointsOfInterest[{index}].type is unsupported")
+        require_text(point.get("name"), f"pointsOfInterest[{index}].name", 128)
+        require_text(point.get("summary"), f"pointsOfInterest[{index}].summary", 512)
+        require_https_url(point.get("officialURL"), f"pointsOfInterest[{index}].officialURL")
+        require_date(point.get("checkedAt"), f"pointsOfInterest[{index}].checkedAt")
+        source_id = require_text(point.get("sourceID"), f"pointsOfInterest[{index}].sourceID", 128)
+        if source_id not in source_ids:
+            raise ValueError(f"pointsOfInterest[{index}].sourceID references an unknown source")
+        latitude = point.get("latitude")
+        longitude = point.get("longitude")
+        if (latitude is None) != (longitude is None):
+            raise ValueError(f"pointsOfInterest[{index}] must provide both latitude and longitude")
+        if latitude is not None:
+            require_number(latitude, f"pointsOfInterest[{index}].latitude", -90, 90)
+            require_number(longitude, f"pointsOfInterest[{index}].longitude", -180, 180)
+
+    links = payload.get("mountainPointOfInterestLinks", [])
+    if not isinstance(links, list) or len(links) > 50_000:
+        raise ValueError("mountainPointOfInterestLinks must contain at most 50000 records")
+    link_pairs: set[tuple[str, str]] = set()
+    for index, link in enumerate(links):
+        if not isinstance(link, dict):
+            raise ValueError(f"mountainPointOfInterestLinks[{index}] must be an object")
+        mountain_id = require_text(
+            link.get("mountainID"),
+            f"mountainPointOfInterestLinks[{index}].mountainID",
+            128,
+        )
+        point_id = require_text(
+            link.get("pointOfInterestID"),
+            f"mountainPointOfInterestLinks[{index}].pointOfInterestID",
+            128,
+        )
+        if mountain_id not in ids or point_id not in point_ids:
+            raise ValueError(f"mountainPointOfInterestLinks[{index}] references an unknown record")
+        pair = (mountain_id, point_id)
+        if pair in link_pairs:
+            raise ValueError(f"duplicate mountain point of interest link: {pair}")
+        link_pairs.add(pair)
     return payload
 
 
@@ -235,6 +339,61 @@ def create_database(source: dict[str, Any], output: Path) -> None:
                     "INSERT INTO mountain_names(mountain_id, name, search_name, kind) VALUES(?, ?, ?, 'alias')",
                     (mountain["id"], alias, alias),
                 )
+        connection.executemany(
+            """
+            INSERT INTO source_links(
+                id, provider, title, url, checked_at, is_primary, attribution_text
+            ) VALUES(?, ?, ?, ?, ?, 1, ?)
+            """,
+            [
+                (
+                    source_link["id"],
+                    source_link["provider"],
+                    source_link["title"],
+                    source_link["url"],
+                    source_link["checkedAt"],
+                    source_link["attributionText"],
+                )
+                for source_link in source.get("sourceLinks", [])
+            ],
+        )
+        for point in source.get("pointsOfInterest", []):
+            connection.execute(
+                """
+                INSERT INTO points_of_interest(
+                    id, region_id, type, name, latitude, longitude, summary,
+                    official_url, checked_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    point["id"],
+                    point["regionID"],
+                    point["type"],
+                    point["name"],
+                    point.get("latitude"),
+                    point.get("longitude"),
+                    point["summary"],
+                    point["officialURL"],
+                    point["checkedAt"],
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO entity_sources(entity_type, entity_id, source_id)
+                VALUES('point_of_interest', ?, ?)
+                """,
+                (point["id"], point["sourceID"]),
+            )
+        connection.executemany(
+            """
+            INSERT INTO mountain_points_of_interest(mountain_id, point_of_interest_id)
+            VALUES(?, ?)
+            """,
+            [
+                (link["mountainID"], link["pointOfInterestID"])
+                for link in source.get("mountainPointOfInterestLinks", [])
+            ],
+        )
         connection.commit()
         connection.execute("VACUUM")
     finally:
@@ -273,6 +432,21 @@ def verify_database(source: dict[str, Any], output: Path) -> None:
         )
         if rows != expected:
             raise ValueError("database mountains do not match source data")
+        point_rows = connection.execute(
+            "SELECT id, type, name, official_url, checked_at FROM points_of_interest ORDER BY id"
+        ).fetchall()
+        expected_points = sorted(
+            (
+                point["id"],
+                point["type"],
+                point["name"],
+                point["officialURL"],
+                point["checkedAt"],
+            )
+            for point in source.get("pointsOfInterest", [])
+        )
+        if point_rows != expected_points:
+            raise ValueError("database points of interest do not match source data")
     finally:
         connection.close()
 
