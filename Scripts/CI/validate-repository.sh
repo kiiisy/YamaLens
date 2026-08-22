@@ -19,8 +19,13 @@ required_files=(
     ".gitignore"
     "AGENTS.md"
     "Data/Bootstrap/tanzawa-bootstrap-v1.json"
+    "Data/OfflinePackages/tanzawa-detailed-v1.json"
+    "Data/SourceManifests/gsi-dem-tanzawa-v1.yaml"
     "Data/SourceManifests/tanzawa-bootstrap-v1.yaml"
+    "Tools/OfflinePackageBuilder/README.md"
     "Tools/OfflinePackageBuilder/build_bootstrap.py"
+    "Tools/OfflinePackageBuilder/build_detailed_pack.py"
+    "Tools/OfflinePackageBuilder/test_build_detailed_pack.py"
     "YamaLens/YamaLens/Resources/Bootstrap/bootstrap.sqlite"
     "doc/YamaLens_UI設計書.md"
     "doc/YamaLens_事前決定事項.md"
@@ -38,6 +43,8 @@ python3 Tools/OfflinePackageBuilder/build_bootstrap.py \
     --input Data/Bootstrap/tanzawa-bootstrap-v1.json \
     --output YamaLens/YamaLens/Resources/Bootstrap/bootstrap.sqlite \
     --verify-only
+
+python3 Tools/OfflinePackageBuilder/test_build_detailed_pack.py
 
 if ! compgen -G 'doc/*要求仕様書.md' > /dev/null; then
     echo "Required specification document is missing: doc/*要求仕様書.md" >&2

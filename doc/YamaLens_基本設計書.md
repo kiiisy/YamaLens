@@ -375,6 +375,8 @@ tanzawa/1.0.0/
 - `terrain.lzfse` は固定16byteのheaderと、個別にLZFSE圧縮した256×256の標高タイルで構成する。headerはASCII `YLTF`（byte 0〜3）、format version UInt16（4〜5）、header size UInt16（6〜7）、tile count UInt32（8〜11）、flags UInt32（12〜15）のlittle-endianとする。v1はversion 1、header size 16、flags 0とし、未知のflagsを拒否する。標高値は1m単位の符号付き16bit整数、欠損値は `-32768` とする。
 - タイルの境界、格子間隔、offset、圧縮前後サイズ、展開後SHA-256は `terrain_tiles` を正とし、範囲外読み込みを拒否する。
 - schema v1では地形タイルを100,000件以下、各タイルの圧縮後サイズを262,144byte以下とし、offset順で重複していないことを展開前に確認する。
+- `Tools/OfflinePackageBuilder/build_detailed_pack.py` は、取得済みの国土地理院256×256テキスト標高タイルを `z/x/y.txt` 構成で受け取る。最初にデータ種別・相対パス・原本SHA-256を持つ入力索引を生成し、ビルド時に原本の不変性を再確認する。ズーム15の同一セルはDEM5A、DEM5B、DEM5Cの順で補完し、残る欠損は索引に存在するズーム14の親DEM10Bを2×2の最近傍展開で補う。小数標高は1m単位で四捨五入する。入力取得をツール内で自動化せず、Source Manifestの取得日・元データ版・利用条件確認と分離する。
+- 生成ツールはタイルごとのLZFSE往復、SQLite整合性、地形offset・サイズ・SHA-256、Ed25519署名を自己検証し、すべて成功した場合だけ完成ディレクトリを出力する。既存出力を暗黙に上書きせず、秘密鍵はコマンド引数でリポジトリ外のファイルを渡す。
 - 導入時は一時領域で署名・manifest・2ファイル・SQLite・全地形タイルを検証し、`Versions/<contentVersion>` へ移動した後に小さな `active-version` をatomic書き換えして参照を切り替える。切替前の版は保持し、`readyToInstall` journalが残った場合は起動時に再検証してから切替を完了する。
 
 #### 容量予算（設計目標）

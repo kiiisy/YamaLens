@@ -1,0 +1,34 @@
+id: gsi-dem-tanzawa-v1
+title: YamaLens 丹沢詳細地形データ
+status: provisional_inputs_not_acquired
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+source_information_url: https://service.gsi.go.jp/kiban/app/help/
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+acquired_at:
+source_updated_at:
+terms_checked_at: 2026-08-22
+coordinate_reference_note: "2025-07-31以降に提供される基盤地図情報はJGD2024へ移行している。標高タイルの更新時点と座標系は、実入力取得時に記録する。"
+scope:
+  allowed_bounds:
+    north: 36.0
+    south: 34.6
+    east: 139.65
+    west: 138.55
+  datasets_by_priority:
+    - DEM5A
+    - DEM5B
+    - DEM5C
+    - DEM10B
+input_files: []
+input_inventory: "Data/Generated/tanzawa-detailed-v1/terrain-index.jsonへ、入力ファイルごとの相対パスとSHA-256を生成する。"
+processing_steps:
+  - 取得済みの公式標高タイルをz/x/y.txt構成のまま保管する。
+  - build_detailed_pack.py indexでデータ種別、タイル座標、SHA-256を索引化する。
+  - ズーム15の同一セルはDEM5A、DEM5B、DEM5Cの順で最初に得られた値を採用し、残る欠損は対応するズーム14の親DEM10Bを2×2の最近傍展開で補う。
+  - 小数標高を1m単位へ四捨五入し、欠損値を-32768とする256×256 Int16格子へ変換する。
+  - 各格子を独立してLZFSE圧縮し、SQLite索引、manifest、Ed25519署名を生成する。
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+legal_note: "商用配布前に、国土地理院コンテンツ利用規約と測量法上の複製・使用承認の要否を、実際の利用・加工・配布形態について確認する。"
+verification_note: "原本未取得のため、現時点では正式な配布用Source Manifestではない。input_files、取得日、元データ更新日、座標系、利用手続確認結果が埋まるまで本番署名・配布を行わない。"

@@ -26,6 +26,8 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
     let distanceScoreWeight: Double
     let reducedQualityMinimumScore: Double
     let altitudeUnavailableQualityScore: Double
+    let terrainOcclusionClearanceMeters: Double
+    let terrainOcclusionScoreMultiplier: Double
 
     static let `default` = CandidateTuning(
         maximumSearchDistanceMeters: 150_000,
@@ -52,7 +54,9 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
         observationQualityScoreWeight: 0.15,
         distanceScoreWeight: 0.10,
         reducedQualityMinimumScore: 0.4,
-        altitudeUnavailableQualityScore: 0.6
+        altitudeUnavailableQualityScore: 0.6,
+        terrainOcclusionClearanceMeters: 30,
+        terrainOcclusionScoreMultiplier: 0.75
     )
 }
 

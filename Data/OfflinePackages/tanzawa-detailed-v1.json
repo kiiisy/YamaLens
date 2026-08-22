@@ -1,0 +1,35 @@
+{
+  "allowedBounds": {
+    "east": 139.65,
+    "north": 36.0,
+    "south": 34.6,
+    "west": 138.55
+  },
+  "catalogInput": "../Bootstrap/tanzawa-bootstrap-v1.json",
+  "contentVersion": "1.0.0",
+  "createdAt": "2026-08-22T00:00:00Z",
+  "formatVersion": 1,
+  "keyID": "yamalens-pack-development-01",
+  "minimumAppVersion": "0.1.0",
+  "packageID": "jp.kanagawa.tanzawa",
+  "schemaVersion": 1,
+  "sourceLinks": [
+    {
+      "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）",
+      "checkedAt": "2026-08-22",
+      "id": "gsi-elevation-tiles",
+      "isPrimary": true,
+      "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "processingNote": "ズーム15ではDEM5A、DEM5B、DEM5Cの順で欠損セルを補完し、残る欠損は対応するズーム14の親DEM10Bを2×2展開して補完する。1m単位のInt16標高格子へ丸めた後、タイル単位でLZFSE圧縮する。",
+      "provider": "国土地理院",
+      "title": "標高タイル（基盤地図情報数値標高モデル）",
+      "url": "https://maps.gsi.go.jp/development/ichiran.html#dem"
+    }
+  ],
+  "sourceManifestIDs": [
+    "gsi-dem-tanzawa-v1",
+    "tanzawa-bootstrap-v1"
+  ],
+  "sourceManifestDirectory": "../SourceManifests",
+  "terrainSourceLinkID": "gsi-elevation-tiles"
+}
