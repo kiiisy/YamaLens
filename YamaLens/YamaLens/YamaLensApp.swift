@@ -21,7 +21,8 @@ struct YamaLensApp: App {
                 cameraObservationProvider: appContainer.cameraObservationProvider,
                 cameraPreview: appContainer.cameraPreview,
                 cameraDiagnosticLogRepository: appContainer.cameraDiagnosticLogRepository,
-                cameraDiagnosticDevice: appContainer.cameraDiagnosticDevice
+                cameraDiagnosticDevice: appContainer.cameraDiagnosticDevice,
+                terrainVisibilityResolver: appContainer.terrainVisibilityResolver
             )
                 .modelContainer(for: UserMountainRecord.self)
         }
@@ -75,7 +76,8 @@ private struct YamaLensRootView: View {
         cameraObservationProvider: any CameraObservationProvider,
         cameraPreview: AnyView,
         cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?,
-        cameraDiagnosticDevice: CameraDiagnosticDevice?
+        cameraDiagnosticDevice: CameraDiagnosticDevice?,
+        terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     ) {
         self.repository = repository
         self.proximityCalculator = proximityCalculator
@@ -103,6 +105,7 @@ private struct YamaLensRootView: View {
                 provider: cameraObservationProvider,
                 mountains: repository.fetchMountains(),
                 projector: projector,
+                terrainVisibilityResolver: terrainVisibilityResolver,
                 diagnosticRecorder: diagnosticRecorder
             )
         )

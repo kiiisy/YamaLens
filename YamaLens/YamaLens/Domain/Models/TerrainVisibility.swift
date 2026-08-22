@@ -14,6 +14,11 @@ nonisolated struct TerrainProfileSample: Equatable, Sendable {
     let elevation: TerrainElevation?
 }
 
+nonisolated struct TerrainProfilePoint: Equatable, Sendable {
+    let coordinate: GeoCoordinate
+    let distance: MountainDistance
+}
+
 nonisolated enum TerrainVisibility: Equatable, Sendable {
     case notOccluded
     case occluded(maximumExcessHeightMeters: Double)

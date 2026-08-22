@@ -10,8 +10,10 @@ nonisolated struct CameraMountainCandidate: Equatable, Sendable {
     let proximity: MountainProximity
     let screenPoint: ViewportPoint
     let elevationAngleDegrees: Double?
+    let unpenalizedScore: Double
     let score: Double
     let strength: CameraCandidateStrength
+    let terrainVisibility: TerrainVisibility
 }
 
 nonisolated struct CameraCandidateProjection: Equatable, Sendable {
@@ -37,6 +39,7 @@ nonisolated struct MountainCameraProjector: Sendable {
         mountains: [Mountain],
         retainedSheetMountainIDs: [String],
         manualHeadingCorrectionDegrees: Double = 0,
+        terrainVisibilityByMountainID: [String: TerrainVisibility] = [:],
         now: Date
     ) -> CameraCandidateProjection {
         guard manualHeadingCorrectionDegrees.isFinite else {
@@ -71,7 +74,9 @@ nonisolated struct MountainCameraProjector: Sendable {
                     location: location,
                     camera: camera,
                     manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees,
-                    qualityScore: qualityScore
+                    qualityScore: qualityScore,
+                    terrainVisibility: terrainVisibilityByMountainID[nearby.mountain.id]
+                        ?? .unavailable
                 )
             }
             .sorted(by: candidatePrecedes)
@@ -84,7 +89,7 @@ nonisolated struct MountainCameraProjector: Sendable {
 
         let extendedCandidates = projected.filter {
             isInsideExtendedViewport($0.screenPoint, geometry: camera.projectionGeometry)
-                && $0.score >= tuning.sheetCandidateScore
+                && $0.unpenalizedScore >= tuning.sheetCandidateScore
         }
         let byID = Dictionary(uniqueKeysWithValues: extendedCandidates.map { ($0.mountain.id, $0) })
         let retained = retainedSheetMountainIDs.compactMap { byID[$0] }
@@ -105,7 +110,8 @@ nonisolated struct MountainCameraProjector: Sendable {
         location: LocationObservation,
         camera: CameraPoseObservation,
         manualHeadingCorrectionDegrees: Double,
-        qualityScore: Double
+        qualityScore: Double,
+        terrainVisibility: TerrainVisibility
     ) -> CameraMountainCandidate? {
         guard let direction = worldDirection(
             from: location,
@@ -138,10 +144,17 @@ nonisolated struct MountainCameraProjector: Sendable {
         let distanceScore = clamp(
             1 - nearby.proximity.distance.meters / tuning.maximumSearchDistanceMeters
         )
-        let score = tuning.bearingScoreWeight * horizontalScore
+        let unpenalizedScore = tuning.bearingScoreWeight * horizontalScore
             + tuning.elevationScoreWeight * verticalScore
             + tuning.observationQualityScoreWeight * qualityScore
             + tuning.distanceScoreWeight * distanceScore
+        let score: Double
+        switch terrainVisibility {
+        case .occluded:
+            score = unpenalizedScore * tuning.terrainOcclusionScoreMultiplier
+        case .notOccluded, .unavailable:
+            score = unpenalizedScore
+        }
         let strength: CameraCandidateStrength = score >= tuning.strongCandidateScore
             && qualityScore == 1
             ? .strong
@@ -152,8 +165,10 @@ nonisolated struct MountainCameraProjector: Sendable {
             proximity: nearby.proximity,
             screenPoint: screenPoint,
             elevationAngleDegrees: direction.elevationAngleDegrees,
+            unpenalizedScore: unpenalizedScore,
             score: score,
-            strength: strength
+            strength: strength,
+            terrainVisibility: terrainVisibility
         )
     }
 

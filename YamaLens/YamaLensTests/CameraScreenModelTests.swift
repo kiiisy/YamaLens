@@ -171,11 +171,35 @@ struct CameraScreenModelTests {
         #expect(model.manualHeadingCorrectionDegrees == 0)
     }
 
-    private func makeModel() -> CameraScreenModel {
+    @Test("非同期の地形遮蔽判定をカメラ候補へ反映する")
+    func appliesAsynchronousTerrainVisibility() async {
+        let resolver = FixedTerrainVisibilityResolver(
+            result: ["north": .occluded(maximumExcessHeightMeters: 80)]
+        )
+        let model = makeModel(terrainVisibilityResolver: resolver)
+        model.updateLocationState(.available(location(age: 0), quality: .good))
+        model.receive(pose(age: 0, headingAccuracy: 5))
+
+        for _ in 0..<100 {
+            if case .active(_, _, let candidates, _) = model.state,
+               candidates.first?.terrainVisibility
+                == .occluded(maximumExcessHeightMeters: 80) {
+                #expect(candidates.first?.score != candidates.first?.unpenalizedScore)
+                return
+            }
+            await Task.yield()
+        }
+        Issue.record("地形判定がカメラ候補へ反映されませんでした")
+    }
+
+    private func makeModel(
+        terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil
+    ) -> CameraScreenModel {
         CameraScreenModel(
             provider: InertCameraObservationProvider(),
             mountains: [testMountain],
             projector: MountainCameraProjector(),
+            terrainVisibilityResolver: terrainVisibilityResolver,
             now: { fixedNow }
         )
     }
@@ -245,6 +269,17 @@ struct CameraScreenModelTests {
             horizontalFieldOfViewDegrees: 70,
             verticalFieldOfViewDegrees: 100
         )
+    }
+}
+
+private nonisolated struct FixedTerrainVisibilityResolver: TerrainVisibilityResolving {
+    let result: [String: TerrainVisibility]
+
+    func resolveVisibility(
+        from location: LocationObservation,
+        to mountains: [Mountain]
+    ) async throws -> [String: TerrainVisibility] {
+        result
     }
 }
 

@@ -137,6 +137,49 @@ struct MountainCameraProjectorTests {
         #expect(result.sheetCandidates.count == 10)
     }
 
+    @Test("地形遮蔽候補は0.75倍へ減点しても候補シートから削除しない")
+    func penalizesOccludedCandidateWithoutRemovingIt() throws {
+        let mountain = mountain(id: "north", latitude: 35.01, longitude: 139)
+        let baseline = projector.projectCandidates(
+            location: location(),
+            camera: camera(geometry: geometryFacingNorth()),
+            mountains: [mountain],
+            retainedSheetMountainIDs: [],
+            now: now
+        )
+        let occluded = projector.projectCandidates(
+            location: location(),
+            camera: camera(geometry: geometryFacingNorth()),
+            mountains: [mountain],
+            retainedSheetMountainIDs: [],
+            terrainVisibilityByMountainID: [
+                mountain.id: .occluded(maximumExcessHeightMeters: 80),
+            ],
+            now: now
+        )
+
+        let baselineCandidate = try #require(baseline.sheetCandidates.first)
+        let occludedCandidate = try #require(occluded.sheetCandidates.first)
+        #expect(abs(occludedCandidate.score - baselineCandidate.score * 0.75) < 0.000_001)
+        #expect(occludedCandidate.unpenalizedScore == baselineCandidate.score)
+        #expect(occludedCandidate.terrainVisibility == .occluded(maximumExcessHeightMeters: 80))
+    }
+
+    @Test("地形未確認は候補scoreを変更しない")
+    func leavesScoreUnchangedWhenTerrainIsUnavailable() throws {
+        let result = projector.projectCandidates(
+            location: location(),
+            camera: camera(geometry: geometryFacingNorth()),
+            mountains: [mountain(id: "north", latitude: 35.01, longitude: 139)],
+            retainedSheetMountainIDs: [],
+            now: now
+        )
+
+        let candidate = try #require(result.sheetCandidates.first)
+        #expect(candidate.score == candidate.unpenalizedScore)
+        #expect(candidate.terrainVisibility == .unavailable)
+    }
+
     private func location() -> LocationObservation {
         LocationObservation(
             coordinate: GeoCoordinate(latitude: 35, longitude: 139),

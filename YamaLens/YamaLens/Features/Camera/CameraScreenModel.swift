@@ -29,6 +29,7 @@ final class CameraScreenModel {
     private let provider: any CameraObservationProvider
     private let mountains: [Mountain]
     private let projector: MountainCameraProjector
+    private let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
     let diagnosticRecorder: CameraDiagnosticRecorder?
@@ -38,6 +39,10 @@ final class CameraScreenModel {
     private var observationTask: Task<Void, Never>?
     private var retainedSheetMountainIDs: [String] = []
     private var locationTimestampRequestedForRefresh: Date?
+    private var terrainVisibilityByMountainID: [String: TerrainVisibility] = [:]
+    private var terrainLocationObservedAt: Date?
+    private var terrainTask: Task<Void, Never>?
+    private var terrainRequestGeneration = 0
 
     private(set) var state: CameraScreenState = .idle
     private(set) var locationRefreshRequestID = 0
@@ -49,6 +54,7 @@ final class CameraScreenModel {
         mountains: [Mountain],
         projector: MountainCameraProjector,
         tuning: CandidateTuning = .default,
+        terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil,
         diagnosticRecorder: CameraDiagnosticRecorder? = nil,
         now: @escaping @MainActor () -> Date = { .now }
     ) {
@@ -56,6 +62,7 @@ final class CameraScreenModel {
         self.mountains = mountains
         self.projector = projector
         self.tuning = tuning
+        self.terrainVisibilityResolver = terrainVisibilityResolver
         self.diagnosticRecorder = diagnosticRecorder
         self.now = now
     }
@@ -99,6 +106,7 @@ final class CameraScreenModel {
         lastObservationEvaluationDate = nil
         retainedSheetMountainIDs = []
         locationTimestampRequestedForRefresh = nil
+        resetTerrainEvaluation()
         isManualHeadingAdjustmentActive = false
         state = .idle
     }
@@ -142,9 +150,11 @@ final class CameraScreenModel {
         lastObservation = observation
         lastObservationEvaluationDate = evaluationDate
         guard case .available(let location, let locationQuality) = locationState else {
+            resetTerrainEvaluation()
             state = .waitingForSensors
             return
         }
+        prepareTerrainEvaluation(for: location)
 
         let locationAge = evaluationDate.timeIntervalSince(location.observedAt)
         guard locationAge >= -1, locationAge <= tuning.maximumLocationAgeSeconds else {
@@ -179,6 +189,7 @@ final class CameraScreenModel {
             mountains: mountains,
             retainedSheetMountainIDs: retainedSheetMountainIDs,
             manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees,
+            terrainVisibilityByMountainID: terrainVisibilityByMountainID,
             now: evaluationDate
         )
         retainedSheetMountainIDs = projection.sheetCandidates.map(\.mountain.id)
@@ -193,6 +204,10 @@ final class CameraScreenModel {
             labels: projection.labels,
             candidates: projection.sheetCandidates,
             quality: isGood ? .good : .reduced
+        )
+        scheduleTerrainEvaluationIfNeeded(
+            location: location,
+            projection: projection
         )
     }
 
@@ -249,9 +264,84 @@ final class CameraScreenModel {
     }
 
     private func reprojectLastObservation() {
-        retainedSheetMountainIDs = []
+        reprojectLastObservation(preservingRetainedCandidates: false)
+    }
+
+    private func reprojectLastObservation(preservingRetainedCandidates: Bool) {
+        if !preservingRetainedCandidates {
+            retainedSheetMountainIDs = []
+        }
         guard let lastObservation, let lastObservationEvaluationDate else { return }
         receive(lastObservation, evaluatedAt: lastObservationEvaluationDate)
+    }
+
+    private func prepareTerrainEvaluation(for location: LocationObservation) {
+        guard terrainLocationObservedAt != location.observedAt else { return }
+        resetTerrainEvaluation()
+        terrainLocationObservedAt = location.observedAt
+    }
+
+    private func scheduleTerrainEvaluationIfNeeded(
+        location: LocationObservation,
+        projection: CameraCandidateProjection
+    ) {
+        guard let terrainVisibilityResolver, terrainTask == nil else { return }
+        let candidateMountains = uniqueMountains(
+            projection.labels.map(\.mountain) + projection.sheetCandidates.map(\.mountain)
+        ).filter { terrainVisibilityByMountainID[$0.id] == nil }
+        guard !candidateMountains.isEmpty else { return }
+
+        terrainRequestGeneration += 1
+        let requestGeneration = terrainRequestGeneration
+        let locationObservedAt = location.observedAt
+        terrainTask = Task { [weak self, terrainVisibilityResolver] in
+            let result: [String: TerrainVisibility]
+            do {
+                result = try await terrainVisibilityResolver.resolveVisibility(
+                    from: location,
+                    to: candidateMountains
+                )
+            } catch {
+                result = Dictionary(
+                    uniqueKeysWithValues: candidateMountains.map { ($0.id, .unavailable) }
+                )
+            }
+            guard !Task.isCancelled else { return }
+            self?.applyTerrainVisibility(
+                result,
+                locationObservedAt: locationObservedAt,
+                requestGeneration: requestGeneration
+            )
+        }
+    }
+
+    private func applyTerrainVisibility(
+        _ result: [String: TerrainVisibility],
+        locationObservedAt: Date,
+        requestGeneration: Int
+    ) {
+        guard
+            terrainLocationObservedAt == locationObservedAt,
+            terrainRequestGeneration == requestGeneration
+        else {
+            return
+        }
+        terrainTask = nil
+        terrainVisibilityByMountainID.merge(result) { _, new in new }
+        reprojectLastObservation(preservingRetainedCandidates: true)
+    }
+
+    private func resetTerrainEvaluation() {
+        terrainRequestGeneration += 1
+        terrainTask?.cancel()
+        terrainTask = nil
+        terrainVisibilityByMountainID = [:]
+        terrainLocationObservedAt = nil
+    }
+
+    private func uniqueMountains(_ mountains: [Mountain]) -> [Mountain] {
+        var seenIDs: Set<String> = []
+        return mountains.filter { seenIDs.insert($0.id).inserted }
     }
 
     private func setActiveState(

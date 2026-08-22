@@ -213,7 +213,10 @@ final class CameraDiagnosticRecorder {
                     mountainID: candidate.mountain.id,
                     screenPoint: candidate.screenPoint,
                     score: candidate.score,
-                    isLabelVisible: labelIDs.contains(candidate.mountain.id)
+                    isLabelVisible: labelIDs.contains(candidate.mountain.id),
+                    terrainVisibility: diagnosticTerrainVisibility(
+                        candidate.terrainVisibility
+                    )
                 )
             }
         return CameraDiagnosticSample(
@@ -252,6 +255,19 @@ final class CameraDiagnosticRecorder {
             return .good
         case .reduced:
             return .reduced
+        case .unavailable:
+            return .unavailable
+        }
+    }
+
+    private func diagnosticTerrainVisibility(
+        _ visibility: TerrainVisibility
+    ) -> CameraDiagnosticTerrainVisibility {
+        switch visibility {
+        case .notOccluded:
+            return .notOccluded
+        case .occluded:
+            return .occluded
         case .unavailable:
             return .unavailable
         }

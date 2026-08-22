@@ -11,6 +11,7 @@ struct AppContainer {
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let cameraDiagnosticDevice: CameraDiagnosticDevice?
+    let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
 
     init(
         mountainRepository: any MountainRepository = BootstrapMountainRepository(),
@@ -21,6 +22,7 @@ struct AppContainer {
         self.locationObservationProvider = locationObservationProvider
             ?? Self.makeLocationObservationProvider()
         self.proximityCalculator = proximityCalculator
+        terrainVisibilityResolver = nil
         let cameraDependencies = Self.makeCameraDependencies()
         cameraObservationProvider = cameraDependencies.provider
         cameraPreview = cameraDependencies.preview

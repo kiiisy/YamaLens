@@ -91,6 +91,27 @@ nonisolated struct CameraDiagnosticCandidate: Codable, Equatable, Sendable {
     let screenPoint: ViewportPoint
     let score: Double
     let isLabelVisible: Bool
+    let terrainVisibility: CameraDiagnosticTerrainVisibility?
+
+    init(
+        mountainID: String,
+        screenPoint: ViewportPoint,
+        score: Double,
+        isLabelVisible: Bool,
+        terrainVisibility: CameraDiagnosticTerrainVisibility? = nil
+    ) {
+        self.mountainID = mountainID
+        self.screenPoint = screenPoint
+        self.score = score
+        self.isLabelVisible = isLabelVisible
+        self.terrainVisibility = terrainVisibility
+    }
+}
+
+nonisolated enum CameraDiagnosticTerrainVisibility: String, Codable, Equatable, Sendable {
+    case notOccluded
+    case occluded
+    case unavailable
 }
 
 nonisolated struct CameraDiagnosticEvent: Codable, Equatable, Identifiable, Sendable {

@@ -86,6 +86,63 @@ struct CameraDiagnosticRecorderTests {
         #expect(try await repository.fetchLogs().isEmpty)
     }
 
+    @Test("候補ごとの地形未確認理由を診断ログへ保存する")
+    func savesTerrainVisibilityReason() async throws {
+        let repository = DiagnosticLogRepositorySpy()
+        let clock = DiagnosticTestClock(date: .diagnosticReference)
+        let recorder = makeRecorder(repository: repository, clock: clock)
+        let candidate = CameraMountainCandidate(
+            mountain: Mountain(
+                id: "tonodake",
+                name: "塔ノ岳",
+                aliases: [],
+                regionName: "丹沢",
+                prefectureName: "神奈川県",
+                elevationMeters: 1_491,
+                coordinate: GeoCoordinate(latitude: 35.454, longitude: 139.163)
+            ),
+            proximity: MountainProximity(
+                distance: MountainDistance(meters: 1_000),
+                bearing: TrueBearing(degrees: 0),
+                direction: .north
+            ),
+            screenPoint: ViewportPoint(x: 100, y: 200),
+            elevationAngleDegrees: 5,
+            unpenalizedScore: 0.8,
+            score: 0.8,
+            strength: .strong,
+            terrainVisibility: .unavailable
+        )
+        recorder.startRecording()
+        recorder.observe(
+            location: .diagnosticLocation(at: clock.date),
+            locationQuality: .good,
+            camera: .diagnosticCamera(at: clock.date),
+            labels: [candidate],
+            candidates: [candidate],
+            quality: .good,
+            manualHeadingCorrectionDegrees: 0
+        )
+
+        await recorder.saveRecording()
+
+        let log = try #require(try await repository.fetchLogs().first)
+        #expect(log.samples.first?.candidates.first?.terrainVisibility == .unavailable)
+    }
+
+    @Test("旧schemaの候補ログは地形項目なしでも読み込める")
+    func decodesCandidateWithoutTerrainField() throws {
+        let data = try #require(
+            """
+            {"mountainID":"tonodake","screenPoint":{"x":100,"y":200},"score":0.8,"isLabelVisible":true}
+            """.data(using: .utf8)
+        )
+
+        let candidate = try JSONDecoder().decode(CameraDiagnosticCandidate.self, from: data)
+
+        #expect(candidate.terrainVisibility == nil)
+    }
+
     private func makeRecorder(
         repository: DiagnosticLogRepositorySpy,
         clock: DiagnosticTestClock
