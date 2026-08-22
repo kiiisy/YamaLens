@@ -444,6 +444,55 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testMountainDetailShowsWeatherStatesAndPreviousDaySummary() throws {
+        let app = makeApplication(launchArguments: ["-ui-test-weather-loaded"])
+        app.launch()
+
+        let mountainCard = app.buttons
+            .matching(identifier: "mountain-row-蛭ヶ岳")
+            .firstMatch
+        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
+        mountainCard.tap()
+
+        let detail = app.descendants(matching: .any)["mountain-detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 2))
+        let weatherSummary = app.buttons["weather-summary-card"]
+        for _ in 0..<3 where !weatherSummary.exists {
+            detail.swipeUp()
+        }
+        XCTAssertTrue(weatherSummary.waitForExistence(timeout: 2))
+
+        let summaryScreenshot = XCTAttachment(screenshot: app.screenshot())
+        summaryScreenshot.name = "山詳細の天気概要"
+        summaryScreenshot.lifetime = .keepAlways
+        add(summaryScreenshot)
+
+        weatherSummary.tap()
+
+        let weatherDetail = app.descendants(matching: .any)["weather-detail"]
+        XCTAssertTrue(weatherDetail.waitForExistence(timeout: 2))
+        let currentWeather = app.descendants(matching: .any)["weather-current-card"]
+        XCTAssertTrue(currentWeather.waitForExistence(timeout: 2))
+        for _ in 0..<2 where !app.descendants(matching: .any)["weather-warnings"].exists {
+            weatherDetail.swipeUp()
+        }
+        XCTAssertTrue(app.descendants(matching: .any)["weather-warnings"].exists)
+        XCTAssertTrue(app.staticTexts["今後12時間の注意情報"].exists)
+
+        let previousDay = app.descendants(matching: .any)["weather-previous-day-card"]
+        for _ in 0..<3 where !previousDay.exists {
+            weatherDetail.swipeUp()
+        }
+        XCTAssertTrue(previousDay.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["前日の気象サマリー（山頂付近）"].exists)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "天気の詳細"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testMountainDetailClosesWithBackButton() throws {
         let app = makeApplication()
         app.launch()

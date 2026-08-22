@@ -19,9 +19,11 @@ struct MountainDetailView: View {
     @State private var dismissDragDistance: CGFloat = 0
     @State private var isDraggingToDismiss = false
     @State private var scrollOffset: CGFloat = 0
+    @State private var weatherModel: MountainWeatherScreenModel
 
     init(
         mountain: Mountain,
+        weatherRepository: any MountainWeatherRepository,
         currentLocationState: CurrentLocationState = .notRequested,
         proximityCalculator: MountainProximityCalculator = MountainProximityCalculator(),
         overlayTopInset: CGFloat? = nil,
@@ -32,6 +34,9 @@ struct MountainDetailView: View {
         self.proximityCalculator = proximityCalculator
         self.overlayTopInset = overlayTopInset
         self.onClose = onClose
+        _weatherModel = State(
+            initialValue: MountainWeatherScreenModel(repository: weatherRepository)
+        )
     }
 
     private var record: UserMountainRecord? {
@@ -319,45 +324,8 @@ struct MountainDetailView: View {
     }
 
     private var weatherSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                YamaSectionHeader(title: "山頂付近の天気")
-                Spacer()
-                Text("未取得")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(YamaColor.amber)
-            }
-
-            HStack(spacing: 12) {
-                unavailableWeatherCard(title: "現在・予報", icon: "cloud.sun")
-                unavailableWeatherCard(title: "時間ごと", icon: "chart.xyaxis.line")
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Label("前日の気象サマリー", systemImage: "calendar.badge.clock")
-                    .font(.headline)
-                Text("前日のWeatherKit日別サマリーは、現在・予報と分けて表示します。対象日、提供元、取得日時を確認できます。")
-                    .font(.footnote)
-                    .foregroundStyle(YamaColor.secondaryText)
-                Text("前日の情報を取得できません")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(YamaColor.amber)
-            }
-            .padding(16)
-            .background(YamaColor.raisedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
+        MountainWeatherSection(mountain: mountain, model: weatherModel)
         .padding(.horizontal, 18)
-    }
-
-    private func unavailableWeatherCard(title: String, icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Image(systemName: icon).font(.title2).foregroundStyle(YamaColor.alpineTeal)
-            Text(title).font(.headline)
-            Text("データ未取得").font(.caption).foregroundStyle(YamaColor.secondaryText)
-        }
-        .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
-        .padding(16)
-        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var facilitySection: some View {

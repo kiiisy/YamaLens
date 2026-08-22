@@ -4,6 +4,7 @@ import UIKit
 
 struct HomeView: View {
     private let mountains: [Mountain]
+    private let mountainWeatherRepository: any MountainWeatherRepository
     private let locationModel: LocationSessionModel
     private let proximityCalculator: MountainProximityCalculator
     private let onSelectMountain: (MountainDetailPresentation) -> Void
@@ -14,11 +15,13 @@ struct HomeView: View {
 
     init(
         repository: any MountainRepository,
+        mountainWeatherRepository: any MountainWeatherRepository,
         locationModel: LocationSessionModel,
         proximityCalculator: MountainProximityCalculator,
         onSelectMountain: @escaping (MountainDetailPresentation) -> Void
     ) {
         mountains = repository.fetchMountains()
+        self.mountainWeatherRepository = mountainWeatherRepository
         self.locationModel = locationModel
         self.proximityCalculator = proximityCalculator
         self.onSelectMountain = onSelectMountain
@@ -66,6 +69,7 @@ struct HomeView: View {
             .sheet(isPresented: $isSearchPresented) {
                 MountainSearchView(
                     mountains: mountains,
+                    mountainWeatherRepository: mountainWeatherRepository,
                     currentLocationState: locationModel.state,
                     proximityCalculator: proximityCalculator
                 )
@@ -398,6 +402,7 @@ struct HomeView: View {
 
 private struct MountainSearchView: View {
     let mountains: [Mountain]
+    let mountainWeatherRepository: any MountainWeatherRepository
     let currentLocationState: CurrentLocationState
     let proximityCalculator: MountainProximityCalculator
     private let searchService = MountainSearchService()
@@ -442,6 +447,7 @@ private struct MountainSearchView: View {
             .navigationDestination(for: Mountain.self) { mountain in
                 MountainDetailView(
                     mountain: mountain,
+                    weatherRepository: mountainWeatherRepository,
                     currentLocationState: currentLocationState,
                     proximityCalculator: proximityCalculator
                 )

@@ -14,6 +14,7 @@ struct AppContainer {
     let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     let terrainHorizonResolver: (any TerrainHorizonResolving)?
     let offlinePackageManager: any OfflinePackageManaging
+    let mountainWeatherRepository: any MountainWeatherRepository
 
     init(
         mountainRepository: any MountainRepository = BootstrapMountainRepository(),
@@ -25,6 +26,7 @@ struct AppContainer {
         self.locationObservationProvider = locationObservationProvider
             ?? Self.makeLocationObservationProvider()
         self.proximityCalculator = proximityCalculator
+        mountainWeatherRepository = Self.makeMountainWeatherRepository()
         if let offlinePackageRootURL = Self.offlinePackageRootURL() {
             let offlinePackageStore = OfflinePackageStore(
                 rootURL: offlinePackageRootURL,
@@ -152,6 +154,18 @@ struct AppContainer {
         return CoreLocationObservationProvider()
     }
 
+    private static func makeMountainWeatherRepository() -> any MountainWeatherRepository {
+#if DEBUG
+        // Apple Developer Programへ加入するまでは、通常の開発起動でも
+        // WeatherKit認証に依存せず気象UIを確認できるようにする。
+        // 実サービスの確認時だけSchemeへ -use-live-weatherkit を追加する。
+        if !ProcessInfo.processInfo.arguments.contains("-use-live-weatherkit") {
+            return FixedMountainWeatherRepository(now: .now)
+        }
+#endif
+        return CachedMountainWeatherRepository()
+    }
+
     private static func makeCameraDependencies() -> (
         provider: any CameraObservationProvider,
         preview: AnyView
@@ -238,6 +252,108 @@ struct AppContainer {
     }
 #endif
 }
+
+#if DEBUG
+private actor FixedMountainWeatherRepository: MountainWeatherRepository {
+    private let now: Date
+
+    init(now: Date) {
+        self.now = now
+    }
+
+    func cachedForecast(for mountainID: String) async throws -> MountainWeatherForecast? {
+        try forecast(mountainID: mountainID)
+    }
+
+    func cachedPreviousDaySummary(
+        for mountainID: String
+    ) async throws -> PreviousDayWeatherSummary? {
+        try previousDaySummary(mountainID: mountainID)
+    }
+
+    func refreshForecast(
+        for mountain: Mountain,
+        reason: WeatherRefreshReason,
+        now: Date
+    ) async throws -> MountainWeatherForecast {
+        try forecast(mountainID: mountain.id)
+    }
+
+    func refreshPreviousDaySummary(
+        for mountain: Mountain,
+        targetDate: Date,
+        timeZoneIdentifier: String,
+        reason: WeatherRefreshReason,
+        now: Date
+    ) async throws -> PreviousDayWeatherSummary {
+        try previousDaySummary(mountainID: mountain.id)
+    }
+
+    private func forecast(mountainID: String) throws -> MountainWeatherForecast {
+        guard let legalURL = URL(
+            string: "https://weatherkit.apple.com/legal-attribution.html"
+        ) else {
+            throw MountainWeatherRepositoryError.invalidData
+        }
+        let current = MountainCurrentWeather(
+            observedAt: now,
+            conditionCode: "partlyCloudy",
+            symbolName: "cloud.sun.fill",
+            temperatureCelsius: 7,
+            apparentTemperatureCelsius: 4,
+            windSpeedMetersPerSecond: 6.2,
+            windDirectionCode: "northwest"
+        )
+        let hourly = (0..<8).map(makeHour(offset:))
+        return MountainWeatherForecast(
+            mountainID: mountainID,
+            current: current,
+            hourly: hourly,
+            alerts: [],
+            retrievedAt: now,
+            sourceName: "Apple Weather（テスト用固定値・実際の予報ではありません）",
+            legalPageURL: legalURL
+        )
+    }
+
+    private func makeHour(offset: Int) -> MountainHourlyWeather {
+        let isRain = offset >= 4
+        return MountainHourlyWeather(
+            date: now.addingTimeInterval(Double(offset) * 60 * 60),
+            conditionCode: isRain ? "rain" : "partlyCloudy",
+            symbolName: isRain ? "cloud.rain.fill" : "cloud.sun.fill",
+            temperatureCelsius: 7 - Double(offset) * 0.8,
+            windSpeedMetersPerSecond: offset == 3 ? 10.4 : 6.2,
+            precipitationChance: isRain ? 0.7 : 0.2,
+            hasThunderstorm: false,
+            hasSnowOrIce: false
+        )
+    }
+
+    private func previousDaySummary(
+        mountainID: String
+    ) throws -> PreviousDayWeatherSummary {
+        guard let targetDate = MountainWeatherCalendar.previousDayStart(now: now),
+              let legalURL = URL(
+                  string: "https://weatherkit.apple.com/legal-attribution.html"
+              ) else {
+            throw MountainWeatherRepositoryError.invalidData
+        }
+        return PreviousDayWeatherSummary(
+            mountainID: mountainID,
+            targetDate: targetDate,
+            timeZoneIdentifier: MountainWeatherCalendar.timeZoneIdentifier,
+            precipitationMillimeters: 12.4,
+            snowfallCentimeters: nil,
+            highTemperatureCelsius: 9,
+            lowTemperatureCelsius: 2,
+            retrievedAt: now,
+            sourceName: "Apple Weather（テスト用固定値・実際の予報ではありません）",
+            legalPageURL: legalURL
+        )
+    }
+}
+#endif
 
 #if DEBUG
 @MainActor

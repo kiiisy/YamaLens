@@ -24,7 +24,8 @@ struct YamaLensApp: App {
                 cameraDiagnosticDevice: appDelegate.appContainer.cameraDiagnosticDevice,
                 terrainVisibilityResolver: appDelegate.appContainer.terrainVisibilityResolver,
                 terrainHorizonResolver: appDelegate.appContainer.terrainHorizonResolver,
-                offlinePackageManager: appDelegate.appContainer.offlinePackageManager
+                offlinePackageManager: appDelegate.appContainer.offlinePackageManager,
+                mountainWeatherRepository: appDelegate.appContainer.mountainWeatherRepository
             )
                 .modelContainer(for: UserMountainRecord.self)
         }
@@ -63,6 +64,7 @@ private struct YamaLensRootView: View {
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let cameraProjector: MountainCameraProjector
+    let mountainWeatherRepository: any MountainWeatherRepository
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedTab: YamaTab = .home
@@ -83,11 +85,13 @@ private struct YamaLensRootView: View {
         cameraDiagnosticDevice: CameraDiagnosticDevice?,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)?,
         terrainHorizonResolver: (any TerrainHorizonResolving)?,
-        offlinePackageManager: any OfflinePackageManaging
+        offlinePackageManager: any OfflinePackageManaging,
+        mountainWeatherRepository: any MountainWeatherRepository
     ) {
         self.repository = repository
         self.proximityCalculator = proximityCalculator
         self.cameraPreview = cameraPreview
+        self.mountainWeatherRepository = mountainWeatherRepository
         _locationModel = State(
             initialValue: LocationSessionModel(
                 provider: locationObservationProvider,
@@ -129,6 +133,7 @@ private struct YamaLensRootView: View {
                 TabView(selection: $selectedTab) {
                     HomeView(
                         repository: repository,
+                        mountainWeatherRepository: mountainWeatherRepository,
                         locationModel: locationModel,
                         proximityCalculator: proximityCalculator
                     ) { presentation in
@@ -164,6 +169,7 @@ private struct YamaLensRootView: View {
 
                     MyView(
                         repository: repository,
+                        mountainWeatherRepository: mountainWeatherRepository,
                         showsTerrainHorizon: $showsTerrainHorizon,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
                         cameraProjector: cameraProjector,
@@ -187,6 +193,7 @@ private struct YamaLensRootView: View {
 
                     MountainDetailView(
                         mountain: detailPresentation.mountain,
+                        weatherRepository: mountainWeatherRepository,
                         currentLocationState: locationModel.state,
                         proximityCalculator: proximityCalculator,
                         overlayTopInset: geometry.safeAreaInsets.top

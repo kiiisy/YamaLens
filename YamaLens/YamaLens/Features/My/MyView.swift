@@ -4,6 +4,7 @@ import SwiftUI
 struct MyView: View {
     @Binding private var showsTerrainHorizon: Bool
     private let mountains: [Mountain]
+    private let mountainWeatherRepository: any MountainWeatherRepository
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     private let cameraProjector: MountainCameraProjector
     private let offlinePackageModel: OfflinePackageScreenModel
@@ -12,6 +13,7 @@ struct MyView: View {
 
     init(
         repository: any MountainRepository,
+        mountainWeatherRepository: any MountainWeatherRepository,
         showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
@@ -19,6 +21,7 @@ struct MyView: View {
     ) {
         _showsTerrainHorizon = showsTerrainHorizon
         mountains = repository.fetchMountains()
+        self.mountainWeatherRepository = mountainWeatherRepository
         self.diagnosticLogRepository = diagnosticLogRepository
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
@@ -49,7 +52,12 @@ struct MyView: View {
                 .scrollIndicators(.hidden)
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Mountain.self) { MountainDetailView(mountain: $0) }
+            .navigationDestination(for: Mountain.self) {
+                MountainDetailView(
+                    mountain: $0,
+                    weatherRepository: mountainWeatherRepository
+                )
+            }
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsPlaceholderView(
                     showsTerrainHorizon: $showsTerrainHorizon,
