@@ -45,6 +45,32 @@ struct ActiveOfflinePackageTerrainVisibilityResolverTests {
         #expect(result[mountain.id] == .notOccluded)
     }
 
+    @Test("activeの詳細パックから予測稜線を生成する")
+    func resolvesHorizonFromActivePackageTerrain() async throws {
+        let rootURL = try makeTemporaryDirectory(named: "horizon")
+        defer { removeTemporaryDirectory(rootURL) }
+        let storeRootURL = rootURL.appending(path: "OfflinePackages")
+        let stagingURL = storeRootURL
+            .appending(path: "Staging")
+            .appending(path: "fixture")
+        let fixture = try OfflinePackageFixture.make(at: stagingURL)
+        let store = OfflinePackageStore(
+            rootURL: storeRootURL,
+            validator: OfflinePackageValidator(publicKeys: fixture.publicKeys)
+        )
+        _ = try await store.install(stagedPackageURL: stagingURL)
+        let resolver = ActiveOfflinePackageTerrainVisibilityResolver(store: store)
+
+        let samples = try await resolver.resolveHorizon(
+            from: location,
+            centerBearingDegrees: 0,
+            horizontalFieldOfViewDegrees: 50
+        )
+
+        #expect(!samples.isEmpty)
+        #expect(samples.contains { $0.elevationAngleDegrees != nil })
+    }
+
     private var location: LocationObservation {
         LocationObservation(
             coordinate: GeoCoordinate(latitude: 35.41, longitude: 139.15),

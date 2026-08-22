@@ -172,7 +172,8 @@ struct OfflineView: View {
             Text("詳細パックがなくても、内蔵の基本データで一覧・検索・基本詳細を利用できます。")
                 .font(.subheadline)
                 .foregroundStyle(YamaColor.secondaryText)
-            if distribution == .available {
+            if distribution.canInstall {
+                developmentBundleNotice(distribution)
                 Button {
                     Task { await model.install() }
                 } label: {
@@ -191,7 +192,8 @@ struct OfflineView: View {
 
         case .installed(let package, let distribution):
             installedPackageDetails(package)
-            if distribution == .available {
+            if distribution.canInstall {
+                developmentBundleNotice(distribution)
                 Button {
                     Task { await model.install() }
                 } label: {
@@ -234,7 +236,7 @@ struct OfflineView: View {
                     .foregroundStyle(YamaColor.secondaryText)
                 deleteButton
             }
-            if failure.canRetry, distribution == .available {
+            if failure.canRetry, distribution.canInstall {
                 Button {
                     Task { await model.install() }
                 } label: {
@@ -246,6 +248,18 @@ struct OfflineView: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("offline-retry-button")
             }
+        }
+    }
+
+    @ViewBuilder
+    private func developmentBundleNotice(
+        _ distribution: OfflinePackageDistributionAvailability
+    ) -> some View {
+        if distribution == .developmentBundle {
+            Label("開発用に同梱した署名済みパックを導入します", systemImage: "hammer.fill")
+                .font(.caption)
+                .foregroundStyle(YamaColor.alpineTeal)
+                .accessibilityIdentifier("offline-development-bundle-notice")
         }
     }
 

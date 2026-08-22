@@ -1,12 +1,12 @@
 {
   "allowedBounds": {
     "east": 139.65,
-    "north": 36.0,
+    "north": 36.05,
     "south": 34.6,
-    "west": 138.55
+    "west": 138.5
   },
   "catalogInput": "../Bootstrap/tanzawa-bootstrap-v1.json",
-  "contentVersion": "1.0.0",
+  "contentVersion": "1.0.1",
   "createdAt": "2026-08-22T00:00:00Z",
   "formatVersion": 1,
   "keyID": "yamalens-pack-development-01",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "1.1.0",
+  "contentVersion": "1.1.1",
   "regions": [
     {
       "id": "jp.kanagawa.tanzawa",
@@ -47,10 +47,10 @@
       "canonicalName": "蛭ヶ岳",
       "searchName": "ひるがたけ",
       "aliases": ["ひるがたけ"],
-      "latitude": 35.4886,
-      "longitude": 139.1304,
+      "latitude": 35.4863889,
+      "longitude": 139.1388889,
       "elevationMeters": 1673,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "丹沢山",
@@ -59,10 +59,10 @@
       "canonicalName": "丹沢山",
       "searchName": "たんざわさん",
       "aliases": ["たんざわさん"],
-      "latitude": 35.4742,
-      "longitude": 139.1627,
+      "latitude": 35.4741667,
+      "longitude": 139.1627778,
       "elevationMeters": 1567,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "塔ノ岳",
@@ -71,10 +71,10 @@
       "canonicalName": "塔ノ岳",
       "searchName": "とうのだけ",
       "aliases": ["とうのだけ", "塔ヶ岳"],
-      "latitude": 35.4743,
-      "longitude": 139.1486,
+      "latitude": 35.4541667,
+      "longitude": 139.1633333,
       "elevationMeters": 1491,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "檜洞丸",
@@ -83,10 +83,10 @@
       "canonicalName": "檜洞丸",
       "searchName": "ひのきぼらまる",
       "aliases": ["ひのきぼらまる"],
-      "latitude": 35.4678,
-      "longitude": 139.0815,
+      "latitude": 35.4790567,
+      "longitude": 139.1027937,
       "elevationMeters": 1601,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "鍋割山",
@@ -95,10 +95,10 @@
       "canonicalName": "鍋割山",
       "searchName": "なべわりやま",
       "aliases": ["なべわりやま"],
-      "latitude": 35.4537,
-      "longitude": 139.1272,
+      "latitude": 35.4437799,
+      "longitude": 139.1413847,
       "elevationMeters": 1273,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "大山",
@@ -107,10 +107,10 @@
       "canonicalName": "大山",
       "searchName": "おおやま",
       "aliases": ["おおやま", "阿夫利山"],
-      "latitude": 35.4394,
-      "longitude": 139.2311,
+      "latitude": 35.4408333,
+      "longitude": 139.2313889,
       "elevationMeters": 1252,
-      "updatedAt": "2026-08-21T00:00:00Z"
+      "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
       "id": "富士山",

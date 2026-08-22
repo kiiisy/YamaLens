@@ -18,6 +18,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
@@ -158,7 +159,7 @@ def parse_arguments() -> argparse.Namespace:
 
     index_parser = subparsers.add_parser(
         "index",
-        help="Inventory already downloaded GSI z/x/y.txt elevation tiles.",
+        help="Inventory already downloaded GSI z/x/y PNG or text elevation tiles.",
     )
     index_parser.add_argument(
         "--source",
@@ -263,8 +264,8 @@ def parse_source_argument(raw_value: str) -> tuple[str, Path]:
 
 def parse_xyz_path(root: Path, tile_path: Path) -> tuple[int, int, int]:
     relative = tile_path.relative_to(root)
-    if len(relative.parts) != 3 or relative.suffix != ".txt":
-        raise ValueError(f"tile path must use z/x/y.txt below its source root: {tile_path}")
+    if len(relative.parts) != 3 or relative.suffix.lower() not in {".txt", ".png"}:
+        raise ValueError(f"tile path must use z/x/y.txt or z/x/y.png below its source root: {tile_path}")
     try:
         zoom = int(relative.parts[0])
         x = int(relative.parts[1])
@@ -293,7 +294,8 @@ def create_terrain_index(source_arguments: list[str], output: Path) -> None:
 
     for raw_source in source_arguments:
         dataset, root = parse_source_argument(raw_source)
-        for tile_path in sorted(root.glob("*/*/*.txt")):
+        source_paths = sorted(root.glob("*/*/*.txt")) + sorted(root.glob("*/*/*.png"))
+        for tile_path in source_paths:
             if tile_path.is_symlink():
                 raise ValueError(f"symbolic links are not accepted as elevation input: {tile_path}")
             zoom, x, y = parse_xyz_path(root, tile_path)
@@ -313,7 +315,7 @@ def create_terrain_index(source_arguments: list[str], output: Path) -> None:
             )
 
     if not tiles:
-        raise ValueError("no z/x/y.txt elevation tiles were found")
+        raise ValueError("no z/x/y.png or z/x/y.txt elevation tiles were found")
     if len(tiles) > MAXIMUM_TERRAIN_TILES:
         raise ValueError(f"terrain index exceeds {MAXIMUM_TERRAIN_TILES} unique tiles")
 
@@ -407,7 +409,7 @@ def load_terrain_index(path: Path) -> list[TerrainTileInput]:
     return sorted(tiles, key=lambda tile: (tile.zoom, tile.x, tile.y))
 
 
-def load_elevation_cells(source: TerrainSource) -> list[int | None]:
+def load_text_elevation_cells(source: TerrainSource) -> list[int | None]:
     cells: list[int | None] = []
     with source.path.open("r", encoding="utf-8", newline="") as stream:
         rows = list(csv.reader(stream))
@@ -434,6 +436,133 @@ def load_elevation_cells(source: TerrainSource) -> list[int | None]:
                 raise ValueError(f"elevation is outside Int16 data range in {source.path}")
             cells.append(rounded)
     return cells
+
+
+def paeth_predictor(left: int, above: int, upper_left: int) -> int:
+    prediction = left + above - upper_left
+    left_distance = abs(prediction - left)
+    above_distance = abs(prediction - above)
+    upper_left_distance = abs(prediction - upper_left)
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def load_png_elevation_cells(source: TerrainSource) -> list[int | None]:
+    payload = source.path.read_bytes()
+    if not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError(f"elevation PNG has an invalid signature: {source.path}")
+
+    position = 8
+    header: tuple[int, int, int, int, int, int, int] | None = None
+    compressed = bytearray()
+    saw_end = False
+    while position < len(payload):
+        if position + 12 > len(payload):
+            raise ValueError(f"elevation PNG has a truncated chunk: {source.path}")
+        length = struct.unpack(">I", payload[position : position + 4])[0]
+        chunk_type = payload[position + 4 : position + 8]
+        data_start = position + 8
+        data_end = data_start + length
+        crc_end = data_end + 4
+        if data_end < data_start or crc_end > len(payload):
+            raise ValueError(f"elevation PNG chunk exceeds the file: {source.path}")
+        chunk_data = payload[data_start:data_end]
+        expected_crc = struct.unpack(">I", payload[data_end:crc_end])[0]
+        actual_crc = zlib.crc32(chunk_type)
+        actual_crc = zlib.crc32(chunk_data, actual_crc) & 0xFFFF_FFFF
+        if actual_crc != expected_crc:
+            raise ValueError(f"elevation PNG has a CRC mismatch: {source.path}")
+        if chunk_type == b"IHDR":
+            if header is not None or length != 13:
+                raise ValueError(f"elevation PNG has an invalid IHDR: {source.path}")
+            header = struct.unpack(">IIBBBBB", chunk_data)
+        elif chunk_type == b"IDAT":
+            compressed.extend(chunk_data)
+        elif chunk_type == b"IEND":
+            saw_end = True
+            position = crc_end
+            break
+        position = crc_end
+
+    expected_header = (
+        TERRAIN_COLUMNS,
+        TERRAIN_ROWS,
+        8,  # bit depth
+        2,  # truecolour RGB
+        0,  # compression
+        0,  # filter
+        0,  # no interlace
+    )
+    if header != expected_header or not compressed or not saw_end or position != len(payload):
+        raise ValueError(f"elevation PNG must be a complete 256x256 24-bit RGB image: {source.path}")
+
+    bytes_per_pixel = 3
+    row_bytes = TERRAIN_COLUMNS * bytes_per_pixel
+    expected_bytes = TERRAIN_ROWS * (row_bytes + 1)
+    try:
+        filtered = zlib.decompress(bytes(compressed))
+    except zlib.error as error:
+        raise ValueError(f"elevation PNG decompression failed: {source.path}") from error
+    if len(filtered) != expected_bytes:
+        raise ValueError(f"elevation PNG decoded size is invalid: {source.path}")
+
+    reconstructed = bytearray(TERRAIN_ROWS * row_bytes)
+    source_offset = 0
+    for row in range(TERRAIN_ROWS):
+        filter_type = filtered[source_offset]
+        source_offset += 1
+        if filter_type > 4:
+            raise ValueError(f"elevation PNG uses an unsupported filter: {source.path}")
+        row_start = row * row_bytes
+        for column_byte in range(row_bytes):
+            raw_value = filtered[source_offset]
+            source_offset += 1
+            destination = row_start + column_byte
+            left = reconstructed[destination - bytes_per_pixel] if column_byte >= bytes_per_pixel else 0
+            above = reconstructed[destination - row_bytes] if row > 0 else 0
+            upper_left = (
+                reconstructed[destination - row_bytes - bytes_per_pixel]
+                if row > 0 and column_byte >= bytes_per_pixel
+                else 0
+            )
+            if filter_type == 0:
+                value = raw_value
+            elif filter_type == 1:
+                value = raw_value + left
+            elif filter_type == 2:
+                value = raw_value + above
+            elif filter_type == 3:
+                value = raw_value + ((left + above) // 2)
+            else:
+                value = raw_value + paeth_predictor(left, above, upper_left)
+            reconstructed[destination] = value & 0xFF
+
+    cells: list[int | None] = []
+    for offset in range(0, len(reconstructed), bytes_per_pixel):
+        encoded = (
+            reconstructed[offset] << 16
+            | reconstructed[offset + 1] << 8
+            | reconstructed[offset + 2]
+        )
+        if encoded == 1 << 23:
+            cells.append(None)
+            continue
+        signed_hundredths = encoded if encoded < 1 << 23 else encoded - (1 << 24)
+        elevation = Decimal(signed_hundredths) / Decimal(100)
+        rounded = int(elevation.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        if not -32_767 <= rounded <= 32_767:
+            raise ValueError(f"elevation is outside Int16 data range in {source.path}")
+        cells.append(rounded)
+    return cells
+
+
+def load_elevation_cells(source: TerrainSource) -> list[int | None]:
+    if source.path.suffix.lower() == ".png":
+        return load_png_elevation_cells(source)
+    return load_text_elevation_cells(source)
 
 
 @functools.lru_cache(maxsize=32)
@@ -636,6 +765,22 @@ def validate_tiles_within_allowed_bounds(
             or tile.south < allowed_bounds["south"] - epsilon
             or tile.east > allowed_bounds["east"] + epsilon
             or tile.west < allowed_bounds["west"] - epsilon
+        ):
+            raise ValueError(f"terrain tile is outside allowedBounds: {tile.identifier}")
+
+
+def validate_tile_inputs_within_allowed_bounds(
+    tiles: list[TerrainTileInput],
+    allowed_bounds: dict[str, float],
+) -> None:
+    epsilon = 1e-9
+    for tile in tiles:
+        north, south, east, west = tile_bounds(tile.zoom, tile.x, tile.y)
+        if (
+            north > allowed_bounds["north"] + epsilon
+            or south < allowed_bounds["south"] - epsilon
+            or east > allowed_bounds["east"] + epsilon
+            or west < allowed_bounds["west"] - epsilon
         ):
             raise ValueError(f"terrain tile is outside allowedBounds: {tile.identifier}")
 
@@ -909,9 +1054,10 @@ def build_package(config_path: Path, terrain_index_path: Path, output: Path, pri
         raise ValueError(f"refusing to replace an existing package directory: {output}")
     config = load_config(config_path)
     tile_inputs = load_terrain_index(terrain_index_path)
+    allowed_bounds = validate_bounds(config["allowedBounds"], "allowedBounds")
+    validate_tile_inputs_within_allowed_bounds(tile_inputs, allowed_bounds)
     codec = LZFSECodec()
     encoded_tiles = encode_terrain_tiles(tile_inputs, codec)
-    allowed_bounds = validate_bounds(config["allowedBounds"], "allowedBounds")
     validate_tiles_within_allowed_bounds(encoded_tiles, allowed_bounds)
 
     output.parent.mkdir(parents=True, exist_ok=True)

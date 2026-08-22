@@ -62,26 +62,27 @@ actor SQLiteTerrainElevationRepository: TerrainElevationRepository {
     }
 
     func elevations(at coordinates: [GeoCoordinate]) async throws -> [TerrainElevation?] {
-        var elevations: [TerrainElevation?] = []
-        elevations.reserveCapacity(coordinates.count)
-        for coordinate in coordinates {
+        var elevations = Array<TerrainElevation?>(repeating: nil, count: coordinates.count)
+        var unresolvedIndices = coordinates.indices.filter { Self.isValid(coordinates[$0]) }
+
+        for tile in tiles where !unresolvedIndices.isEmpty {
             try Task.checkCancellation()
-            elevations.append(try elevation(at: coordinate))
+            let matchingIndices = unresolvedIndices.filter { tile.contains(coordinates[$0]) }
+            guard !matchingIndices.isEmpty else { continue }
+
+            let values = try decodedElevations(for: tile)
+            var resolvedIndices: Set<Int> = []
+            for index in matchingIndices {
+                let value = values[tile.elevationIndex(for: coordinates[index])]
+                guard value != Limits.missingElevation else { continue }
+                elevations[index] = TerrainElevation(meters: Double(value))
+                resolvedIndices.insert(index)
+            }
+            if !resolvedIndices.isEmpty {
+                unresolvedIndices.removeAll { resolvedIndices.contains($0) }
+            }
         }
         return elevations
-    }
-
-    private func elevation(at coordinate: GeoCoordinate) throws -> TerrainElevation? {
-        guard Self.isValid(coordinate) else { return nil }
-        let matchingTiles = tiles.filter { $0.contains(coordinate) }
-        for tile in matchingTiles {
-            let values = try decodedElevations(for: tile)
-            let index = tile.elevationIndex(for: coordinate)
-            let value = values[index]
-            guard value != Limits.missingElevation else { continue }
-            return TerrainElevation(meters: Double(value))
-        }
-        return nil
     }
 
     private func decodedElevations(for tile: TileRecord) throws -> [Int16] {

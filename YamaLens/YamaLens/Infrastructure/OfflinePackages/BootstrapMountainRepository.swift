@@ -51,7 +51,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1673,
-                coordinate: GeoCoordinate(latitude: 35.4886, longitude: 139.1304)
+                coordinate: GeoCoordinate(latitude: 35.4863889, longitude: 139.1388889)
             ),
             Mountain(
                 id: "丹沢山",
@@ -60,7 +60,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1567,
-                coordinate: GeoCoordinate(latitude: 35.4742, longitude: 139.1627)
+                coordinate: GeoCoordinate(latitude: 35.4741667, longitude: 139.1627778)
             ),
             Mountain(
                 id: "塔ノ岳",
@@ -69,7 +69,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1491,
-                coordinate: GeoCoordinate(latitude: 35.4743, longitude: 139.1486)
+                coordinate: GeoCoordinate(latitude: 35.4541667, longitude: 139.1633333)
             ),
             Mountain(
                 id: "檜洞丸",
@@ -78,7 +78,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1601,
-                coordinate: GeoCoordinate(latitude: 35.4678, longitude: 139.0815)
+                coordinate: GeoCoordinate(latitude: 35.4790567, longitude: 139.1027937)
             ),
             Mountain(
                 id: "鍋割山",
@@ -87,7 +87,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1273,
-                coordinate: GeoCoordinate(latitude: 35.4537, longitude: 139.1272)
+                coordinate: GeoCoordinate(latitude: 35.4437799, longitude: 139.1413847)
             ),
             Mountain(
                 id: "大山",
@@ -96,7 +96,7 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1252,
-                coordinate: GeoCoordinate(latitude: 35.4394, longitude: 139.2311)
+                coordinate: GeoCoordinate(latitude: 35.4408333, longitude: 139.2313889)
             ),
         ]
     }

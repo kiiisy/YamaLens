@@ -3,6 +3,7 @@ import UIKit
 
 struct CameraView: View {
     @Binding var selectedTab: YamaTab
+    @Binding var showsTerrainHorizon: Bool
     let model: CameraScreenModel
     let locationModel: LocationSessionModel
     let preview: AnyView
@@ -24,6 +25,9 @@ struct CameraView: View {
         .preferredColorScheme(.dark)
         .onChange(of: locationModel.state, initial: true) { _, newState in
             model.updateLocationState(newState)
+        }
+        .onChange(of: showsTerrainHorizon, initial: true) { _, isVisible in
+            model.setTerrainHorizonVisible(isVisible)
         }
         .task(id: model.locationRefreshRequestID) {
             guard model.locationRefreshRequestID > 0 else { return }
@@ -137,6 +141,13 @@ struct CameraView: View {
         quality: CameraEstimateQuality
     ) -> some View {
         ZStack {
+            if model.terrainHorizonState == .available,
+               !model.terrainHorizonSegments.isEmpty {
+                terrainHorizonOverlay(
+                    model.terrainHorizonSegments,
+                    observation: observation
+                )
+            }
             projectedLabels(labels, observation: observation)
             if model.isManualHeadingAdjustmentActive {
                 manualHeadingDragLayer(observation: observation)
@@ -167,6 +178,7 @@ struct CameraView: View {
                 if model.isManualHeadingAdjustmentActive {
                     manualHeadingAdjustmentPanel
                 } else {
+                    terrainHorizonNotice
                     candidateTray(candidates, canAdjustHeading: quality != .unavailable)
                 }
             }
@@ -412,6 +424,51 @@ struct CameraView: View {
         }
     }
 
+    private func terrainHorizonOverlay(
+        _ segments: [[ViewportPoint]],
+        observation: CameraPoseObservation
+    ) -> some View {
+        GeometryReader { proxy in
+            let sourceSize = observation.projectionGeometry.viewportSizePoints
+            ZStack {
+                ForEach(Array(segments.enumerated()), id: \.offset) { indexedSegment in
+                    let segment = indexedSegment.element
+                    let ridgePath = Path { path in
+                        guard let first = segment.first else { return }
+                        path.move(to: scaledPoint(first, from: sourceSize, to: proxy.size))
+                        for point in segment.dropFirst() {
+                            path.addLine(
+                                to: scaledPoint(point, from: sourceSize, to: proxy.size)
+                            )
+                        }
+                    }
+                    ridgePath.stroke(
+                        Color.black.opacity(0.72),
+                        style: StrokeStyle(
+                            lineWidth: 4,
+                            lineCap: .round,
+                            lineJoin: .round,
+                            dash: [7, 5]
+                        )
+                    )
+                    ridgePath.stroke(
+                        YamaColor.alpineTeal,
+                        style: StrokeStyle(
+                            lineWidth: 2,
+                            lineCap: .round,
+                            lineJoin: .round,
+                            dash: [7, 5]
+                        )
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("DEMから計算した予測稜線を表示中")
+        .accessibilityIdentifier("camera-terrain-horizon-overlay")
+    }
+
     private var cameraLabelSize: CGSize {
         if dynamicTypeSize.isAccessibilitySize {
             return CGSize(width: 190, height: 78)
@@ -463,6 +520,16 @@ struct CameraView: View {
                     .font(.headline)
                 Spacer()
                 Button {
+                    showsTerrainHorizon.toggle()
+                } label: {
+                    Image(systemName: showsTerrainHorizon ? "waveform.path" : "waveform.path.badge.minus")
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel(showsTerrainHorizon ? "予測稜線を非表示" : "予測稜線を表示")
+                .accessibilityValue(showsTerrainHorizon ? "表示中" : "非表示")
+                .accessibilityIdentifier("camera-terrain-horizon-toggle")
+                Button {
                     adjustmentStartDegrees = nil
                     model.beginManualHeadingAdjustment()
                 } label: {
@@ -512,6 +579,31 @@ struct CameraView: View {
         }
         .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var terrainHorizonNotice: some View {
+        switch model.terrainHorizonState {
+        case .loading:
+            Label("予測稜線を計算しています", systemImage: "waveform.path")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .frame(minHeight: 40)
+                .background(.regularMaterial, in: Capsule())
+                .accessibilityIdentifier("camera-terrain-horizon-loading")
+        case .unavailable where showsTerrainHorizon:
+            Label(
+                "詳細地形を確認できないため、予測稜線は表示できません",
+                systemImage: "exclamationmark.triangle"
+            )
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 12)
+            .frame(minHeight: 40)
+            .background(.regularMaterial, in: Capsule())
+            .accessibilityIdentifier("camera-terrain-horizon-unavailable")
+        case .hidden, .available, .unavailable:
+            EmptyView()
+        }
     }
 
     private func manualHeadingDragLayer(

@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct MyView: View {
+    @Binding private var showsTerrainHorizon: Bool
     private let mountains: [Mountain]
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     private let cameraProjector: MountainCameraProjector
@@ -11,10 +12,12 @@ struct MyView: View {
 
     init(
         repository: any MountainRepository,
+        showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
         offlinePackageModel: OfflinePackageScreenModel
     ) {
+        _showsTerrainHorizon = showsTerrainHorizon
         mountains = repository.fetchMountains()
         self.diagnosticLogRepository = diagnosticLogRepository
         self.cameraProjector = cameraProjector
@@ -49,6 +52,7 @@ struct MyView: View {
             .navigationDestination(for: Mountain.self) { MountainDetailView(mountain: $0) }
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsPlaceholderView(
+                    showsTerrainHorizon: $showsTerrainHorizon,
                     diagnosticLogRepository: diagnosticLogRepository,
                     mountains: mountains,
                     cameraProjector: cameraProjector,

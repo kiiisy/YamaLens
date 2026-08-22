@@ -12,6 +12,7 @@ struct AppContainer {
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let cameraDiagnosticDevice: CameraDiagnosticDevice?
     let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
+    let terrainHorizonResolver: (any TerrainHorizonResolving)?
     let offlinePackageManager: any OfflinePackageManaging
 
     init(
@@ -27,21 +28,26 @@ struct AppContainer {
         if let offlinePackageRootURL = Self.offlinePackageRootURL() {
             let offlinePackageStore = OfflinePackageStore(
                 rootURL: offlinePackageRootURL,
-                validator: OfflinePackageValidator(publicKeys: [:])
+                validator: OfflinePackageValidator(
+                    publicKeys: OfflinePackageVerificationKeys.all
+                )
             )
             let offlinePackageDownloader = BackgroundOfflinePackageFileDownloader(
                 rootURL: offlinePackageRootURL,
                 backgroundEventsDidFinish: backgroundEventsDidFinish
             )
-            terrainVisibilityResolver = ActiveOfflinePackageTerrainVisibilityResolver(
+            let terrainResolver = ActiveOfflinePackageTerrainVisibilityResolver(
                 store: offlinePackageStore
             )
+            terrainVisibilityResolver = terrainResolver
+            terrainHorizonResolver = terrainResolver
             offlinePackageManager = Self.makeOfflinePackageManager(
                 store: offlinePackageStore,
                 downloader: offlinePackageDownloader
             )
         } else {
             terrainVisibilityResolver = nil
+            terrainHorizonResolver = nil
             offlinePackageManager = UnavailableOfflinePackageManager()
         }
         let cameraDependencies = Self.makeCameraDependencies()
@@ -77,6 +83,27 @@ struct AppContainer {
         if ProcessInfo.processInfo.arguments.contains("-ui-test-offline-installed") {
             return FixedOfflinePackageManager()
         }
+        if let developmentPackageDirectoryURL = developmentPackageDirectoryURL(),
+           let source = try? OfflinePackageSource.developmentBundle(
+               packageID: "jp.kanagawa.tanzawa",
+               directoryURL: developmentPackageDirectoryURL
+           ) {
+            let validator = OfflinePackageValidator(
+                publicKeys: OfflinePackageVerificationKeys.all
+            )
+            return OfflinePackageManagementService(
+                store: store,
+                installer: OfflinePackageInstaller(
+                    store: store,
+                    validator: validator,
+                    fileDownloader: DevelopmentBundleOfflinePackageFileDownloader(
+                        sourceDirectoryURL: developmentPackageDirectoryURL
+                    )
+                ),
+                source: source,
+                availableDistribution: .developmentBundle
+            )
+        }
 #endif
         // 配布URLと公開鍵が確定するまでは、ローカル状態の確認と削除だけを有効にする。
         return OfflinePackageManagementService(
@@ -86,6 +113,21 @@ struct AppContainer {
             }
         )
     }
+
+#if DEBUG
+    private static func developmentPackageDirectoryURL() -> URL? {
+        let subdirectory = "DevelopmentOfflinePackages/tanzawa-detailed-v1"
+        if let manifestURL = Bundle.main.url(
+            forResource: "manifest",
+            withExtension: "json",
+            subdirectory: subdirectory
+        ) {
+            return manifestURL.deletingLastPathComponent()
+        }
+        return Bundle.main.url(forResource: "manifest", withExtension: "json")?
+            .deletingLastPathComponent()
+    }
+#endif
 
     private static func makeLocationObservationProvider() -> any LocationObservationProvider {
 #if DEBUG
@@ -120,12 +162,12 @@ struct AppContainer {
             let provider = FixedCameraObservationProvider(
                 result: .success(()),
                 observation: CameraPoseObservation(
-                    trueBearingDegrees: 34,
+                    trueBearingDegrees: 137,
                     pitchDegrees: 2,
                     headingAccuracyDegrees: 5,
                     observedAt: .now,
                     trackingQuality: .normal,
-                    projectionGeometry: testProjectionGeometry(facingDegrees: 34)
+                    projectionGeometry: testProjectionGeometry(facingDegrees: 137)
                 )
             )
             return (provider, AnyView(Color(red: 0.14, green: 0.24, blue: 0.22)))

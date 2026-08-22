@@ -23,6 +23,13 @@ enum CameraEstimateQuality: Equatable {
     case unavailable
 }
 
+enum TerrainHorizonDisplayState: Equatable {
+    case hidden
+    case loading
+    case available
+    case unavailable
+}
+
 @MainActor
 @Observable
 final class CameraScreenModel {
@@ -30,6 +37,8 @@ final class CameraScreenModel {
     private let mountains: [Mountain]
     private let projector: MountainCameraProjector
     private let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
+    private let terrainHorizonResolver: (any TerrainHorizonResolving)?
+    private let terrainHorizonProjector: TerrainHorizonProjector
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
     let diagnosticRecorder: CameraDiagnosticRecorder?
@@ -43,11 +52,18 @@ final class CameraScreenModel {
     private var terrainLocationObservedAt: Date?
     private var terrainTask: Task<Void, Never>?
     private var terrainRequestGeneration = 0
+    private var terrainHorizonSamples: [TerrainHorizonSample] = []
+    private var terrainHorizonCenterBearingDegrees: Double?
+    private var terrainHorizonTask: Task<Void, Never>?
+    private var terrainHorizonRequestGeneration = 0
 
     private(set) var state: CameraScreenState = .idle
     private(set) var locationRefreshRequestID = 0
     private(set) var manualHeadingCorrectionDegrees: Double = 0
     private(set) var isManualHeadingAdjustmentActive = false
+    private(set) var isTerrainHorizonVisible = false
+    private(set) var terrainHorizonState: TerrainHorizonDisplayState = .hidden
+    private(set) var terrainHorizonSegments: [[ViewportPoint]] = []
 
     init(
         provider: any CameraObservationProvider,
@@ -55,6 +71,8 @@ final class CameraScreenModel {
         projector: MountainCameraProjector,
         tuning: CandidateTuning = .default,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil,
+        terrainHorizonResolver: (any TerrainHorizonResolving)? = nil,
+        terrainHorizonProjector: TerrainHorizonProjector = TerrainHorizonProjector(),
         diagnosticRecorder: CameraDiagnosticRecorder? = nil,
         now: @escaping @MainActor () -> Date = { .now }
     ) {
@@ -63,6 +81,8 @@ final class CameraScreenModel {
         self.projector = projector
         self.tuning = tuning
         self.terrainVisibilityResolver = terrainVisibilityResolver
+        self.terrainHorizonResolver = terrainHorizonResolver
+        self.terrainHorizonProjector = terrainHorizonProjector
         self.diagnosticRecorder = diagnosticRecorder
         self.now = now
     }
@@ -139,6 +159,17 @@ final class CameraScreenModel {
         setManualHeadingCorrection(degrees: 0)
     }
 
+    func setTerrainHorizonVisible(_ isVisible: Bool) {
+        guard isTerrainHorizonVisible != isVisible else { return }
+        isTerrainHorizonVisible = isVisible
+        if isVisible {
+            terrainHorizonState = .loading
+            reprojectLastObservation(preservingRetainedCandidates: true)
+        } else {
+            resetTerrainHorizonEvaluation()
+        }
+    }
+
     func receive(_ observation: CameraPoseObservation) {
         receive(observation, evaluatedAt: now())
     }
@@ -174,6 +205,7 @@ final class CameraScreenModel {
             observation.trackingQuality != .unavailable
         else {
             retainedSheetMountainIDs = []
+            terrainHorizonSegments = []
             setActiveState(
                 observation,
                 labels: [],
@@ -208,6 +240,11 @@ final class CameraScreenModel {
         scheduleTerrainEvaluationIfNeeded(
             location: location,
             projection: projection
+        )
+        updateTerrainHorizonProjection(camera: observation)
+        scheduleTerrainHorizonEvaluationIfNeeded(
+            location: location,
+            camera: observation
         )
     }
 
@@ -333,12 +370,111 @@ final class CameraScreenModel {
         reprojectLastObservation(preservingRetainedCandidates: true)
     }
 
+    private func scheduleTerrainHorizonEvaluationIfNeeded(
+        location: LocationObservation,
+        camera: CameraPoseObservation
+    ) {
+        guard
+            isTerrainHorizonVisible,
+            let terrainHorizonResolver,
+            terrainHorizonTask == nil
+        else {
+            return
+        }
+        let centerBearingDegrees = normalizedBearing(camera.trueBearingDegrees)
+        if let requestedCenter = terrainHorizonCenterBearingDegrees,
+           angularDifferenceDegrees(requestedCenter, centerBearingDegrees)
+            <= max(camera.projectionGeometry.horizontalFieldOfViewDegrees / 4, 10) {
+            return
+        }
+
+        terrainHorizonRequestGeneration += 1
+        let requestGeneration = terrainHorizonRequestGeneration
+        let locationObservedAt = location.observedAt
+        terrainHorizonCenterBearingDegrees = centerBearingDegrees
+        terrainHorizonState = .loading
+        terrainHorizonTask = Task { [weak self, terrainHorizonResolver] in
+            let samples: [TerrainHorizonSample]
+            do {
+                samples = try await terrainHorizonResolver.resolveHorizon(
+                    from: location,
+                    centerBearingDegrees: centerBearingDegrees,
+                    horizontalFieldOfViewDegrees: camera.projectionGeometry
+                        .horizontalFieldOfViewDegrees
+                )
+            } catch {
+                samples = []
+            }
+            guard !Task.isCancelled else { return }
+            self?.applyTerrainHorizon(
+                samples,
+                locationObservedAt: locationObservedAt,
+                requestGeneration: requestGeneration
+            )
+        }
+    }
+
+    private func applyTerrainHorizon(
+        _ samples: [TerrainHorizonSample],
+        locationObservedAt: Date,
+        requestGeneration: Int
+    ) {
+        guard
+            isTerrainHorizonVisible,
+            terrainLocationObservedAt == locationObservedAt,
+            terrainHorizonRequestGeneration == requestGeneration
+        else {
+            return
+        }
+        terrainHorizonTask = nil
+        terrainHorizonSamples = samples
+        terrainHorizonState = samples.contains { $0.elevationAngleDegrees != nil }
+            ? .available
+            : .unavailable
+        if let lastObservation {
+            updateTerrainHorizonProjection(camera: lastObservation)
+        }
+    }
+
+    private func updateTerrainHorizonProjection(camera: CameraPoseObservation) {
+        guard isTerrainHorizonVisible, !terrainHorizonSamples.isEmpty else {
+            terrainHorizonSegments = []
+            return
+        }
+        terrainHorizonSegments = terrainHorizonProjector.project(
+            terrainHorizonSamples,
+            camera: camera,
+            manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees
+        )
+    }
+
     private func resetTerrainEvaluation() {
         terrainRequestGeneration += 1
         terrainTask?.cancel()
         terrainTask = nil
         terrainVisibilityByMountainID = [:]
         terrainLocationObservedAt = nil
+        resetTerrainHorizonEvaluation()
+    }
+
+    private func resetTerrainHorizonEvaluation() {
+        terrainHorizonRequestGeneration += 1
+        terrainHorizonTask?.cancel()
+        terrainHorizonTask = nil
+        terrainHorizonSamples = []
+        terrainHorizonCenterBearingDegrees = nil
+        terrainHorizonSegments = []
+        terrainHorizonState = isTerrainHorizonVisible ? .unavailable : .hidden
+    }
+
+    private func normalizedBearing(_ degrees: Double) -> Double {
+        let remainder = degrees.truncatingRemainder(dividingBy: 360)
+        return remainder >= 0 ? remainder : remainder + 360
+    }
+
+    private func angularDifferenceDegrees(_ lhs: Double, _ rhs: Double) -> Double {
+        let difference = abs(normalizedBearing(lhs) - normalizedBearing(rhs))
+        return min(difference, 360 - difference)
     }
 
     private func uniqueMountains(_ mountains: [Mountain]) -> [Mountain] {

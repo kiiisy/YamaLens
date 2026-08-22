@@ -9,7 +9,12 @@ nonisolated struct OfflinePackageSummary: Equatable, Sendable {
 
 nonisolated enum OfflinePackageDistributionAvailability: Equatable, Sendable {
     case available
+    case developmentBundle
     case unavailable
+
+    var canInstall: Bool {
+        self != .unavailable
+    }
 }
 
 nonisolated struct OfflinePackageManagementSnapshot: Equatable, Sendable {

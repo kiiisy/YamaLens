@@ -215,14 +215,44 @@ struct CameraScreenModelTests {
         #expect(quality == .unavailable)
     }
 
+    @Test("DEM予測稜線を非同期に生成し表示切替で破棄する")
+    func displaysAndHidesTerrainHorizon() async {
+        let resolver = FixedTerrainHorizonResolver(
+            samples: [-10.0, 0, 10].map {
+                TerrainHorizonSample(bearingDegrees: $0, elevationAngleDegrees: 0)
+            }
+        )
+        let model = makeModel(terrainHorizonResolver: resolver)
+        model.setTerrainHorizonVisible(true)
+        model.updateLocationState(.available(location(age: 0), quality: .good))
+        model.receive(pose(age: 0, headingAccuracy: 5))
+
+        for _ in 0..<100 {
+            if model.terrainHorizonState == .available,
+               !model.terrainHorizonSegments.isEmpty {
+                break
+            }
+            await Task.yield()
+        }
+        #expect(model.terrainHorizonState == .available)
+        #expect(model.terrainHorizonSegments.first?.count == 3)
+
+        model.setTerrainHorizonVisible(false)
+
+        #expect(model.terrainHorizonState == .hidden)
+        #expect(model.terrainHorizonSegments.isEmpty)
+    }
+
     private func makeModel(
-        terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil
+        terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil,
+        terrainHorizonResolver: (any TerrainHorizonResolving)? = nil
     ) -> CameraScreenModel {
         CameraScreenModel(
             provider: InertCameraObservationProvider(),
             mountains: [testMountain],
             projector: MountainCameraProjector(),
             terrainVisibilityResolver: terrainVisibilityResolver,
+            terrainHorizonResolver: terrainHorizonResolver,
             now: { fixedNow }
         )
     }
@@ -303,6 +333,18 @@ private nonisolated struct FixedTerrainVisibilityResolver: TerrainVisibilityReso
         to mountains: [Mountain]
     ) async throws -> [String: TerrainVisibility] {
         result
+    }
+}
+
+private nonisolated struct FixedTerrainHorizonResolver: TerrainHorizonResolving {
+    let samples: [TerrainHorizonSample]
+
+    func resolveHorizon(
+        from location: LocationObservation,
+        centerBearingDegrees: Double,
+        horizontalFieldOfViewDegrees: Double
+    ) async throws -> [TerrainHorizonSample] {
+        samples
     }
 }
 

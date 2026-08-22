@@ -23,6 +23,7 @@ xcuserdata/
 *.tmp
 *.log
 Data/Generated/
+YamaLens/YamaLens/Resources/DevelopmentOfflinePackages/
 __pycache__/
 *.py[cod]
 

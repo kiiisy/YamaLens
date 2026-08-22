@@ -11,6 +11,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 import build_detailed_pack
@@ -115,6 +116,36 @@ class DetailedPackBuilderTests(unittest.TestCase):
                 self.generate_private_key(),
             )
 
+    def test_rejects_outside_bounds_before_decoding_source(self) -> None:
+        source_root = self.root / "DEM5A"
+        tile = source_root / "15" / "29000" / "12900.txt"
+        tile.parent.mkdir(parents=True, exist_ok=True)
+        tile.write_text("not an elevation tile\n", encoding="utf-8")
+        terrain_index = self.root / "terrain-index.json"
+        build_detailed_pack.create_terrain_index([f"DEM5A={source_root}"], terrain_index)
+        config = self.write_config(15, 29000, 12900, exclude_tile=True)
+
+        with self.assertRaisesRegex(ValueError, "outside allowedBounds"):
+            build_detailed_pack.build_package(
+                config,
+                terrain_index,
+                self.root / "package",
+                self.generate_private_key(),
+            )
+
+    def test_reads_gsi_png_elevation_and_missing_value(self) -> None:
+        source_root = self.root / "DEM5C"
+        tile = source_root / "15" / "29000" / "12900.png"
+        self.write_png_tile(tile, default_hundredths=12_340, first=None)
+        terrain_index = self.root / "terrain-index.json"
+        build_detailed_pack.create_terrain_index([f"DEM5C={source_root}"], terrain_index)
+        inputs = build_detailed_pack.load_terrain_index(terrain_index)
+
+        cells = build_detailed_pack.load_elevation_cells(inputs[0].sources[0])
+
+        self.assertIsNone(cells[0])
+        self.assertEqual(cells[1], 123)
+
     def write_tile(self, path: Path, default: str, first: str | None = None) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         rows = []
@@ -124,6 +155,32 @@ class DetailedPackBuilderTests(unittest.TestCase):
                 cells[0] = first
             rows.append(",".join(cells))
         path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    def write_png_tile(
+        self,
+        path: Path,
+        default_hundredths: int,
+        first: int | None,
+    ) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        rows = bytearray()
+        for row in range(256):
+            rows.append(0)
+            for column in range(256):
+                value = first if row == 0 and column == 0 else default_hundredths
+                encoded = 1 << 23 if value is None else value & 0xFF_FFFF
+                rows.extend(((encoded >> 16) & 0xFF, (encoded >> 8) & 0xFF, encoded & 0xFF))
+
+        def chunk(kind: bytes, payload: bytes) -> bytes:
+            checksum = zlib.crc32(kind)
+            checksum = zlib.crc32(payload, checksum) & 0xFFFF_FFFF
+            return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", checksum)
+
+        png = bytearray(b"\x89PNG\r\n\x1a\n")
+        png.extend(chunk(b"IHDR", struct.pack(">IIBBBBB", 256, 256, 8, 2, 0, 0, 0)))
+        png.extend(chunk(b"IDAT", zlib.compress(bytes(rows))))
+        png.extend(chunk(b"IEND", b""))
+        path.write_bytes(png)
 
     def write_config(
         self,

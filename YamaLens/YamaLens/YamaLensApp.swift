@@ -23,6 +23,7 @@ struct YamaLensApp: App {
                 cameraDiagnosticLogRepository: appDelegate.appContainer.cameraDiagnosticLogRepository,
                 cameraDiagnosticDevice: appDelegate.appContainer.cameraDiagnosticDevice,
                 terrainVisibilityResolver: appDelegate.appContainer.terrainVisibilityResolver,
+                terrainHorizonResolver: appDelegate.appContainer.terrainHorizonResolver,
                 offlinePackageManager: appDelegate.appContainer.offlinePackageManager
             )
                 .modelContainer(for: UserMountainRecord.self)
@@ -70,6 +71,7 @@ private struct YamaLensRootView: View {
     @State private var locationModel: LocationSessionModel
     @State private var cameraModel: CameraScreenModel
     @State private var offlinePackageModel: OfflinePackageScreenModel
+    @AppStorage("camera.showsTerrainHorizon") private var showsTerrainHorizon = true
 
     init(
         repository: any MountainRepository,
@@ -80,6 +82,7 @@ private struct YamaLensRootView: View {
         cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?,
         cameraDiagnosticDevice: CameraDiagnosticDevice?,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)?,
+        terrainHorizonResolver: (any TerrainHorizonResolving)?,
         offlinePackageManager: any OfflinePackageManaging
     ) {
         self.repository = repository
@@ -109,6 +112,7 @@ private struct YamaLensRootView: View {
                 mountains: repository.fetchMountains(),
                 projector: projector,
                 terrainVisibilityResolver: terrainVisibilityResolver,
+                terrainHorizonResolver: terrainHorizonResolver,
                 diagnosticRecorder: diagnosticRecorder
             )
         )
@@ -138,6 +142,7 @@ private struct YamaLensRootView: View {
 
                     CameraView(
                         selectedTab: $selectedTab,
+                        showsTerrainHorizon: $showsTerrainHorizon,
                         model: cameraModel,
                         locationModel: locationModel,
                         preview: cameraPreview
@@ -159,6 +164,7 @@ private struct YamaLensRootView: View {
 
                     MyView(
                         repository: repository,
+                        showsTerrainHorizon: $showsTerrainHorizon,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
                         cameraProjector: cameraProjector,
                         offlinePackageModel: offlinePackageModel

@@ -5,6 +5,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
     private let store: OfflinePackageStore
     private let installer: OfflinePackageInstaller?
     private let source: OfflinePackageSource?
+    private let availableDistribution: OfflinePackageDistributionAvailability
     private let now: @Sendable () -> Date
     private let activeStagingIdentifiers: @Sendable () async -> Set<String>
 
@@ -13,6 +14,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
         store: OfflinePackageStore,
         installer: OfflinePackageInstaller? = nil,
         source: OfflinePackageSource? = nil,
+        availableDistribution: OfflinePackageDistributionAvailability = .available,
         now: @escaping @Sendable () -> Date = { .now },
         activeStagingIdentifiers: @escaping @Sendable () async -> Set<String> = { [] }
     ) {
@@ -20,6 +22,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
         self.store = store
         self.installer = installer
         self.source = source
+        self.availableDistribution = availableDistribution
         self.now = now
         self.activeStagingIdentifiers = activeStagingIdentifiers
     }
@@ -72,7 +75,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
     }
 
     private var distributionAvailability: OfflinePackageDistributionAvailability {
-        installer != nil && source != nil ? .available : .unavailable
+        installer != nil && source != nil ? availableDistribution : .unavailable
     }
 
     private nonisolated static func summary(

@@ -102,6 +102,43 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testDevelopmentBundleInstallsSignedDetailedPackage() throws {
+        let app = makeApplication()
+        app.launch()
+        app.buttons["マイ"].tap()
+        let offlineLink = app.buttons["offline-pack-link"]
+        XCTAssertTrue(offlineLink.waitForExistence(timeout: 2))
+        offlineLink.tap()
+
+        let developmentNotice = app.descendants(matching: .any)[
+            "offline-development-bundle-notice"
+        ]
+        guard developmentNotice.waitForExistence(timeout: 3) else {
+            throw XCTSkip("開発用パックがDebugアプリへ同梱されていません")
+        }
+
+        if app.staticTexts["保存済み"].exists {
+            deleteDetailedPackage(in: app)
+            XCTAssertTrue(app.staticTexts["未導入"].waitForExistence(timeout: 5))
+        }
+
+        let installButton = app.buttons["offline-install-button"]
+        XCTAssertTrue(installButton.waitForExistence(timeout: 3))
+        if !installButton.isHittable {
+            app.swipeUp()
+        }
+        installButton.tap()
+
+        XCTAssertTrue(app.staticTexts["保存済み"].waitForExistence(timeout: 60))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["offline-installed-package-details"].exists
+        )
+
+        deleteDetailedPackage(in: app)
+        XCTAssertTrue(app.staticTexts["未導入"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testSearchFiltersMountains() throws {
         let app = makeApplication()
         app.launch()
@@ -117,6 +154,19 @@ final class YamaLensUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["search-result-塔ノ岳"].waitForExistence(timeout: 2))
         XCTAssertFalse(app.buttons["search-result-蛭ヶ岳"].exists)
+    }
+
+    @MainActor
+    private func deleteDetailedPackage(in app: XCUIApplication) {
+        let deleteButton = app.buttons["offline-delete-button"]
+        if !deleteButton.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(deleteButton.isHittable)
+        deleteButton.tap()
+        let confirmation = app.alerts.buttons["削除"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 2))
+        confirmation.tap()
     }
 
     @MainActor
@@ -157,6 +207,8 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(nearbyList.waitForExistence(timeout: 2))
         let nearbyMountain = app.buttons["nearby-mountain-塔ノ岳"]
         XCTAssertTrue(nearbyMountain.waitForExistence(timeout: 2))
+        nearbyList.swipeLeft()
+        XCTAssertTrue(nearbyMountain.isHittable)
         nearbyMountain.tap()
 
         XCTAssertTrue(
@@ -204,6 +256,54 @@ final class YamaLensUITests: XCTestCase {
         screenshot.name = "カメラ方位候補"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+    }
+
+    @MainActor
+    func testCameraGeneratesTerrainHorizonFromSignedDetailedPackage() throws {
+        let app = makeApplication(
+            launchArguments: ["-ui-test-location-granted", "-ui-test-camera-active"]
+        )
+        app.launch()
+        app.buttons["マイ"].tap()
+        let offlineLink = app.buttons["offline-pack-link"]
+        XCTAssertTrue(offlineLink.waitForExistence(timeout: 2))
+        offlineLink.tap()
+
+        let developmentNotice = app.descendants(matching: .any)[
+            "offline-development-bundle-notice"
+        ]
+        guard developmentNotice.waitForExistence(timeout: 3) else {
+            throw XCTSkip("開発用パックがDebugアプリへ同梱されていません")
+        }
+        if !app.staticTexts["保存済み"].exists {
+            let installButton = app.buttons["offline-install-button"]
+            XCTAssertTrue(installButton.waitForExistence(timeout: 3))
+            if !installButton.isHittable {
+                app.swipeUp()
+            }
+            installButton.tap()
+            XCTAssertTrue(app.staticTexts["保存済み"].waitForExistence(timeout: 60))
+        }
+
+        app.buttons["カメラ"].tap()
+        let startButton = app.buttons["camera-start-button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 3))
+        startButton.tap()
+
+        let horizon = app.descendants(matching: .any)["camera-terrain-horizon-overlay"]
+        XCTAssertTrue(horizon.waitForExistence(timeout: 30))
+        XCTAssertFalse(
+            app.descendants(matching: .any)["camera-terrain-horizon-unavailable"].exists
+        )
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "正式DEM予測稜線"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        app.buttons["マイ"].tap()
+        deleteDetailedPackage(in: app)
+        XCTAssertTrue(app.staticTexts["未導入"].waitForExistence(timeout: 5))
     }
 
     @MainActor

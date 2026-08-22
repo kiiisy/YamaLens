@@ -30,6 +30,10 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
     let terrainOcclusionScoreMultiplier: Double
     let preferredTerrainProfileSpacingMeters: Double
     let maximumTerrainProfileSampleCount: Int
+    let terrainHorizonMaximumDistanceMeters: Double
+    let preferredTerrainHorizonSpacingMeters: Double
+    let maximumTerrainHorizonSampleCountPerBearing: Int
+    let terrainHorizonBearingStepDegrees: Double
 
     static let `default` = CandidateTuning(
         maximumSearchDistanceMeters: 150_000,
@@ -60,7 +64,11 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
         terrainOcclusionClearanceMeters: 30,
         terrainOcclusionScoreMultiplier: 0.75,
         preferredTerrainProfileSpacingMeters: 50,
-        maximumTerrainProfileSampleCount: 512
+        maximumTerrainProfileSampleCount: 512,
+        terrainHorizonMaximumDistanceMeters: 25_000,
+        preferredTerrainHorizonSpacingMeters: 100,
+        maximumTerrainHorizonSampleCountPerBearing: 256,
+        terrainHorizonBearingStepDegrees: 2
     )
 }
 

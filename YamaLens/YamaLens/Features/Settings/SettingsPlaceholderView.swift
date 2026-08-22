@@ -2,17 +2,20 @@ import SwiftUI
 
 struct SettingsPlaceholderView: View {
     @Environment(\.dismiss) private var dismiss
+    @Binding var showsTerrainHorizon: Bool
     let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let mountains: [Mountain]
     let cameraProjector: MountainCameraProjector
     let offlinePackageModel: OfflinePackageScreenModel
 
     init(
+        showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         mountains: [Mountain] = [],
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
         offlinePackageModel: OfflinePackageScreenModel
     ) {
+        _showsTerrainHorizon = showsTerrainHorizon
         self.diagnosticLogRepository = diagnosticLogRepository
         self.mountains = mountains
         self.cameraProjector = cameraProjector
@@ -23,7 +26,7 @@ struct SettingsPlaceholderView: View {
         NavigationStack {
             List {
                 Section("カメラ表示") {
-                    Toggle(isOn: .constant(true)) {
+                    Toggle(isOn: $showsTerrainHorizon) {
                         SettingsLabel(title: "稜線を表示", systemImage: "waveform.path")
                     }
                     Toggle(isOn: .constant(true)) {

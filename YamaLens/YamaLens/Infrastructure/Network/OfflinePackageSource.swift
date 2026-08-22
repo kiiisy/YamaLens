@@ -9,6 +9,7 @@ nonisolated enum OfflinePackageSourceError: Error, Equatable, Sendable {
 nonisolated struct OfflinePackageSource: Equatable, Sendable {
     let packageID: String
     let baseURL: URL
+    private let allowsDevelopmentBundleURL: Bool
 
     init(packageID: String, baseURL: URL) throws {
         guard Self.isSafeIdentifier(packageID) else {
@@ -22,7 +23,29 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
         }
         self.packageID = packageID
         self.baseURL = baseURL
+        allowsDevelopmentBundleURL = false
     }
+
+#if DEBUG
+    static func developmentBundle(
+        packageID: String,
+        directoryURL: URL
+    ) throws -> Self {
+        guard Self.isSafeIdentifier(packageID) else {
+            throw OfflinePackageSourceError.invalidPackageID
+        }
+        let standardizedURL = directoryURL.standardizedFileURL
+        guard standardizedURL.isFileURL,
+              standardizedURL.absoluteString.utf8.count <= 2_048 else {
+            throw OfflinePackageSourceError.invalidBaseURL
+        }
+        return Self(
+            packageID: packageID,
+            baseURL: standardizedURL,
+            allowsDevelopmentBundleURL: true
+        )
+    }
+#endif
 
     func urlForFile(named fileName: String) throws -> URL {
         let allowedNames = [
@@ -35,13 +58,26 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
             throw OfflinePackageSourceError.invalidBaseURL
         }
         let url = baseURL.appending(path: fileName, directoryHint: .notDirectory)
-        guard Self.isAllowed(url: url) else {
+        let isAllowedURL = allowsDevelopmentBundleURL
+            ? Self.isAllowedDevelopmentBundleURL(url, below: baseURL)
+            : Self.isAllowed(url: url)
+        guard isAllowedURL else {
             throw OfflinePackageSourceError.invalidBaseURL
         }
         guard url.absoluteString.utf8.count <= 2_048 else {
             throw OfflinePackageSourceError.URLTooLong
         }
         return url
+    }
+
+    private init(
+        packageID: String,
+        baseURL: URL,
+        allowsDevelopmentBundleURL: Bool
+    ) {
+        self.packageID = packageID
+        self.baseURL = baseURL
+        self.allowsDevelopmentBundleURL = allowsDevelopmentBundleURL
     }
 
     private static func isAllowed(url: URL) -> Bool {
@@ -54,6 +90,15 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
             && components.password == nil
             && components.query == nil
             && components.fragment == nil
+    }
+
+    private static func isAllowedDevelopmentBundleURL(
+        _ url: URL,
+        below directoryURL: URL
+    ) -> Bool {
+        url.isFileURL
+            && url.standardizedFileURL.deletingLastPathComponent()
+                == directoryURL.standardizedFileURL
     }
 
     private static func isSafeIdentifier(_ value: String) -> Bool {

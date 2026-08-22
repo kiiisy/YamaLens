@@ -1,34 +1,49 @@
 id: gsi-dem-tanzawa-v1
 title: YamaLens 丹沢詳細地形データ
-status: provisional_inputs_not_acquired
+status: development_inputs_acquired_distribution_procedure_pending
 provider: 国土地理院
 dataset: 標高タイル（基盤地図情報数値標高モデル）
-download_url: https://maps.gsi.go.jp/development/ichiran.html#dem
-source_information_url: https://service.gsi.go.jp/kiban/app/help/
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
 terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
-acquired_at:
-source_updated_at:
+acquired_at: 2026-08-22T07:12:13Z
+source_updated_at: 2026-03-31
 terms_checked_at: 2026-08-22
-coordinate_reference_note: "2025-07-31以降に提供される基盤地図情報はJGD2024へ移行している。標高タイルの更新時点と座標系は、実入力取得時に記録する。"
+coordinate_reference_note: "地理院タイル仕様のWebメルカトルXYZ座標を使用する。日本国内の地理院タイルはJGD2011として案内されている。取得時点の提供仕様を記録する。"
 scope:
   allowed_bounds:
-    north: 36.0
+    north: 36.05
     south: 34.6
     east: 139.65
-    west: 138.55
+    west: 138.5
   datasets_by_priority:
     - DEM5A
     - DEM5B
     - DEM5C
     - DEM10B
-input_files: []
+input_files:
+  - path: Data/Generated/GSI/acquisition-inventory.json
+    sha256: 4fad177a162d16d5897fe8a023f86425d76fa1d7d2cca11d4f31abacba22442d
+  - path: Data/Generated/tanzawa-detailed-v1/terrain-index.json
+    sha256: f060d79478b7d6b29f3cb0abc3d420a10475903a25cc759ed5647574470e4c99
 input_inventory: "Data/Generated/tanzawa-detailed-v1/terrain-index.jsonへ、入力ファイルごとの相対パスとSHA-256を生成する。"
+acquisition_summary:
+  planned_tiles: 3700
+  acquired_tiles: 1464
+  unavailable_tiles: 2236
+  acquired_by_dataset:
+    DEM5A: 1122
+    DEM5B: 11
+    DEM5C: 0
+    DEM10B: 331
+  generated_terrain_tiles: 1453
 processing_steps:
-  - 取得済みの公式標高タイルをz/x/y.txt構成のまま保管する。
+  - 取得計画をData/OfflinePackages/tanzawa-dem-acquisition-v1.jsonから生成し、対象URLと件数を確認する。
+  - 取得済みの公式PNG標高タイルをデータ種別ごとのz/x/y.png構成のまま保管する。
   - build_detailed_pack.py indexでデータ種別、タイル座標、SHA-256を索引化する。
   - ズーム15の同一セルはDEM5A、DEM5B、DEM5Cの順で最初に得られた値を採用し、残る欠損は対応するズーム14の親DEM10Bを2×2の最近傍展開で補う。
   - 小数標高を1m単位へ四捨五入し、欠損値を-32768とする256×256 Int16格子へ変換する。
   - 各格子を独立してLZFSE圧縮し、SQLite索引、manifest、Ed25519署名を生成する。
 attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
 legal_note: "商用配布前に、国土地理院コンテンツ利用規約と測量法上の複製・使用承認の要否を、実際の利用・加工・配布形態について確認する。"
-verification_note: "原本未取得のため、現時点では正式な配布用Source Manifestではない。input_files、取得日、元データ更新日、座標系、利用手続確認結果が埋まるまで本番署名・配布を行わない。"
+verification_note: "開発・容量測定・現地試験用の公式標高タイル取得と署名パック生成は完了した。商用配布前に、保存・加工・再配布形態について測量法上の申請要否を国土地理院へ確認し、利用手続結果を追記する。"
