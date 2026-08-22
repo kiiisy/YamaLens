@@ -138,7 +138,10 @@ struct MyView: View {
         VStack(alignment: .leading, spacing: 12) {
             YamaSectionHeader(title: "オフライン")
             NavigationLink {
-                OfflineView()
+                OfflineView(
+                    coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
+                    surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
+                )
             } label: {
                 HStack(spacing: 14) {
                     Image(systemName: "arrow.down.circle.fill")
@@ -148,7 +151,7 @@ struct MyView: View {
                         Text("丹沢オフラインパック")
                             .font(.headline)
                             .foregroundStyle(YamaColor.primaryText)
-                        Text("未保存 ・ 上限1GB")
+                        Text("基本データ利用可能 ・ 丹沢 \(mountains.filter { $0.coverageRole == .core }.count)座")
                             .font(.subheadline)
                             .foregroundStyle(YamaColor.secondaryText)
                     }
@@ -159,6 +162,7 @@ struct MyView: View {
                 .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("offline-pack-link")
         }
     }
 

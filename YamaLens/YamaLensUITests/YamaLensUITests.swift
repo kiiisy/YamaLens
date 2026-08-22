@@ -41,6 +41,40 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
+    func testOfflineScreenSeparatesBuiltInDataFromDetailedPack() throws {
+        let app = makeApplication()
+        app.launch()
+
+        let myTab = app.buttons["マイ"]
+        XCTAssertTrue(myTab.waitForExistence(timeout: 2))
+        myTab.tap()
+
+        let offlineLink = app.buttons["offline-pack-link"]
+        XCTAssertTrue(offlineLink.waitForExistence(timeout: 2))
+        offlineLink.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["offline-bootstrap-status"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)["offline-detail-pack-status"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.staticTexts["基本データ利用可能"].exists)
+        XCTAssertTrue(app.staticTexts["未導入"].exists)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["offline-surrounding-count"]
+                .waitForExistence(timeout: 2)
+        )
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "オフラインデータ状態"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testSearchFiltersMountains() throws {
         let app = makeApplication()
         app.launch()
@@ -56,6 +90,29 @@ final class YamaLensUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["search-result-塔ノ岳"].waitForExistence(timeout: 2))
         XCTAssertFalse(app.buttons["search-result-蛭ヶ岳"].exists)
+    }
+
+    @MainActor
+    func testSurroundingMountainExplainsLimitedDataScope() throws {
+        let app = makeApplication()
+        app.launch()
+
+        let searchButton = app.buttons["search-button"]
+        XCTAssertTrue(searchButton.waitForExistence(timeout: 2))
+        searchButton.tap()
+
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.tap()
+        searchField.typeText("富士山")
+
+        let result = app.buttons["search-result-富士山"]
+        XCTAssertTrue(result.waitForExistence(timeout: 2))
+        result.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["surrounding-candidate-notice"]
+                .waitForExistence(timeout: 2)
+        )
     }
 
     @MainActor

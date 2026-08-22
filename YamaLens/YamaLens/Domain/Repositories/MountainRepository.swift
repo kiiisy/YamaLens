@@ -1,5 +1,5 @@
 import Foundation
 
-protocol MountainRepository: Sendable {
+nonisolated protocol MountainRepository: Sendable {
     func fetchMountains() -> [Mountain]
 }

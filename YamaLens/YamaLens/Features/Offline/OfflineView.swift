@@ -1,16 +1,23 @@
 import SwiftUI
 
 struct OfflineView: View {
-    @State private var isDownloadConfirmationPresented = false
+    let coreMountainCount: Int
+    let surroundingMountainCount: Int
+
+    init(coreMountainCount: Int = 0, surroundingMountainCount: Int = 0) {
+        self.coreMountainCount = coreMountainCount
+        self.surroundingMountainCount = surroundingMountainCount
+    }
 
     var body: some View {
         ZStack {
             TopographicBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    storageSummary
-                    packCard
-                    explanation
+                    availabilitySummary
+                    bootstrapCard
+                    detailedPackCard
+                    dataProtectionNote
                 }
                 .padding(18)
                 .padding(.bottom, 30)
@@ -20,33 +27,29 @@ struct OfflineView: View {
         .navigationTitle("オフラインパック")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
-        .confirmationDialog("丹沢パックを保存しますか？", isPresented: $isDownloadConfirmationPresented) {
-            Button("保存を開始") {}
-            Button("キャンセル", role: .cancel) {}
-        } message: {
-            Text("実際のダウンロード機能はデータパックの準備後に有効になります。")
-        }
     }
 
-    private var storageSummary: some View {
+    private var availabilitySummary: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("保存容量", systemImage: "internaldrive")
+                Label("オフライン利用", systemImage: "checkmark.circle.fill")
                     .font(.headline)
                 Spacer()
-                Text("0MB / 1GB").foregroundStyle(YamaColor.secondaryText)
+                Text("基本データ利用可能")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(YamaColor.moss)
             }
-            ProgressView(value: 0, total: 1)
-                .tint(YamaColor.alpineTeal)
-            Text("MVPでは丹沢山地だけを提供します")
+            Text("通信がなくても、丹沢の山を一覧・検索できます。AR識別用に、富士山など周辺の主要山頂も収録しています。")
                 .font(.caption)
                 .foregroundStyle(YamaColor.secondaryText)
         }
         .padding(18)
         .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("offline-bootstrap-status")
     }
 
-    private var packCard: some View {
+    private var bootstrapCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .bottomLeading) {
                 LinearGradient(
@@ -62,7 +65,7 @@ struct OfflineView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("丹沢山地")
                         .font(.title.bold())
-                    Text("オフラインパック")
+                    Text("アプリ内蔵の基本データ")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
@@ -71,21 +74,27 @@ struct OfflineView: View {
             .frame(height: 160)
 
             VStack(alignment: .leading, spacing: 16) {
-                Label("未保存", systemImage: "icloud.slash")
+                Label("利用可能", systemImage: "checkmark.circle.fill")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(YamaColor.amber)
+                    .foregroundStyle(YamaColor.moss)
 
-                featureRow("山頂・山小屋・登山口の基本情報", icon: "list.bullet.rectangle")
-                featureRow("カメラ候補に必要な地形データ", icon: "camera.viewfinder")
-                featureRow("圏外での山詳細閲覧", icon: "wifi.slash")
+                featureRow("山名・別名・標高・山頂座標", icon: "list.bullet.rectangle")
+                featureRow("一覧・検索・基本詳細", icon: "magnifyingglass")
+                featureRow("カメラ候補の基礎となる山頂情報", icon: "camera.viewfinder")
 
-                Button("丹沢パックを保存") {
-                    isDownloadConfirmationPresented = true
+                LabeledContent("丹沢の山") {
+                    Text("\(coreMountainCount)座")
+                        .foregroundStyle(YamaColor.primaryText)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(YamaColor.forest)
-                .controlSize(.large)
-                .frame(maxWidth: .infinity)
+                .font(.subheadline)
+
+                LabeledContent("周辺候補") {
+                    Text("\(surroundingMountainCount)座")
+                        .foregroundStyle(YamaColor.primaryText)
+                }
+                .font(.subheadline)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("offline-surrounding-count")
             }
             .padding(18)
         }
@@ -94,15 +103,49 @@ struct OfflineView: View {
         .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(.white.opacity(0.08)) }
     }
 
+    private var detailedPackCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("丹沢詳細パック")
+                        .font(.headline)
+                    Text("詳細地形・施設・出典データ")
+                        .font(.caption)
+                        .foregroundStyle(YamaColor.secondaryText)
+                }
+                Spacer()
+                Text("未導入")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(YamaColor.amber)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(YamaColor.amber.opacity(0.14), in: Capsule())
+            }
+
+            Text("地形による見通し判定や山小屋・登山口情報に使用する詳細パックは、現在準備中です。基本データは引き続き利用できます。")
+                .font(.subheadline)
+                .foregroundStyle(YamaColor.secondaryText)
+
+            Label("ダウンロード提供前", systemImage: "shippingbox")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(YamaColor.secondaryText)
+        }
+        .padding(18)
+        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.08)) }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("offline-detail-pack-status")
+    }
+
     private func featureRow(_ title: String, icon: String) -> some View {
         Label(title, systemImage: icon)
             .font(.subheadline)
             .foregroundStyle(YamaColor.primaryText)
     }
 
-    private var explanation: some View {
+    private var dataProtectionNote: some View {
         Label {
-            Text("パックを削除しても、山ノート・お気に入り・登頂済みは削除されません。")
+            Text("詳細パックを追加・更新・削除する機能を導入しても、山ノート・お気に入り・登頂済みは別領域で保持します。")
         } icon: {
             Image(systemName: "lock.shield")
                 .foregroundStyle(YamaColor.moss)

@@ -21,6 +21,8 @@ xcuserdata/
 *.tmp
 *.log
 Data/Generated/
+__pycache__/
+*.py[cod]
 
 # Agent customizations
 .agents/

@@ -18,6 +18,10 @@ required_files=(
     ".github/pull_request_template.md"
     ".gitignore"
     "AGENTS.md"
+    "Data/Bootstrap/tanzawa-bootstrap-v1.json"
+    "Data/SourceManifests/tanzawa-bootstrap-v1.yaml"
+    "Tools/OfflinePackageBuilder/build_bootstrap.py"
+    "YamaLens/YamaLens/Resources/Bootstrap/bootstrap.sqlite"
     "doc/YamaLens_UI設計書.md"
     "doc/YamaLens_事前決定事項.md"
     "doc/YamaLens_基本設計書.md"
@@ -29,6 +33,11 @@ for required_file in "${required_files[@]}"; do
         exit 1
     fi
 done
+
+python3 Tools/OfflinePackageBuilder/build_bootstrap.py \
+    --input Data/Bootstrap/tanzawa-bootstrap-v1.json \
+    --output YamaLens/YamaLens/Resources/Bootstrap/bootstrap.sqlite \
+    --verify-only
 
 if ! compgen -G 'doc/*要求仕様書.md' > /dev/null; then
     echo "Required specification document is missing: doc/*要求仕様書.md" >&2

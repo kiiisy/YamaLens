@@ -1,6 +1,47 @@
 import Foundation
+import OSLog
 
-struct BootstrapMountainRepository: MountainRepository {
+nonisolated struct BootstrapMountainRepository: MountainRepository {
+    private static let logger = Logger(
+        subsystem: "com.kiiisy.YamaLens",
+        category: "BootstrapMountainRepository"
+    )
+
+    private let repository: any MountainRepository
+
+    init(bundle: Bundle = .main) {
+        guard let databaseURL = Self.databaseURL(in: bundle) else {
+            Self.logger.fault("Bundled bootstrap SQLite was not found; using emergency mountain data")
+            repository = EmergencyMountainRepository()
+            return
+        }
+
+        do {
+            repository = try SQLiteMountainRepository(databaseURL: databaseURL)
+        } catch {
+            Self.logger.fault("Bundled bootstrap SQLite could not be read; using emergency mountain data")
+            repository = EmergencyMountainRepository()
+        }
+    }
+
+    func fetchMountains() -> [Mountain] {
+        repository.fetchMountains()
+    }
+
+    static func databaseURL(in bundle: Bundle) -> URL? {
+        if let nestedURL = bundle.url(
+            forResource: "bootstrap",
+            withExtension: "sqlite",
+            subdirectory: "Bootstrap"
+        ) {
+            return nestedURL
+        }
+        return bundle.url(forResource: "bootstrap", withExtension: "sqlite")
+    }
+}
+
+/// アプリBundleの構成不備でも検索経路を失わないためだけに使用する最小の退避データ。
+private nonisolated struct EmergencyMountainRepository: MountainRepository {
     func fetchMountains() -> [Mountain] {
         [
             Mountain(

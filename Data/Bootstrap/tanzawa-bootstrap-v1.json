@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.1.0",
+  "regions": [
+    {
+      "id": "jp.kanagawa.tanzawa",
+      "name": "丹沢山地",
+      "prefectureName": "神奈川県"
+    },
+    {
+      "id": "jp.fuji",
+      "name": "富士山周辺",
+      "prefectureName": "山梨県・静岡県"
+    },
+    {
+      "id": "jp.kanagawa.hakone",
+      "name": "箱根山地",
+      "prefectureName": "神奈川県・静岡県"
+    },
+    {
+      "id": "jp.tokyo.okutama",
+      "name": "奥多摩",
+      "prefectureName": "東京都・山梨県・埼玉県"
+    },
+    {
+      "id": "jp.yamanashi.daibosatsu",
+      "name": "大菩薩連嶺",
+      "prefectureName": "山梨県"
+    },
+    {
+      "id": "jp.shizuoka.ashitaka",
+      "name": "愛鷹山塊",
+      "prefectureName": "静岡県"
+    },
+    {
+      "id": "jp.shizuoka.amagi",
+      "name": "天城山地",
+      "prefectureName": "静岡県"
+    }
+  ],
+  "sourceManifestID": "tanzawa-bootstrap-v1",
+  "mountains": [
+    {
+      "id": "蛭ヶ岳",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "蛭ヶ岳",
+      "searchName": "ひるがたけ",
+      "aliases": ["ひるがたけ"],
+      "latitude": 35.4886,
+      "longitude": 139.1304,
+      "elevationMeters": 1673,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "丹沢山",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "丹沢山",
+      "searchName": "たんざわさん",
+      "aliases": ["たんざわさん"],
+      "latitude": 35.4742,
+      "longitude": 139.1627,
+      "elevationMeters": 1567,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "塔ノ岳",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "塔ノ岳",
+      "searchName": "とうのだけ",
+      "aliases": ["とうのだけ", "塔ヶ岳"],
+      "latitude": 35.4743,
+      "longitude": 139.1486,
+      "elevationMeters": 1491,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "檜洞丸",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "檜洞丸",
+      "searchName": "ひのきぼらまる",
+      "aliases": ["ひのきぼらまる"],
+      "latitude": 35.4678,
+      "longitude": 139.0815,
+      "elevationMeters": 1601,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "鍋割山",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "鍋割山",
+      "searchName": "なべわりやま",
+      "aliases": ["なべわりやま"],
+      "latitude": 35.4537,
+      "longitude": 139.1272,
+      "elevationMeters": 1273,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "大山",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "core",
+      "canonicalName": "大山",
+      "searchName": "おおやま",
+      "aliases": ["おおやま", "阿夫利山"],
+      "latitude": 35.4394,
+      "longitude": 139.2311,
+      "elevationMeters": 1252,
+      "updatedAt": "2026-08-21T00:00:00Z"
+    },
+    {
+      "id": "富士山",
+      "regionID": "jp.fuji",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "富士山",
+      "searchName": "ふじさん",
+      "aliases": ["ふじさん", "剣ヶ峰"],
+      "latitude": 35.3606,
+      "longitude": 138.7274,
+      "elevationMeters": 3776,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "金時山",
+      "regionID": "jp.kanagawa.hakone",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "金時山",
+      "searchName": "きんときやま",
+      "aliases": ["きんときやま", "猪鼻岳"],
+      "latitude": 35.2898,
+      "longitude": 139.0047,
+      "elevationMeters": 1212,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "神山",
+      "regionID": "jp.kanagawa.hakone",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "神山",
+      "searchName": "かみやま",
+      "aliases": ["かみやま"],
+      "latitude": 35.2334,
+      "longitude": 139.0206,
+      "elevationMeters": 1438,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "箱根駒ヶ岳",
+      "regionID": "jp.kanagawa.hakone",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "箱根駒ヶ岳",
+      "searchName": "はこねこまがたけ",
+      "aliases": ["はこねこまがたけ", "駒ヶ岳"],
+      "latitude": 35.2250,
+      "longitude": 139.0245,
+      "elevationMeters": 1356,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "雲取山",
+      "regionID": "jp.tokyo.okutama",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "雲取山",
+      "searchName": "くもとりやま",
+      "aliases": ["くもとりやま"],
+      "latitude": 35.8555,
+      "longitude": 138.9439,
+      "elevationMeters": 2017,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "三頭山",
+      "regionID": "jp.tokyo.okutama",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "三頭山",
+      "searchName": "みとうさん",
+      "aliases": ["みとうさん"],
+      "latitude": 35.7392,
+      "longitude": 139.0133,
+      "elevationMeters": 1531,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "大岳山",
+      "regionID": "jp.tokyo.okutama",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "大岳山",
+      "searchName": "おおだけさん",
+      "aliases": ["おおだけさん", "大嶽山"],
+      "latitude": 35.7651,
+      "longitude": 139.1308,
+      "elevationMeters": 1266,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "大菩薩嶺",
+      "regionID": "jp.yamanashi.daibosatsu",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "大菩薩嶺",
+      "searchName": "だいぼさつれい",
+      "aliases": ["だいぼさつれい"],
+      "latitude": 35.7488,
+      "longitude": 138.8456,
+      "elevationMeters": 2057,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "三ツ峠山",
+      "regionID": "jp.fuji",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "三ツ峠山",
+      "searchName": "みつとうげやま",
+      "aliases": ["みつとうげやま", "開運山"],
+      "latitude": 35.5492,
+      "longitude": 138.8096,
+      "elevationMeters": 1785,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "越前岳",
+      "regionID": "jp.shizuoka.ashitaka",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "越前岳",
+      "searchName": "えちぜんだけ",
+      "aliases": ["えちぜんだけ"],
+      "latitude": 35.2382,
+      "longitude": 138.7947,
+      "elevationMeters": 1504,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    },
+    {
+      "id": "万三郎岳",
+      "regionID": "jp.shizuoka.amagi",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "万三郎岳",
+      "searchName": "ばんざぶろうだけ",
+      "aliases": ["ばんざぶろうだけ", "天城山"],
+      "latitude": 34.8628,
+      "longitude": 139.0017,
+      "elevationMeters": 1406,
+      "updatedAt": "2026-08-22T00:00:00Z"
+    }
+  ]
+}

@@ -29,6 +29,10 @@ struct HomeView: View {
         return mountains.filter { favoriteIDs.contains($0.id) }
     }
 
+    private var coreMountains: [Mountain] {
+        mountains.filter { $0.coverageRole == .core }
+    }
+
     private var recentMountains: [Mountain] {
         let recentIDs = records
             .compactMap { record -> (String, Date)? in
@@ -106,7 +110,7 @@ struct HomeView: View {
         posterSection(
             title: "今の時期の山",
             subtitle: "季節情報のある丹沢の山",
-            mountains: Array(mountains.prefix(4)),
+            mountains: Array(coreMountains.prefix(4)),
             badge: "季節の紹介"
         )
     }
@@ -414,6 +418,11 @@ private struct MountainSearchView: View {
                         Text("\(mountain.elevationMeters.formatted())m ・ \(mountain.regionName)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        if mountain.coverageRole == .surroundingCandidate {
+                            Label("周辺候補", systemImage: "binoculars")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(YamaColor.alpineTeal)
+                        }
                         if let proximity = proximity(for: mountain) {
                             Label(
                                 MountainProximityText.summary(proximity),

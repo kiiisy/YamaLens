@@ -300,6 +300,8 @@ score = 0.45 * bearingScore
 
 アプリ本体には `bootstrap.sqlite` を同梱し、パック未導入・圏外でも丹沢の一覧、検索、基本詳細を利用可能にする。詳細地形を含む丹沢パックは、静的HTTPS配信元から次のファイルを一時ディレクトリへ取得する。
 
+`bootstrap.sqlite` は `Data/Bootstrap/tanzawa-bootstrap-v1.json` を入力として、`Tools/OfflinePackageBuilder/build_bootstrap.py` で生成・検証する。アプリはBundle内のDBを読み取り専用で開き、`integrity_check`、schemaVersion、必須の山レコードを確認してから利用する。開発用データは丹沢の中心6座と、富士山等の周辺候補11座を区別して収録する。正式な配布データとする前に `Data/SourceManifests/tanzawa-bootstrap-v1.yaml` に従って国土地理院の一次情報との照合と利用手続の確認を完了する。
+
 ```text
 tanzawa/1.0.0/
 ├─ manifest.json
@@ -359,8 +361,8 @@ tanzawa/1.0.0/
 | テーブル | 主な列・制約 |
 | --- | --- |
 | `package_metadata` | `key TEXT PRIMARY KEY`、`value TEXT NOT NULL` |
-| `regions` | `id TEXT PRIMARY KEY`、`name TEXT NOT NULL` |
-| `mountains` | `id TEXT PRIMARY KEY`、`region_id`、`canonical_name`、`search_name`、`latitude`、`longitude`、`elevation_m`、`updated_at` |
+| `regions` | `id TEXT PRIMARY KEY`、`name TEXT NOT NULL`、`prefecture_name TEXT NOT NULL` |
+| `mountains` | `id TEXT PRIMARY KEY`、`region_id`、`canonical_name`、`search_name`、`coverage_role`（`core`／`surroundingCandidate`）、`latitude`、`longitude`、`elevation_m`、`updated_at` |
 | `mountain_names` | `mountain_id`、`name`、`search_name`、`kind`。`PRIMARY KEY(mountain_id, name)` |
 | `points_of_interest` | `id TEXT PRIMARY KEY`、`region_id`、`type`、`name`、任意座標、`summary`、`official_url`、`checked_at` |
 | `mountain_points_of_interest` | `mountain_id`、`point_of_interest_id`。複合PRIMARY KEY |
@@ -370,8 +372,10 @@ tanzawa/1.0.0/
 
 - 外部キーを有効にし、ID、検索名、山域、施設種別、地形範囲に必要なindexを作る。
 - 山名検索は `search_name` に、大文字小文字、全角半角、ひらがな・カタカナ、空白を正規化した値を保存する。MVPでは外部検索ライブラリやFTSを必須にせず、実測で必要になった場合だけ追加する。
-- `terrain.lzfse` はmagic `YLTF`、format version 1、tile countを持つheaderと、個別にLZFSE圧縮した256×256の標高タイルで構成する。標高値は1m単位の符号付き16bit整数、欠損値は `-32768` とする。
+- `terrain.lzfse` は固定16byteのheaderと、個別にLZFSE圧縮した256×256の標高タイルで構成する。headerはASCII `YLTF`（byte 0〜3）、format version UInt16（4〜5）、header size UInt16（6〜7）、tile count UInt32（8〜11）、flags UInt32（12〜15）のlittle-endianとする。v1はversion 1、header size 16、flags 0とし、未知のflagsを拒否する。標高値は1m単位の符号付き16bit整数、欠損値は `-32768` とする。
 - タイルの境界、格子間隔、offset、圧縮前後サイズ、展開後SHA-256は `terrain_tiles` を正とし、範囲外読み込みを拒否する。
+- schema v1では地形タイルを100,000件以下、各タイルの圧縮後サイズを262,144byte以下とし、offset順で重複していないことを展開前に確認する。
+- 導入時は一時領域で署名・manifest・2ファイル・SQLite・全地形タイルを検証し、`Versions/<contentVersion>` へ移動した後に小さな `active-version` をatomic書き換えして参照を切り替える。切替前の版は保持し、`readyToInstall` journalが残った場合は起動時に再検証してから切替を完了する。
 
 #### 容量予算（設計目標）
 

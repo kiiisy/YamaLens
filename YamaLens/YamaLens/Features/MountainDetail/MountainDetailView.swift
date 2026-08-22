@@ -45,6 +45,7 @@ struct MountainDetailView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
                         hero
+                        surroundingCandidateNotice
                         statusCard
                         weatherSection
                         facilitySection
@@ -105,6 +106,29 @@ struct MountainDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var surroundingCandidateNotice: some View {
+        if mountain.coverageRole == .surroundingCandidate {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("周辺候補データ", systemImage: "binoculars.fill")
+                    .font(.headline)
+                    .foregroundStyle(YamaColor.alpineTeal)
+                Text("丹沢から見える可能性のある山として、名称・標高・座標を収録しています。詳細地形・施設情報は未対応です。")
+                    .font(.subheadline)
+                    .foregroundStyle(YamaColor.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(
+                YamaColor.surface,
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            )
+            .padding(.horizontal, 18)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("surrounding-candidate-notice")
+        }
     }
 
     private var detailScale: CGFloat {

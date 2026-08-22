@@ -1,0 +1,19 @@
+id: tanzawa-bootstrap-v1
+title: YamaLens 丹沢bootstrap初期データ
+status: provisional_requires_official_verification
+checked_at: 2026-08-21
+scope:
+  - mountain_name
+  - alias
+  - summit_coordinate
+  - elevation
+sources:
+  - provider: 国土地理院
+    role: 正式照合に使用する一次情報
+    url: https://maps.gsi.go.jp/
+    terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+    download_service_url: https://service.gsi.go.jp/kiban/
+attribution: "出典：国土地理院ウェブサイト"
+processing_note: "国土地理院の情報を照合し、YamaLens向けSQLiteへ加工した場合は、その旨と対象データセットをアプリ内に表示する。"
+legal_note: "基盤地図情報等の測量成果を配布物へ収録する前に、測量法上の複製・使用承認の要否をデータセットと利用形態ごとに確認する。"
+verification_note: "現在の丹沢6座と周辺候補11座は現地試験用の暫定値であり、このmanifestだけを根拠に正式照合済み・配布許諾確認済みとは扱わない。正式配布前に名称、別名、座標、標高を一次情報と照合する。"

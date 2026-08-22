@@ -38,11 +38,19 @@ struct SettingsPlaceholderView: View {
 
                 Section("オフライン") {
                     NavigationLink {
-                        DownloadSettingsView()
+                        OfflineView(
+                            coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
+                            surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
+                        )
                     } label: {
-                        SettingsLabel(title: "ダウンロード設定", systemImage: "arrow.down.circle")
+                        SettingsLabel(title: "オフラインデータ", systemImage: "arrow.down.circle")
                     }
-                    SettingsLink(title: "丹沢パック", value: "未保存", systemImage: "mountain.2")
+                    LabeledContent {
+                        Text("丹沢 \(mountains.filter { $0.coverageRole == .core }.count)座・周辺 \(mountains.filter { $0.coverageRole == .surroundingCandidate }.count)座")
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        SettingsLabel(title: "内蔵基本データ", systemImage: "mountain.2")
+                    }
                 }
 
                 Section("プライバシーと情報") {
@@ -116,36 +124,5 @@ private struct SettingsLink: View {
                 .font(.caption.bold())
                 .foregroundStyle(.tertiary)
         }
-    }
-}
-
-private struct DownloadSettingsView: View {
-    @State private var automaticDownloads = false
-    @State private var wifiOnly = true
-    @State private var mobileData = false
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle("自動ダウンロード", isOn: $automaticDownloads)
-                Toggle("Wi-Fi接続時のみ", isOn: $wifiOnly)
-                    .disabled(!automaticDownloads)
-                Toggle("モバイル通信を使用", isOn: $mobileData)
-                    .disabled(!automaticDownloads || wifiOnly)
-            } footer: {
-                Text("自動ダウンロードは初期状態ではオフです。オンにした場合もWi-Fi接続時のみを推奨します。")
-            }
-
-            Section("保存容量") {
-                LabeledContent("保存容量の上限", value: "1GB")
-                LabeledContent("現在の使用量", value: "0MB")
-            }
-
-            Section {
-                Button("パックの更新を確認") {}
-            }
-        }
-        .navigationTitle("ダウンロード設定")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
