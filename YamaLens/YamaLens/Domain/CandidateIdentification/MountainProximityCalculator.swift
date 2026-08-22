@@ -34,6 +34,11 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
     let preferredTerrainHorizonSpacingMeters: Double
     let maximumTerrainHorizonSampleCountPerBearing: Int
     let terrainHorizonBearingStepDegrees: Double
+    let labelStabilizationDeadbandPoints: Double
+    let labelStabilizationFastFollowDistancePoints: Double
+    let labelStabilizationStationaryTimeConstantSeconds: TimeInterval
+    let labelStabilizationMovingTimeConstantSeconds: TimeInterval
+    let maximumLabelStabilizationGapSeconds: TimeInterval
 
     static let `default` = CandidateTuning(
         maximumSearchDistanceMeters: 150_000,
@@ -68,7 +73,12 @@ nonisolated struct CandidateTuning: Equatable, Sendable {
         terrainHorizonMaximumDistanceMeters: 25_000,
         preferredTerrainHorizonSpacingMeters: 100,
         maximumTerrainHorizonSampleCountPerBearing: 256,
-        terrainHorizonBearingStepDegrees: 2
+        terrainHorizonBearingStepDegrees: 2,
+        labelStabilizationDeadbandPoints: 1,
+        labelStabilizationFastFollowDistancePoints: 64,
+        labelStabilizationStationaryTimeConstantSeconds: 0.30,
+        labelStabilizationMovingTimeConstantSeconds: 0.06,
+        maximumLabelStabilizationGapSeconds: 0.50
     )
 }
 

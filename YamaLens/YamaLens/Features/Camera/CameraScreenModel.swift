@@ -41,6 +41,7 @@ final class CameraScreenModel {
     private let terrainHorizonProjector: TerrainHorizonProjector
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
+    private var candidateStabilizer: CameraCandidateStabilizer
     let diagnosticRecorder: CameraDiagnosticRecorder?
     private var locationState: CurrentLocationState = .notRequested
     private var lastObservation: CameraPoseObservation?
@@ -83,6 +84,7 @@ final class CameraScreenModel {
         self.terrainVisibilityResolver = terrainVisibilityResolver
         self.terrainHorizonResolver = terrainHorizonResolver
         self.terrainHorizonProjector = terrainHorizonProjector
+        candidateStabilizer = CameraCandidateStabilizer(tuning: tuning)
         self.diagnosticRecorder = diagnosticRecorder
         self.now = now
     }
@@ -152,6 +154,7 @@ final class CameraScreenModel {
             max(degrees, -tuning.maximumManualHeadingCorrectionDegrees),
             tuning.maximumManualHeadingCorrectionDegrees
         )
+        candidateStabilizer.reset()
         reprojectLastObservation()
     }
 
@@ -205,6 +208,7 @@ final class CameraScreenModel {
             observation.trackingQuality != .unavailable
         else {
             retainedSheetMountainIDs = []
+            candidateStabilizer.reset()
             terrainHorizonSegments = []
             setActiveState(
                 observation,
@@ -215,7 +219,7 @@ final class CameraScreenModel {
             return
         }
 
-        let projection = projector.projectCandidates(
+        let rawProjection = projector.projectCandidates(
             location: location,
             camera: observation,
             mountains: mountains,
@@ -223,6 +227,10 @@ final class CameraScreenModel {
             manualHeadingCorrectionDegrees: manualHeadingCorrectionDegrees,
             terrainVisibilityByMountainID: terrainVisibilityByMountainID,
             now: evaluationDate
+        )
+        let projection = candidateStabilizer.stabilize(
+            rawProjection,
+            evaluatedAt: evaluationDate
         )
         retainedSheetMountainIDs = projection.sheetCandidates.map(\.mountain.id)
         let isGood = locationQuality == .good
@@ -254,6 +262,7 @@ final class CameraScreenModel {
             receive(observation)
         case .temporarilyUnavailable:
             retainedSheetMountainIDs = []
+            candidateStabilizer.reset()
             // 方位を失う前に開始した地形判定が、復帰待ち表示を上書きしないようにする。
             resetTerrainEvaluation()
             if case .available(let location, _) = locationState {
@@ -316,6 +325,7 @@ final class CameraScreenModel {
 
     private func prepareTerrainEvaluation(for location: LocationObservation) {
         guard terrainLocationObservedAt != location.observedAt else { return }
+        candidateStabilizer.reset()
         resetTerrainEvaluation()
         terrainLocationObservedAt = location.observedAt
     }

@@ -4,7 +4,21 @@ struct DiagnosticReplayView: View {
     let log: CameraDiagnosticLog
     let mountains: [Mountain]
     let projector: MountainCameraProjector
+    private let frames: [CameraDiagnosticReplayFrame]
     @State private var sampleIndex = 0
+    @State private var isPlaying = false
+
+    init(
+        log: CameraDiagnosticLog,
+        mountains: [Mountain],
+        projector: MountainCameraProjector
+    ) {
+        self.log = log
+        self.mountains = mountains
+        self.projector = projector
+        var calculator = CameraDiagnosticReplayCalculator(projector: projector)
+        frames = calculator.replay(samples: log.samples, mountains: mountains)
+    }
 
     var body: some View {
         Form {
@@ -26,6 +40,11 @@ struct DiagnosticReplayView: View {
                 )
                 .disabled(log.samples.count <= 1)
                 .accessibilityLabel("診断ログの再生位置")
+                .onChange(of: sampleIndex) { _, _ in
+                    if sampleIndex >= frames.count - 1 {
+                        isPlaying = false
+                    }
+                }
                 HStack {
                     Button {
                         sampleIndex = max(0, sampleIndex - 1)
@@ -34,8 +53,18 @@ struct DiagnosticReplayView: View {
                     }
                     .disabled(sampleIndex == 0)
                     Spacer()
-                    Text("\(sampleIndex + 1) / \(log.samples.count)")
-                        .monospacedDigit()
+                    Button {
+                        if sampleIndex >= frames.count - 1 {
+                            sampleIndex = 0
+                        }
+                        isPlaying.toggle()
+                    } label: {
+                        Label(
+                            isPlaying ? "一時停止" : "再生",
+                            systemImage: isPlaying ? "pause.fill" : "play.fill"
+                        )
+                    }
+                    .accessibilityIdentifier("diagnostic-replay-playback")
                     Spacer()
                     Button {
                         sampleIndex = min(log.samples.count - 1, sampleIndex + 1)
@@ -44,6 +73,10 @@ struct DiagnosticReplayView: View {
                     }
                     .disabled(sampleIndex >= log.samples.count - 1)
                 }
+                Text("\(sampleIndex + 1) / \(log.samples.count)")
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.secondary)
             }
 
             Section("入力") {
@@ -59,6 +92,12 @@ struct DiagnosticReplayView: View {
             Section("比較") {
                 LabeledContent("記録時の候補", value: "\(recordedLabelCount)件")
                 LabeledContent("現在の候補", value: "\(recalculated.labels.count)件")
+                LabeledContent("一致した候補", value: "\(currentFrame.differences.count)件")
+                LabeledContent("平均位置差", value: differenceText(currentFrame.meanDifferencePoints))
+                LabeledContent("最大位置差", value: differenceText(currentFrame.maximumDifferencePoints))
+                Text("現在の計算は、保存された5Hzサンプルをログ先頭から時系列に処理し、安定化状態を復元しています。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 if let confirmedMountainName {
                     LabeledContent("目視で確認", value: confirmedMountainName)
                 }
@@ -67,13 +106,22 @@ struct DiagnosticReplayView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(log.events) { event in
-                        Label(event.kind.title, systemImage: "exclamationmark.bubble")
+                        Button {
+                            sampleIndex = nearestSampleIndex(to: event.elapsedSeconds)
+                            isPlaying = false
+                        } label: {
+                            Label(event.kind.title, systemImage: "exclamationmark.bubble")
+                        }
                     }
                 }
             }
         }
         .navigationTitle("ログをリプレイ")
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: isPlaying) {
+            guard isPlaying else { return }
+            await playFromCurrentPosition()
+        }
     }
 
     private var replayViewport: some View {
@@ -139,25 +187,15 @@ struct DiagnosticReplayView: View {
     }
 
     private var currentSample: CameraDiagnosticSample {
-        log.samples[min(max(sampleIndex, 0), log.samples.count - 1)]
+        currentFrame.sample
     }
 
     private var recalculated: CameraCandidateProjection {
-        let retainedIDs = sampleIndex > 0
-            ? log.samples[sampleIndex - 1].candidates.map(\.mountainID)
-            : []
-        return projector.projectCandidates(
-            location: currentSample.location,
-            camera: currentSample.camera,
-            mountains: mountains,
-            retainedSheetMountainIDs: retainedIDs,
-            manualHeadingCorrectionDegrees: currentSample.manualHeadingCorrectionDegrees,
-            now: currentSample.recordedAt
-        )
+        currentFrame.recalculated
     }
 
     private var recordedLabels: [CameraDiagnosticCandidate] {
-        currentSample.candidates.filter(\.isLabelVisible)
+        currentFrame.recordedLabels
     }
 
     private var recordedLabelCount: Int { recordedLabels.count }
@@ -172,6 +210,38 @@ struct DiagnosticReplayView: View {
             get: { Double(sampleIndex) },
             set: { sampleIndex = Int($0.rounded()) }
         )
+    }
+
+    private var currentFrame: CameraDiagnosticReplayFrame {
+        frames[min(max(sampleIndex, 0), frames.count - 1)]
+    }
+
+    private func playFromCurrentPosition() async {
+        while !Task.isCancelled, isPlaying, sampleIndex < frames.count - 1 {
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+            } catch is CancellationError {
+                return
+            } catch {
+                isPlaying = false
+                return
+            }
+            guard !Task.isCancelled, isPlaying else { return }
+            sampleIndex += 1
+        }
+        isPlaying = false
+    }
+
+    private func nearestSampleIndex(to elapsedSeconds: TimeInterval) -> Int {
+        frames.indices.min { lhs, rhs in
+            abs(frames[lhs].sample.elapsedSeconds - elapsedSeconds)
+                < abs(frames[rhs].sample.elapsedSeconds - elapsedSeconds)
+        } ?? 0
+    }
+
+    private func differenceText(_ points: Double?) -> String {
+        guard let points else { return "比較対象なし" }
+        return points.formatted(.number.precision(.fractionLength(1))) + "pt"
     }
 
     private var elapsedText: String {
