@@ -64,6 +64,37 @@ sources:
   - provider: 神奈川県
     role: 大山ケーブルバス停の公式アクセス情報
     url: https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/p1189872.html
+automated_sources:
+  - id: kanagawa-hadano-tokawa-park-v1
+    status: approved_for_manual_pilot
+    provider: 神奈川県
+    dataset: 公園データ一覧
+    role: 秦野戸川公園に対応する既存駐車場レコードの変動情報候補
+    dataset_url: https://catalog.opendata.pref.kanagawa.jp/dataset/d1dd79afd3bcfe4ae56b139f5f7f7bb3/resource/2b416702-1a0e-4b89-b17f-42739ef5d580
+    api_url: https://catalog.opendata.pref.kanagawa.jp/api/3/action/datastore_search
+    resource_id: 2b416702-1a0e-4b89-b17f-42739ef5d580
+    terms_url: https://opendata.pref.kanagawa.jp/terms
+    license: Creative Commons Attribution 4.0 International
+    license_url: https://creativecommons.org/licenses/by/4.0/deed.ja
+    attribution: "このデータは神奈川県『公園データ一覧』を改変して利用しています（CC BY 4.0）。"
+    terms_checked_at: 2026-08-24
+    robots_txt_check: "2026-08-24時点で提供元のrobots.txtは404。HTMLは巡回せず、公式CKAN APIだけを手動実行する。"
+    fetch_method: "CKAN DataStore APIへ地方公共団体名と名称の完全一致filterを指定し、1件だけ取得"
+    execution: manual
+    minimum_interval_hours: 168
+    parser_version: kanagawa-park-ckan-v1
+    allowed_fields:
+      - 地方公共団体名
+      - 名称
+      - 所在地
+      - 無料駐車場
+      - 有料駐車場
+      - 開園時間
+      - 休園日
+      - 最終更新日
+    canonical_point_of_interest_id: hadano-tokawa-okura-parking
+    review_policy: "正規JSONを自動変更しない。候補差分、営業情報、出典更新日を人が公式情報と照合してから反映する。"
+    anomaly_policy: "0件、複数件、filter不一致、型・日付不正、HTTP・URL・Content-Type・サイズ不正は失敗として候補を破棄し、既存値を維持する。"
 attribution: "出典：国土地理院ウェブサイト"
 processing_note: "国土地理院の情報を照合し、YamaLens向けSQLiteへ加工した場合は、その旨と対象データセットをアプリ内に表示する。"
 legal_note: "基盤地図情報等の測量成果を配布物へ収録する前に、測量法上の複製・使用承認の要否をデータセットと利用形態ごとに確認する。"

@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "id": "kanagawa-hadano-tokawa-park-v1",
+  "status": "approvedForPilot",
+  "provider": "神奈川県",
+  "sourceType": "ckanDatastoreAPI",
+  "apiURL": "https://catalog.opendata.pref.kanagawa.jp/api/3/action/datastore_search",
+  "resourceID": "2b416702-1a0e-4b89-b17f-42739ef5d580",
+  "datasetURL": "https://catalog.opendata.pref.kanagawa.jp/dataset/d1dd79afd3bcfe4ae56b139f5f7f7bb3/resource/2b416702-1a0e-4b89-b17f-42739ef5d580",
+  "termsURL": "https://opendata.pref.kanagawa.jp/terms",
+  "license": "クリエイティブ・コモンズ 表示 4.0 国際",
+  "licenseURL": "https://creativecommons.org/licenses/by/4.0/deed.ja",
+  "attributionText": "このデータは神奈川県『公園データ一覧』を改変して利用しています（CC BY 4.0）。",
+  "parserVersion": "kanagawa-park-ckan-v1",
+  "filters": {
+    "地方公共団体名": "神奈川県",
+    "名称": "秦野戸川公園"
+  },
+  "canonicalPointOfInterestID": "hadano-tokawa-okura-parking",
+  "allowedFields": [
+    "地方公共団体名",
+    "名称",
+    "所在地",
+    "無料駐車場",
+    "有料駐車場",
+    "開園時間",
+    "休園日",
+    "最終更新日"
+  ],
+  "fetchPolicy": {
+    "execution": "manual",
+    "minimumIntervalHours": 168,
+    "timeoutSeconds": 15,
+    "maximumResponseBytes": 2097152
+  },
+  "reviewPolicy": {
+    "automaticCanonicalUpdate": false,
+    "humanReviewRequiredFields": [
+      "無料駐車場",
+      "有料駐車場",
+      "開園時間",
+      "休園日",
+      "最終更新日"
+    ]
+  }
+}

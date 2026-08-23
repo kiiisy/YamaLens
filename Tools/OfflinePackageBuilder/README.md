@@ -28,6 +28,26 @@
 
 取得・抽出の失敗時は現行JSONを変更せず、汎用的なHTML抽出やアプリからの直接取得へ切り替えない。MVPでは既存の山域パックを内容版更新するため、自動取得を始める前にInfo Overlayを独立した配布物へ分割する必要はない。
 
+### 最初の手動パイロット
+
+神奈川県オープンデータ「公園データ一覧」の公式CKAN APIを使い、秦野戸川公園の1件だけを取得対象とする。これは収集範囲を広げるための汎用クローラーではなく、承認済み設定 `Data/FacilitySources/kanagawa-hadano-tokawa-park-v1.json` に固定した情報源専用処理である。
+
+```sh
+python3 Tools/OfflinePackageBuilder/acquire_facility_updates.py \
+  --config Data/FacilitySources/kanagawa-hadano-tokawa-park-v1.json \
+  --canonical Data/Bootstrap/tanzawa-bootstrap-v1.json \
+  --output Data/Generated/FacilityUpdates/kanagawa-hadano-tokawa-park-YYYY-MM-DD
+```
+
+出力先は既存ディレクトリを上書きしない。次の4ファイルを人が確認する。
+
+- `source-response.json`: 取得した構造化応答
+- `acquisition-metadata.json`: 取得日時、最終URL、HTTP状態、SHA-256、抽出規則の版
+- `candidate.json`: 許可項目だけから生成した候補値
+- `review-diff.json`: 現行の駐車場レコードとの確認用差分
+
+このコマンドは `Data/Bootstrap/tanzawa-bootstrap-v1.json` を変更しない。候補の住所、駐車場種別、開園時間、休園日、更新日を公式ページと照合し、採用すると判断した項目だけを別の変更として正規JSONへ反映する。その後、既存のSQLite生成・検証・署名工程を実行する。最短取得間隔は設定上168時間であり、現段階ではスケジューラーから自動実行しない。
+
 ## 0. 正式な開発用原本を取得する
 
 YamaLensの初期取得範囲は次の多解像度構成とする。
@@ -195,6 +215,7 @@ Tools/OfflinePackageBuilder/stage_development_pack.sh yatsugatake-ar-test-v1
 ## 7. 自動テスト
 
 ```sh
+python3 Tools/OfflinePackageBuilder/test_acquire_facility_updates.py -v
 python3 Tools/OfflinePackageBuilder/test_build_detailed_pack.py -v
 python3 Tools/OfflinePackageBuilder/test_acquire_gsi_tiles.py -v
 ```
