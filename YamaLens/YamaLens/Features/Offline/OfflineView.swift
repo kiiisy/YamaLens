@@ -2,16 +2,19 @@ import SwiftUI
 
 struct OfflineView: View {
     let model: OfflinePackageScreenModel
+    let presentation: OfflinePackagePresentation
     let coreMountainCount: Int
     let surroundingMountainCount: Int
     @State private var isDeleteConfirmationPresented = false
 
     init(
         model: OfflinePackageScreenModel,
+        presentation: OfflinePackagePresentation = .tanzawa,
         coreMountainCount: Int = 0,
         surroundingMountainCount: Int = 0
     ) {
         self.model = model
+        self.presentation = presentation
         self.coreMountainCount = coreMountainCount
         self.surroundingMountainCount = surroundingMountainCount
     }
@@ -21,6 +24,9 @@ struct OfflineView: View {
             TopographicBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    if presentation.isARTestOnly {
+                        arTestNotice
+                    }
                     availabilitySummary
                     bootstrapCard
                     detailedPackCard
@@ -36,7 +42,7 @@ struct OfflineView: View {
         .preferredColorScheme(.dark)
         .task { await model.load() }
         .alert(
-            "丹沢詳細パックを削除しますか？",
+            "\(presentation.packageTitle)を削除しますか？",
             isPresented: $isDeleteConfirmationPresented
         ) {
             Button("削除", role: .destructive) {
@@ -46,6 +52,24 @@ struct OfflineView: View {
         } message: {
             Text("詳細地形と施設データを削除します。山ノート・お気に入り・登頂済みは削除されません。")
         }
+    }
+
+    private var arTestNotice: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("ARテスト用・詳細情報なし")
+                    .font(.headline)
+                Text("\(presentation.regionTitle)で候補表示と地形判定を試す開発専用データです。ホームの正式対応地域は丹沢のままです。")
+                    .font(.caption)
+            }
+        } icon: {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .foregroundStyle(YamaColor.alpineTeal)
+        }
+        .padding(18)
+        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("offline-ar-test-notice")
     }
 
     private var availabilitySummary: some View {
@@ -58,7 +82,7 @@ struct OfflineView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(YamaColor.moss)
             }
-            Text("通信がなくても、丹沢の山を一覧・検索できます。AR識別用に、富士山など周辺の主要山頂も収録しています。")
+            Text(availabilityDescription)
                 .font(.caption)
                 .foregroundStyle(YamaColor.secondaryText)
         }
@@ -126,9 +150,9 @@ struct OfflineView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("丹沢詳細パック")
+                    Text(presentation.packageTitle)
                         .font(.headline)
-                    Text("詳細地形・施設・出典データ")
+                    Text(presentation.packageSubtitle)
                         .font(.caption)
                         .foregroundStyle(YamaColor.secondaryText)
                 }
@@ -177,7 +201,7 @@ struct OfflineView: View {
                 Button {
                     Task { await model.install() }
                 } label: {
-                    Label("丹沢詳細パックを保存", systemImage: "arrow.down.circle.fill")
+                    Label(presentation.installButtonTitle, systemImage: "arrow.down.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -192,7 +216,7 @@ struct OfflineView: View {
 
         case .installed(let package, let distribution):
             installedPackageDetails(package)
-            if distribution.canInstall {
+            if distribution.canInstall, presentation.showsUpdateAction {
                 developmentBundleNotice(distribution)
                 Button {
                     Task { await model.install() }
@@ -342,7 +366,7 @@ struct OfflineView: View {
         Button(role: .destructive) {
             isDeleteConfirmationPresented = true
         } label: {
-            Label("詳細パックを削除", systemImage: "trash")
+            Label("\(presentation.packageTitle)を削除", systemImage: "trash")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
@@ -378,6 +402,13 @@ struct OfflineView: View {
         Label(title, systemImage: icon)
             .font(.subheadline)
             .foregroundStyle(YamaColor.primaryText)
+    }
+
+    private var availabilityDescription: String {
+        if presentation == .fieldTestSet {
+            return "通信がなくても丹沢の一覧・検索を利用できます。カメラ候補には6山域と周辺の主要山頂をまとめて使用します。"
+        }
+        return "通信がなくても、丹沢の山を一覧・検索できます。AR識別用に、富士山など周辺の主要山頂も収録しています。"
     }
 
     private var dataProtectionNote: some View {

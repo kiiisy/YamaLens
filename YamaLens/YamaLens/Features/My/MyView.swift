@@ -9,6 +9,7 @@ struct MyView: View {
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     private let cameraProjector: MountainCameraProjector
     private let offlinePackageModel: OfflinePackageScreenModel
+    private let offlinePackagePresentation: OfflinePackagePresentation
     @Query private var records: [UserMountainRecord]
     @State private var isSettingsPresented = false
 
@@ -19,7 +20,8 @@ struct MyView: View {
         showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
-        offlinePackageModel: OfflinePackageScreenModel
+        offlinePackageModel: OfflinePackageScreenModel,
+        offlinePackagePresentation: OfflinePackagePresentation = .tanzawa
     ) {
         _showsTerrainHorizon = showsTerrainHorizon
         mountains = repository.fetchMountains()
@@ -28,6 +30,7 @@ struct MyView: View {
         self.diagnosticLogRepository = diagnosticLogRepository
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
+        self.offlinePackagePresentation = offlinePackagePresentation
     }
 
     private var favorites: [Mountain] { mountains(matching: records.filter(\.isFavorite)) }
@@ -68,7 +71,8 @@ struct MyView: View {
                     diagnosticLogRepository: diagnosticLogRepository,
                     mountains: mountains,
                     cameraProjector: cameraProjector,
-                    offlinePackageModel: offlinePackageModel
+                    offlinePackageModel: offlinePackageModel,
+                    offlinePackagePresentation: offlinePackagePresentation
                 )
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
@@ -160,6 +164,7 @@ struct MyView: View {
             NavigationLink {
                 OfflineView(
                     model: offlinePackageModel,
+                    presentation: offlinePackagePresentation,
                     coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
                     surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
                 )
@@ -169,10 +174,14 @@ struct MyView: View {
                         .font(.title2)
                         .foregroundStyle(YamaColor.alpineTeal)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("丹沢オフラインパック")
+                        Text(offlinePackagePresentation.packageTitle)
                             .font(.headline)
                             .foregroundStyle(YamaColor.primaryText)
-                        Text("基本データ利用可能 ・ 丹沢 \(mountains.filter { $0.coverageRole == .core }.count)座")
+                        Text(
+                            offlinePackagePresentation.isARTestOnly
+                                ? "ARテスト用・詳細情報なし"
+                                : "基本データ利用可能 ・ 丹沢 \(mountains.filter { $0.coverageRole == .core }.count)座"
+                        )
                             .font(.subheadline)
                             .foregroundStyle(YamaColor.secondaryText)
                     }

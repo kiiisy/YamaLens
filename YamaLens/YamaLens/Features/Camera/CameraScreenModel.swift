@@ -39,6 +39,8 @@ final class CameraScreenModel {
     private let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     private let terrainHorizonResolver: (any TerrainHorizonResolving)?
     private let terrainHorizonProjector: TerrainHorizonProjector
+    private let terrainPackageCoverages: [TerrainPackageCoverage]
+    private let terrainPackageCoverageSelector: TerrainPackageCoverageSelector
     private let tuning: CandidateTuning
     private let now: @MainActor () -> Date
     private var candidateStabilizer: CameraCandidateStabilizer
@@ -65,6 +67,7 @@ final class CameraScreenModel {
     private(set) var isTerrainHorizonVisible = false
     private(set) var terrainHorizonState: TerrainHorizonDisplayState = .hidden
     private(set) var terrainHorizonSegments: [[ViewportPoint]] = []
+    private(set) var activeTerrainPackageDisplayName: String?
 
     init(
         provider: any CameraObservationProvider,
@@ -73,6 +76,8 @@ final class CameraScreenModel {
         tuning: CandidateTuning = .default,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil,
         terrainHorizonResolver: (any TerrainHorizonResolving)? = nil,
+        terrainPackageCoverages: [TerrainPackageCoverage] = [],
+        terrainPackageCoverageSelector: TerrainPackageCoverageSelector = TerrainPackageCoverageSelector(),
         terrainHorizonProjector: TerrainHorizonProjector = TerrainHorizonProjector(),
         diagnosticRecorder: CameraDiagnosticRecorder? = nil,
         now: @escaping @MainActor () -> Date = { .now }
@@ -83,6 +88,8 @@ final class CameraScreenModel {
         self.tuning = tuning
         self.terrainVisibilityResolver = terrainVisibilityResolver
         self.terrainHorizonResolver = terrainHorizonResolver
+        self.terrainPackageCoverages = terrainPackageCoverages
+        self.terrainPackageCoverageSelector = terrainPackageCoverageSelector
         self.terrainHorizonProjector = terrainHorizonProjector
         candidateStabilizer = CameraCandidateStabilizer(tuning: tuning)
         self.diagnosticRecorder = diagnosticRecorder
@@ -110,6 +117,14 @@ final class CameraScreenModel {
 
     func updateLocationState(_ locationState: CurrentLocationState) {
         self.locationState = locationState
+        if case .available(let location, _) = locationState {
+            activeTerrainPackageDisplayName = terrainPackageCoverageSelector.select(
+                for: location.coordinate,
+                from: terrainPackageCoverages
+            )?.displayName
+        } else {
+            activeTerrainPackageDisplayName = nil
+        }
         guard let observation = lastObservation else { return }
         receive(observation)
     }

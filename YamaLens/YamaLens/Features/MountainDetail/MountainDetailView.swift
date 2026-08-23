@@ -79,6 +79,7 @@ struct MountainDetailView: View {
                             trailheadAccessGuides: trailheadAccessGuides
                         )
                             .padding(.horizontal, 18)
+                        externalServiceSection
                         notesSection
                     }
                     .padding(.bottom, 40)
@@ -416,6 +417,51 @@ struct MountainDetailView: View {
             }
         }
         .padding(.horizontal, 18)
+    }
+
+    @ViewBuilder
+    private var externalServiceSection: some View {
+        if let yamapURL = mountain.yamapURL {
+            VStack(alignment: .leading, spacing: 12) {
+                YamaSectionHeader(
+                    title: "外部サービス",
+                    subtitle: "対象の山を別のアプリで確認"
+                )
+                Link(destination: yamapURL) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "map")
+                            .foregroundStyle(YamaColor.moss)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("YAMAPで見る")
+                                .font(.headline)
+                                .foregroundStyle(YamaColor.primaryText)
+                            Text("山ページから登山計画を作成できます")
+                                .font(.caption)
+                                .foregroundStyle(YamaColor.secondaryText)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "arrow.up.right")
+                            .foregroundStyle(YamaColor.secondaryText)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .background(
+                        YamaColor.surface,
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("YAMAPで\(mountain.name)を見る")
+                .accessibilityHint("YAMAPがインストール済みならアプリ、未インストールならWebで開きます")
+                .accessibilityIdentifier("mountain-yamap-link")
+                Text("外部サービスの情報・計画はYamaLensの安全判断ではありません。")
+                    .font(.caption)
+                    .foregroundStyle(YamaColor.secondaryText)
+            }
+            .padding(.horizontal, 18)
+        }
     }
 
     private func notePhase(_ phase: MountainNotePhase, icon: String) -> some View {

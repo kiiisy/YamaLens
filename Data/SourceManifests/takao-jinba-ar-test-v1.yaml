@@ -1,0 +1,22 @@
+id: takao-jinba-ar-test-v1
+title: YamaLens 高尾・陣馬ARテスト用山頂データ
+status: development_test_only_provisional
+checked_at: 2026-08-23
+scope:
+  - mountain_name
+  - alias
+  - summit_coordinate
+  - elevation
+sources:
+  - provider: 国土地理院
+    role: 主要山岳の座標・標高の一次情報
+    url: https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html
+    map_url: https://maps.gsi.go.jp/
+    terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+  - provider: 八王子市
+    role: 高尾・陣馬稜線の山名と標高の一次案内
+    url: https://www.city.hachioji.tokyo.jp/shisei/003/003/p025800_d/fil/P31_32.pdf
+attribution: "出典：国土地理院ウェブサイト、八王子市公式資料"
+processing_note: "AR候補算出と固定リプレイの現地検証用に、山名・座標・標高だけをYamaLens向けSQLiteへ加工する。"
+verification_note: "高尾山と陣馬山は国土地理院『日本の主な山岳標高一覧』、景信山・堂所山・生藤山は地理院地図検索と八王子市等の公式資料を2026-08-23に照合した。正式対応地域としての施設・気象・交通情報は収録しない。"
+distribution_note: "開発用ARテストパック専用。App Store配布物や正式対応地域の表示へ混在させない。"

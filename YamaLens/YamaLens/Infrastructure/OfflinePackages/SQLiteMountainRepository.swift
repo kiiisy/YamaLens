@@ -99,6 +99,11 @@ nonisolated struct SQLiteMountainRepository: MountainRepository {
         from database: OpaquePointer,
         aliases: [String: [String]]
     ) throws -> [Mountain] {
+        let yamapURLSelection = try hasColumn(
+            "yamap_url",
+            inTable: "mountains",
+            database: database
+        ) ? "mountains.yamap_url" : "NULL"
         let query = """
         SELECT
             mountains.id,
@@ -108,7 +113,8 @@ nonisolated struct SQLiteMountainRepository: MountainRepository {
             mountains.coverage_role,
             mountains.elevation_m,
             mountains.latitude,
-            mountains.longitude
+            mountains.longitude,
+            \(yamapURLSelection) AS yamap_url
         FROM mountains
         INNER JOIN regions ON regions.id = mountains.region_id
         ORDER BY mountains.canonical_name;
@@ -136,6 +142,8 @@ nonisolated struct SQLiteMountainRepository: MountainRepository {
                 let elevation = sqlite3_column_int64(statement, 5)
                 let latitude = sqlite3_column_double(statement, 6)
                 let longitude = sqlite3_column_double(statement, 7)
+                let yamapURL = optionalText(in: statement, column: 8)
+                    .flatMap(validatedYAMAPMountainURL)
                 guard
                     !mountainID.isEmpty,
                     !name.isEmpty,
@@ -159,7 +167,8 @@ nonisolated struct SQLiteMountainRepository: MountainRepository {
                             latitude: latitude,
                             longitude: longitude
                         ),
-                        coverageRole: coverageRole
+                        coverageRole: coverageRole,
+                        yamapURL: yamapURL
                     )
                 )
             case SQLITE_DONE:
@@ -199,6 +208,69 @@ nonisolated struct SQLiteMountainRepository: MountainRepository {
             throw SQLiteMountainRepositoryError.sqliteFailure(code: stepResult)
         }
         return try text(in: statement, column: 0)
+    }
+
+    private static func hasColumn(
+        _ columnName: String,
+        inTable tableName: String,
+        database: OpaquePointer
+    ) throws -> Bool {
+        let query = "PRAGMA table_info(\(tableName));"
+        var statement: OpaquePointer?
+        let prepareResult = sqlite3_prepare_v2(database, query, -1, &statement, nil)
+        guard prepareResult == SQLITE_OK, let statement else {
+            throw SQLiteMountainRepositoryError.sqliteFailure(code: prepareResult)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        while true {
+            switch sqlite3_step(statement) {
+            case SQLITE_ROW:
+                if try text(in: statement, column: 1) == columnName {
+                    return true
+                }
+            case SQLITE_DONE:
+                return false
+            default:
+                throw SQLiteMountainRepositoryError.sqliteFailure(code: sqlite3_errcode(database))
+            }
+        }
+    }
+
+    private static func optionalText(
+        in statement: OpaquePointer,
+        column: Int32
+    ) -> String? {
+        guard
+            sqlite3_column_type(statement, column) != SQLITE_NULL,
+            let value = sqlite3_column_text(statement, column)
+        else {
+            return nil
+        }
+        return String(cString: value)
+    }
+
+    private static func validatedYAMAPMountainURL(_ text: String) -> URL? {
+        guard let components = URLComponents(string: text) else {
+            return nil
+        }
+        let pathComponents = components.path.split(separator: "/")
+        guard
+            components.scheme == "https",
+            components.host == "yamap.com",
+            components.user == nil,
+            components.password == nil,
+            components.port == nil,
+            components.query == nil,
+            components.fragment == nil,
+            pathComponents.count == 2,
+            pathComponents[0] == "mountains",
+            let mountainID = Int(pathComponents[1]),
+            mountainID > 0
+        else {
+            return nil
+        }
+        return components.url
     }
 
     private static func text(

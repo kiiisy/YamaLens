@@ -1,0 +1,10 @@
+{
+  "allowedBounds": { "east": 139.00, "north": 36.70, "south": 35.10, "west": 137.20 },
+  "catalogInput": "../Bootstrap/yatsugatake-ar-test-v1.json",
+  "contentVersion": "1.0.0", "createdAt": "2026-08-23T00:00:00Z", "formatVersion": 1,
+  "keyID": "yamalens-pack-development-01", "minimumAppVersion": "0.1.0",
+  "packageID": "jp.yatsugatake.ar-test", "schemaVersion": 1,
+  "sourceLinks": [{ "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）", "checkedAt": "2026-08-23", "id": "gsi-elevation-tiles", "isPrimary": true, "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html", "processingNote": "八ヶ岳詳細域を高解像度DEM、周辺候補域を低解像度DEMとして収録する。", "provider": "国土地理院", "title": "標高タイル（基盤地図情報数値標高モデル）", "url": "https://maps.gsi.go.jp/development/ichiran.html#dem" }],
+  "sourceManifestIDs": ["gsi-dem-yatsugatake-ar-test-v1", "yatsugatake-ar-test-v1"],
+  "sourceManifestDirectory": "../SourceManifests", "terrainSourceLinkID": "gsi-elevation-tiles"
+}

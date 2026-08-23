@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "provider": "国土地理院",
+  "sourceInformationURL": "https://maps.gsi.go.jp/development/ichiran.html#dem",
+  "layers": [
+    { "id": "nantaisan-detail-dem5a", "dataset": "DEM5A", "tileSet": "dem5a_png", "extension": "png", "zoom": 15, "bounds": { "north": 36.87, "south": 36.68, "east": 139.60, "west": 139.30 } },
+    { "id": "nantaisan-detail-dem5b", "dataset": "DEM5B", "tileSet": "dem5b_png", "extension": "png", "zoom": 15, "bounds": { "north": 36.87, "south": 36.68, "east": 139.60, "west": 139.30 } },
+    { "id": "nantaisan-detail-dem5c", "dataset": "DEM5C", "tileSet": "dem5c_png", "extension": "png", "zoom": 15, "bounds": { "north": 36.87, "south": 36.68, "east": 139.60, "west": 139.30 } },
+    { "id": "nantaisan-detail-fallback-dem10b", "dataset": "DEM10B", "tileSet": "dem_png", "extension": "png", "zoom": 14, "bounds": { "north": 36.87, "south": 36.68, "east": 139.60, "west": 139.30 } },
+    { "id": "nantaisan-surrounding-coarse-dem10b", "dataset": "DEM10B", "tileSet": "dem_png", "extension": "png", "zoom": 11, "bounds": { "north": 37.25, "south": 36.10, "east": 140.20, "west": 138.55 } }
+  ]
+}

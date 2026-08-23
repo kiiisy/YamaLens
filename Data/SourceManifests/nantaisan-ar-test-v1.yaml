@@ -1,0 +1,14 @@
+id: nantaisan-ar-test-v1
+title: YamaLens 男体山ARテスト用山頂データ
+status: development_test_only_verified
+checked_at: 2026-08-23
+scope: [mountain_name, alias, summit_coordinate, elevation]
+sources:
+  - provider: 国土地理院
+    role: 主要山岳の座標・標高の一次情報
+    url: https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html
+    terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+attribution: "出典：国土地理院『日本の主な山岳標高一覧』"
+processing_note: "男体山・日光連山と北関東周辺の主峰をAR候補用に加工する。"
+verification_note: "国土地理院の2026年3月31日版GeoJSONと照合した。施設・気象・交通情報は収録しない。"
+distribution_note: "開発用ARテストパック専用。正式対応地域の表示へ混在させない。"

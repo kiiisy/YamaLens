@@ -1,0 +1,22 @@
+id: gsi-dem-yatsugatake-ar-test-v1
+title: YamaLens 八ヶ岳ARテスト用地形データ
+status: development_signed_package_ready
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+terms_checked_at: 2026-08-23
+acquired_at: 2026-08-23T10:44:33Z
+input_files:
+  - path: Data/Generated/GSI/yatsugatake-ar-test-v1/acquisition-inventory.json
+    sha256: 5fd5b5bcb844298e440ddb5e3976007a14ce0a2de6a69945ae9a12f981f2dece
+  - path: Data/Generated/yatsugatake-ar-test-v1/terrain-index.json
+    sha256: 4ca0202353e5d106d0b49f3331b2b5a09786ce9dfdd2c365572d073cccf5f566
+acquisition_summary:
+  planned_tiles: 1202
+  acquired_tiles: 530
+  unavailable_tiles: 672
+  acquired_by_dataset: { DEM5A: 336, DEM5B: 0, DEM5C: 0, DEM10B: 194 }
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+verification_note: "公開HTTPS標高タイルを取得し、530タイルの索引・LZFSE・SQLite・Ed25519署名を生成時に検証した。"

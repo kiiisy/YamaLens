@@ -1,0 +1,22 @@
+id: gsi-dem-tanigawadake-ar-test-v1
+title: YamaLens 谷川岳ARテスト用地形データ
+status: development_signed_package_ready
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+terms_checked_at: 2026-08-23
+acquired_at: 2026-08-23T11:01:05Z
+input_files:
+  - path: Data/Generated/GSI/tanigawadake-ar-test-v1/acquisition-inventory.json
+    sha256: b2d55b7407b30b8b849b158c0d436662ed5d0ebf1dd64c94f25b98aefe3d9d03
+  - path: Data/Generated/tanigawadake-ar-test-v1/terrain-index.json
+    sha256: 0f7d408f5aa99fb9b497072c113da49cbfb26b64e44036b547288ab63a1b5bba
+acquisition_summary:
+  planned_tiles: 1778
+  acquired_tiles: 738
+  unavailable_tiles: 1040
+  acquired_by_dataset: { DEM5A: 520, DEM5B: 0, DEM5C: 0, DEM10B: 218 }
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+verification_note: "公開HTTPS標高タイルを取得し、738タイルの索引・LZFSE・SQLite・Ed25519署名を生成時に検証した。"

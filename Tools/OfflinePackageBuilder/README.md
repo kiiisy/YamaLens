@@ -11,7 +11,11 @@
 - 署名秘密鍵はリポジトリ外に置く。秘密鍵のバックアップとアクセス制御は別途運用する。
 - 生成物と原本は `Data/Generated/` 等のGit追跡外領域へ置く。
 
-実入力を取得したら、`Data/SourceManifests/gsi-dem-tanzawa-v1.yaml` の取得日、元データ更新日、座標系、入力ファイル、利用手続確認結果を更新する。未確認のまま本番配布用パックとして扱わない。
+実入力を取得したら、対象パックのSource Manifestへ取得日、元データ更新日、座標系、入力ファイル、利用手続確認結果を記録する。未確認のまま本番配布用パックとして扱わない。
+
+現在の開発パックは、国土地理院が公開する基盤地図情報数値標高モデル由来の標高タイル（実取得では主にDEM5AとDEM10B）を入力にしているため、地形値はダミーではない。利用者登録が必要なダウンロードサービスのJPGIS GML原本は、現行のAR現地検証パイプラインでは使用しない。GML原本を採用する場合も別のデータとして混在させず、Source Manifestと変換・再現手順を更新してから切り替える。
+
+生成処理は山域に依存しない。取得範囲、山頂カタログ、パックID、出典は `Data/OfflinePackages/` と `Data/Bootstrap/` の設定ファイルで切り替える。正式対応地域は丹沢のままとし、ほかの山域はAR現地検証専用パックとして通常のホームデータへ混在させない。
 
 ## 0. 正式な開発用原本を取得する
 
@@ -120,12 +124,64 @@ Tools/OfflinePackageBuilder/stage_development_pack.sh
 
 その後Xcodeからアプリをビルドし、「マイ」→「オフラインパック」→「丹沢詳細パックを保存」の順に操作する。同梱パックも通常の配布パックと同じ署名、SHA-256、SQLite、地形タイル検証を通過した場合だけ導入される。
 
-- 同梱先は `YamaLens/YamaLens/Resources/DevelopmentOfflinePackages/` で、Gitには追跡しない。
+- 同梱先は `YamaLens/YamaLens/Resources/DevelopmentOfflinePackages/<パック名>.bundle/` で、Gitには追跡しない。bundle単位にすることで、同名のmanifestやSQLiteを持つ別山域パックとアプリ内で衝突させない。
 - 秘密鍵やDEM原本はアプリへ同梱しない。
 - Releaseビルドでは開発用ローカル導入コードを有効にしない。
 - 再生成後は、スクリプトをもう一度実行して同梱ファイルを更新する。
 
-## 5. 自動テスト
+## 5. 高尾・陣馬ARテストパック
+
+最初の複数山域テストとして、高尾山から陣馬山周辺の主要山頂と、富士山・丹沢・奥多摩の遠景候補を収録する。施設、気象、交通、温泉は収録せず、候補表示、見通し判定、診断ログだけを対象にする。
+
+丹沢の原本と混ぜないよう、取得先を専用ディレクトリに分ける。
+
+```sh
+python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py plan \
+  --config Data/OfflinePackages/takao-jinba-dem-acquisition-v1.json \
+  --output Data/Generated/GSI/takao-jinba-ar-test-v1/acquisition-plan.json
+
+python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py fetch \
+  --plan Data/Generated/GSI/takao-jinba-ar-test-v1/acquisition-plan.json \
+  --destination Data/Generated/GSI/takao-jinba-ar-test-v1
+
+python3 Tools/OfflinePackageBuilder/build_detailed_pack.py index \
+  --source DEM5A=Data/Generated/GSI/takao-jinba-ar-test-v1/DEM5A \
+  --source DEM5B=Data/Generated/GSI/takao-jinba-ar-test-v1/DEM5B \
+  --source DEM5C=Data/Generated/GSI/takao-jinba-ar-test-v1/DEM5C \
+  --source DEM10B=Data/Generated/GSI/takao-jinba-ar-test-v1/DEM10B \
+  --output Data/Generated/takao-jinba-ar-test-v1/terrain-index.json
+
+python3 Tools/OfflinePackageBuilder/build_detailed_pack.py build \
+  --config Data/OfflinePackages/takao-jinba-ar-test-v1.json \
+  --terrain-index Data/Generated/takao-jinba-ar-test-v1/terrain-index.json \
+  --private-key /path/outside/repository/yamalens-pack-development.pem \
+  --output Data/Generated/takao-jinba-ar-test-v1/package
+
+Tools/OfflinePackageBuilder/stage_development_pack.sh takao-jinba-ar-test-v1
+```
+
+XcodeのSchemeへ起動引数 `-ar-test-pack-takao-jinba` を追加すると、診断のためカメラ候補、地形判定、オフラインパック管理を高尾・陣馬テストパックだけへ固定できる。通常のDebug起動では後述の全パックを利用する。ホーム、検索、マイの山記録は正式対応地域の丹沢のまま維持される。画面には「ARテスト用・詳細情報なし」と表示する。
+
+## 6. 訪問予定山域のARテストパック
+
+高尾・陣馬と同じ生成手順で、次の独立パックを利用できる。`<name>` を表のパック名へ置換して、対応する `Data/OfflinePackages/<name>-dem-acquisition-v1.json` と `<name>-ar-test-v1.json` を使用する。
+
+| 山域 | パック名 `<name>` | Xcode起動引数 |
+| --- | --- | --- |
+| 八ヶ岳 | `yatsugatake` | `-ar-test-pack-yatsugatake` |
+| 仙丈ヶ岳・南アルプス北部 | `senjogatake` | `-ar-test-pack-senjogatake` |
+| 男体山・日光連山 | `nantaisan` | `-ar-test-pack-nantaisan` |
+| 谷川岳・谷川連峰 | `tanigawadake` | `-ar-test-pack-tanigawadake` |
+
+生成物ディレクトリ名は `<name>-ar-test-v1` とする。たとえば八ヶ岳では、取得先と索引・生成先を `Data/Generated/GSI/yatsugatake-ar-test-v1/`、`Data/Generated/yatsugatake-ar-test-v1/` に分け、完成後に次で同梱する。
+
+```sh
+Tools/OfflinePackageBuilder/stage_development_pack.sh yatsugatake-ar-test-v1
+```
+
+通常のDebug起動では、丹沢、高尾・陣馬、八ヶ岳、仙丈ヶ岳・南アルプス北部、男体山・日光連山、谷川岳・谷川連峰を一式として表示し、一度の保存操作で不足分を導入する。カメラ候補は全カタログから統合し、見通し判定と予測稜線のDEMは現在地が詳細範囲に入るパックへ自動切替する。範囲外では地形未確認とする。表の起動引数を指定した場合だけ、再現確認のため該当する1パックへ固定する。ホーム、検索、マイの正式データは丹沢のまま維持する。
+
+## 7. 自動テスト
 
 ```sh
 python3 Tools/OfflinePackageBuilder/test_build_detailed_pack.py -v

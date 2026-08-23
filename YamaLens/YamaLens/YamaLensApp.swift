@@ -16,6 +16,7 @@ struct YamaLensApp: App {
         WindowGroup {
             YamaLensRootView(
                 repository: appDelegate.appContainer.mountainRepository,
+                cameraMountains: appDelegate.appContainer.cameraMountains,
                 pointOfInterestRepository: appDelegate.appContainer.mountainPointOfInterestRepository,
                 locationObservationProvider: appDelegate.appContainer.locationObservationProvider,
                 proximityCalculator: appDelegate.appContainer.proximityCalculator,
@@ -25,7 +26,9 @@ struct YamaLensApp: App {
                 cameraDiagnosticDevice: appDelegate.appContainer.cameraDiagnosticDevice,
                 terrainVisibilityResolver: appDelegate.appContainer.terrainVisibilityResolver,
                 terrainHorizonResolver: appDelegate.appContainer.terrainHorizonResolver,
+                terrainPackageCoverages: appDelegate.appContainer.terrainPackageCoverages,
                 offlinePackageManager: appDelegate.appContainer.offlinePackageManager,
+                offlinePackagePresentation: appDelegate.appContainer.offlinePackagePresentation,
                 mountainWeatherRepository: appDelegate.appContainer.mountainWeatherRepository
             )
                 .modelContainer(for: UserMountainRecord.self)
@@ -61,12 +64,14 @@ struct MountainDetailPresentation: Identifiable, Equatable {
 
 private struct YamaLensRootView: View {
     let repository: any MountainRepository
+    let cameraMountains: [Mountain]
     let pointOfInterestRepository: any MountainPointOfInterestRepository
     let proximityCalculator: MountainProximityCalculator
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
     let cameraProjector: MountainCameraProjector
     let mountainWeatherRepository: any MountainWeatherRepository
+    let offlinePackagePresentation: OfflinePackagePresentation
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedTab: YamaTab = .home
@@ -79,6 +84,7 @@ private struct YamaLensRootView: View {
 
     init(
         repository: any MountainRepository,
+        cameraMountains: [Mountain],
         pointOfInterestRepository: any MountainPointOfInterestRepository,
         locationObservationProvider: any LocationObservationProvider,
         proximityCalculator: MountainProximityCalculator,
@@ -88,14 +94,18 @@ private struct YamaLensRootView: View {
         cameraDiagnosticDevice: CameraDiagnosticDevice?,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)?,
         terrainHorizonResolver: (any TerrainHorizonResolving)?,
+        terrainPackageCoverages: [TerrainPackageCoverage],
         offlinePackageManager: any OfflinePackageManaging,
+        offlinePackagePresentation: OfflinePackagePresentation,
         mountainWeatherRepository: any MountainWeatherRepository
     ) {
         self.repository = repository
+        self.cameraMountains = cameraMountains
         self.pointOfInterestRepository = pointOfInterestRepository
         self.proximityCalculator = proximityCalculator
         self.cameraPreview = cameraPreview
         self.mountainWeatherRepository = mountainWeatherRepository
+        self.offlinePackagePresentation = offlinePackagePresentation
         _locationModel = State(
             initialValue: LocationSessionModel(
                 provider: locationObservationProvider,
@@ -117,10 +127,11 @@ private struct YamaLensRootView: View {
         _cameraModel = State(
             initialValue: CameraScreenModel(
                 provider: cameraObservationProvider,
-                mountains: repository.fetchMountains(),
+                mountains: cameraMountains,
                 projector: projector,
                 terrainVisibilityResolver: terrainVisibilityResolver,
                 terrainHorizonResolver: terrainHorizonResolver,
+                terrainPackageCoverages: terrainPackageCoverages,
                 diagnosticRecorder: diagnosticRecorder
             )
         )
@@ -155,7 +166,8 @@ private struct YamaLensRootView: View {
                         showsTerrainHorizon: $showsTerrainHorizon,
                         model: cameraModel,
                         locationModel: locationModel,
-                        preview: cameraPreview
+                        preview: cameraPreview,
+                        dataContextTitle: offlinePackagePresentation.cameraContextTitle
                     ) { mountain in
                         openDetail(
                             MountainDetailPresentation(
@@ -179,7 +191,8 @@ private struct YamaLensRootView: View {
                         showsTerrainHorizon: $showsTerrainHorizon,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
                         cameraProjector: cameraProjector,
-                        offlinePackageModel: offlinePackageModel
+                        offlinePackageModel: offlinePackageModel,
+                        offlinePackagePresentation: offlinePackagePresentation
                     )
                         .tabItem {
                             Image(systemName: "person.crop.circle")

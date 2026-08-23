@@ -1,0 +1,35 @@
+{
+  "allowedBounds": {
+    "east": 139.40,
+    "north": 36.04,
+    "south": 35.17,
+    "west": 138.51
+  },
+  "catalogInput": "../Bootstrap/takao-jinba-ar-test-v1.json",
+  "contentVersion": "1.0.0",
+  "createdAt": "2026-08-23T00:00:00Z",
+  "formatVersion": 1,
+  "keyID": "yamalens-pack-development-01",
+  "minimumAppVersion": "0.1.0",
+  "packageID": "jp.tokyo.takao-jinba.ar-test",
+  "schemaVersion": 1,
+  "sourceLinks": [
+    {
+      "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）",
+      "checkedAt": "2026-08-23",
+      "id": "gsi-elevation-tiles",
+      "isPrimary": true,
+      "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "processingNote": "高尾・陣馬のズーム15地形をDEM5A、DEM5B、DEM5C、DEM10Bの順で補完し、周辺はズーム11のDEM10Bを収録する。1m単位のInt16標高格子へ丸め、タイル単位でLZFSE圧縮する。",
+      "provider": "国土地理院",
+      "title": "標高タイル（基盤地図情報数値標高モデル）",
+      "url": "https://maps.gsi.go.jp/development/ichiran.html#dem"
+    }
+  ],
+  "sourceManifestIDs": [
+    "gsi-dem-takao-jinba-ar-test-v1",
+    "takao-jinba-ar-test-v1"
+  ],
+  "sourceManifestDirectory": "../SourceManifests",
+  "terrainSourceLinkID": "gsi-elevation-tiles"
+}

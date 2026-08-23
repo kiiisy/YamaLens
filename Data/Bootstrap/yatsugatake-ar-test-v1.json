@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.0.0",
+  "sourceManifestID": "yatsugatake-ar-test-v1",
+  "regions": [
+    { "id": "jp.yatsugatake", "name": "八ヶ岳", "prefectureName": "長野県・山梨県" },
+    { "id": "jp.surrounding.central-highlands", "name": "中部山岳周辺", "prefectureName": "山梨県・長野県・岐阜県・静岡県" }
+  ],
+  "mountains": [
+    { "id": "赤岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "赤岳", "searchName": "あかだけ", "aliases": ["あかだけ"], "latitude": 35.970797, "longitude": 138.370067, "elevationMeters": 2899, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "阿弥陀岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "阿弥陀岳", "searchName": "あみだだけ", "aliases": ["あみだだけ"], "latitude": 35.972453, "longitude": 138.358797, "elevationMeters": 2805, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "横岳-八ヶ岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "横岳", "searchName": "よこだけ", "aliases": ["八ヶ岳 横岳"], "latitude": 35.985965, "longitude": 138.372841, "elevationMeters": 2830, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "硫黄岳-八ヶ岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "硫黄岳", "searchName": "いおうだけ", "aliases": ["八ヶ岳 硫黄岳"], "latitude": 35.998776, "longitude": 138.369968, "elevationMeters": 2760, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "権現岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "権現岳", "searchName": "ごんげんだけ", "aliases": ["ごんげんだけ"], "latitude": 35.949802, "longitude": 138.359742, "elevationMeters": 2715, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "編笠山", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "編笠山", "searchName": "あみがさやま", "aliases": ["あみがさやま"], "latitude": 35.941696, "longitude": 138.345057, "elevationMeters": 2524, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "天狗岳-八ヶ岳", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "天狗岳", "searchName": "てんぐだけ", "aliases": ["八ヶ岳 天狗岳"], "latitude": 36.019171, "longitude": 138.355453, "elevationMeters": 2646, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "蓼科山", "regionID": "jp.yatsugatake", "coverageRole": "core", "canonicalName": "蓼科山", "searchName": "たてしなやま", "aliases": ["たてしなやま"], "latitude": 36.103729, "longitude": 138.295071, "elevationMeters": 2531, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "富士山", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "富士山", "searchName": "ふじさん", "aliases": ["剣ヶ峯"], "latitude": 35.360738, "longitude": 138.727373, "elevationMeters": 3776, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "甲斐駒ヶ岳", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "甲斐駒ヶ岳", "searchName": "かいこまがたけ", "aliases": ["駒ヶ岳"], "latitude": 35.758009, "longitude": 138.236688, "elevationMeters": 2967, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "仙丈ヶ岳", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "仙丈ヶ岳", "searchName": "せんじょうがたけ", "aliases": ["せんじょうがたけ"], "latitude": 35.720069, "longitude": 138.183581, "elevationMeters": 3033, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "北岳", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "北岳", "searchName": "きただけ", "aliases": ["きただけ"], "latitude": 35.674314, "longitude": 138.238828, "elevationMeters": 3193, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "木曽駒ヶ岳", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "木曽駒ヶ岳", "searchName": "きそこまがたけ", "aliases": ["駒ヶ岳"], "latitude": 35.789550, "longitude": 137.804574, "elevationMeters": 2956, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "御嶽山", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "御嶽山", "searchName": "おんたけさん", "aliases": ["剣ヶ峰"], "latitude": 35.893014, "longitude": 137.480439, "elevationMeters": 3067, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "槍ヶ岳", "regionID": "jp.surrounding.central-highlands", "coverageRole": "surroundingCandidate", "canonicalName": "槍ヶ岳", "searchName": "やりがたけ", "aliases": ["やりがたけ"], "latitude": 36.342024, "longitude": 137.647643, "elevationMeters": 3180, "updatedAt": "2026-08-23T00:00:00Z" }
+  ],
+  "sourceLinks": [
+    { "id": "gsi-major-mountains", "provider": "国土地理院", "title": "日本の主な山岳標高一覧", "url": "https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html", "checkedAt": "2026-08-23", "attributionText": "出典：国土地理院『日本の主な山岳標高一覧』" }
+  ],
+  "pointsOfInterest": [], "mountainPointOfInterestLinks": [], "trailheadAccessLinks": [], "trailheadSearchAreas": []
+}

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sqlite3
 import sys
 from datetime import date
@@ -47,6 +48,7 @@ CREATE TABLE mountains (
     latitude REAL NOT NULL CHECK(latitude BETWEEN -90.0 AND 90.0),
     longitude REAL NOT NULL CHECK(longitude BETWEEN -180.0 AND 180.0),
     elevation_m INTEGER NOT NULL,
+    yamap_url TEXT,
     updated_at TEXT NOT NULL
 );
 CREATE TABLE mountain_names (
@@ -160,6 +162,20 @@ def require_https_url(value: Any, field: str) -> str:
     return url
 
 
+def require_yamap_mountain_url(value: Any, field: str) -> str:
+    url = require_https_url(value, field)
+    parsed = urlsplit(url)
+    if (
+        parsed.hostname != "yamap.com"
+        or parsed.port is not None
+        or parsed.query
+        or parsed.fragment
+        or not re.fullmatch(r"/mountains/[1-9][0-9]*", parsed.path)
+    ):
+        raise ValueError(f"{field} must be a canonical YAMAP mountain URL")
+    return url
+
+
 def require_date(value: Any, field: str) -> str:
     text = require_text(value, field, 10)
     try:
@@ -215,6 +231,11 @@ def load_source(path: Path) -> dict[str, Any]:
         require_number(mountain.get("latitude"), f"mountains[{index}].latitude", -90, 90)
         require_number(mountain.get("longitude"), f"mountains[{index}].longitude", -180, 180)
         require_number(mountain.get("elevationMeters"), f"mountains[{index}].elevationMeters", -500, 9_000)
+        if mountain.get("yamapURL") is not None:
+            require_yamap_mountain_url(
+                mountain.get("yamapURL"),
+                f"mountains[{index}].yamapURL",
+            )
         aliases = mountain.get("aliases")
         if not isinstance(aliases, list) or len(aliases) > 32:
             raise ValueError(f"mountains[{index}].aliases must be an array of at most 32 entries")
@@ -365,8 +386,8 @@ def create_database(source: dict[str, Any], output: Path) -> None:
                 """
                 INSERT INTO mountains(
                     id, region_id, canonical_name, search_name, coverage_role, latitude,
-                    longitude, elevation_m, updated_at
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    longitude, elevation_m, yamap_url, updated_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     mountain["id"],
@@ -377,6 +398,7 @@ def create_database(source: dict[str, Any], output: Path) -> None:
                     mountain["latitude"],
                     mountain["longitude"],
                     mountain["elevationMeters"],
+                    mountain.get("yamapURL"),
                     mountain["updatedAt"],
                 ),
             )
@@ -494,7 +516,7 @@ def verify_database(source: dict[str, Any], output: Path) -> None:
         if schema != (str(SCHEMA_VERSION),):
             raise ValueError("unexpected database schema version")
         rows = connection.execute(
-            "SELECT id, canonical_name, coverage_role, latitude, longitude, elevation_m FROM mountains ORDER BY id"
+            "SELECT id, canonical_name, coverage_role, latitude, longitude, elevation_m, yamap_url FROM mountains ORDER BY id"
         ).fetchall()
         expected = sorted(
             (
@@ -504,6 +526,7 @@ def verify_database(source: dict[str, Any], output: Path) -> None:
                 mountain["latitude"],
                 mountain["longitude"],
                 mountain["elevationMeters"],
+                mountain.get("yamapURL"),
             )
             for mountain in source["mountains"]
         )

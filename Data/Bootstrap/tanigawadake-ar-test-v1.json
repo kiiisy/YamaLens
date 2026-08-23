@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.0.0",
+  "sourceManifestID": "tanigawadake-ar-test-v1",
+  "regions": [
+    { "id": "jp.tanigawa", "name": "谷川連峰", "prefectureName": "群馬県・新潟県" },
+    { "id": "jp.surrounding.joetsu", "name": "上越・尾瀬周辺", "prefectureName": "群馬県・新潟県・長野県・栃木県・福島県" }
+  ],
+  "mountains": [
+    { "id": "谷川岳", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "谷川岳", "searchName": "たにがわだけ", "aliases": ["オキノ耳"], "latitude": 36.837115, "longitude": 138.930157, "elevationMeters": 1977, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "一ノ倉岳", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "一ノ倉岳", "searchName": "いちのくらだけ", "aliases": ["谷川岳 一ノ倉岳"], "latitude": 36.847111, "longitude": 138.924363, "elevationMeters": 1974, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "茂倉岳", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "茂倉岳", "searchName": "しげくらだけ", "aliases": ["谷川岳 茂倉岳"], "latitude": 36.849166, "longitude": 138.916666, "elevationMeters": 1978, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "万太郎山", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "万太郎山", "searchName": "まんたろうさん", "aliases": ["まんたろうさん"], "latitude": 36.824152, "longitude": 138.879218, "elevationMeters": 1954, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "仙ノ倉山", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "仙ノ倉山", "searchName": "せんのくらやま", "aliases": ["せんのくらやま"], "latitude": 36.817468, "longitude": 138.839518, "elevationMeters": 2026, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "平標山", "regionID": "jp.tanigawa", "coverageRole": "core", "canonicalName": "平標山", "searchName": "たいらっぴょうやま", "aliases": ["たいらっぴょうやま"], "latitude": 36.817862, "longitude": 138.821884, "elevationMeters": 1984, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "巻機山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "巻機山", "searchName": "まきはたやま", "aliases": ["まきはたやま"], "latitude": 36.978551, "longitude": 138.964448, "elevationMeters": 1967, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "苗場山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "苗場山", "searchName": "なえばさん", "aliases": ["なえばさん"], "latitude": 36.845937, "longitude": 138.690320, "elevationMeters": 2145, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "武尊山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "武尊山", "searchName": "ほたかやま", "aliases": ["上州武尊山"], "latitude": 36.805189, "longitude": 139.132601, "elevationMeters": 2158, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "至仏山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "至仏山", "searchName": "しぶつさん", "aliases": ["しぶつさん"], "latitude": 36.903474, "longitude": 139.173248, "elevationMeters": 2228, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "燧ヶ岳", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "燧ヶ岳", "searchName": "ひうちがたけ", "aliases": ["柴安嵓"], "latitude": 36.955102, "longitude": 139.285334, "elevationMeters": 2356, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "日光白根山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "日光白根山", "searchName": "にっこうしらねさん", "aliases": ["白根山"], "latitude": 36.798602, "longitude": 139.375921, "elevationMeters": 2578, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "赤城山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "赤城山", "searchName": "あかぎやま", "aliases": ["黒檜山"], "latitude": 36.560367, "longitude": 139.193270, "elevationMeters": 1828, "updatedAt": "2026-08-23T00:00:00Z" },
+    { "id": "浅間山", "regionID": "jp.surrounding.joetsu", "coverageRole": "surroundingCandidate", "canonicalName": "浅間山", "searchName": "あさまやま", "aliases": ["あさまやま"], "latitude": 36.406526, "longitude": 138.522963, "elevationMeters": 2568, "updatedAt": "2026-08-23T00:00:00Z" }
+  ],
+  "sourceLinks": [
+    { "id": "gsi-major-mountains", "provider": "国土地理院", "title": "日本の主な山岳標高一覧・地理院地図", "url": "https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html", "checkedAt": "2026-08-23", "attributionText": "出典：国土地理院『日本の主な山岳標高一覧』・地理院地図" }
+  ],
+  "pointsOfInterest": [], "mountainPointOfInterestLinks": [], "trailheadAccessLinks": [], "trailheadSearchAreas": []
+}

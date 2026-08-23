@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.0.0",
+  "regions": [
+    {
+      "id": "jp.tokyo.takao-jinba",
+      "name": "高尾・陣馬",
+      "prefectureName": "東京都・神奈川県"
+    },
+    {
+      "id": "jp.tokyo.okutama",
+      "name": "奥多摩",
+      "prefectureName": "東京都・山梨県"
+    },
+    {
+      "id": "jp.fuji",
+      "name": "富士山周辺",
+      "prefectureName": "山梨県・静岡県"
+    },
+    {
+      "id": "jp.kanagawa.tanzawa",
+      "name": "丹沢山地",
+      "prefectureName": "神奈川県"
+    }
+  ],
+  "sourceManifestID": "takao-jinba-ar-test-v1",
+  "mountains": [
+    {
+      "id": "高尾山",
+      "regionID": "jp.tokyo.takao-jinba",
+      "coverageRole": "core",
+      "canonicalName": "高尾山",
+      "searchName": "たかおさん",
+      "aliases": ["たかおさん"],
+      "latitude": 35.6252778,
+      "longitude": 139.2436111,
+      "elevationMeters": 599,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "景信山",
+      "regionID": "jp.tokyo.takao-jinba",
+      "coverageRole": "core",
+      "canonicalName": "景信山",
+      "searchName": "かげのぶやま",
+      "aliases": ["かげのぶやま"],
+      "latitude": 35.6459818,
+      "longitude": 139.2158276,
+      "elevationMeters": 727,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "堂所山",
+      "regionID": "jp.tokyo.takao-jinba",
+      "coverageRole": "core",
+      "canonicalName": "堂所山",
+      "searchName": "どうどころやま",
+      "aliases": ["どうどころやま"],
+      "latitude": 35.6513707,
+      "longitude": 139.1936056,
+      "elevationMeters": 731,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "陣馬山",
+      "regionID": "jp.tokyo.takao-jinba",
+      "coverageRole": "core",
+      "canonicalName": "陣馬山",
+      "searchName": "じんばさん",
+      "aliases": ["じんばさん", "陣場山"],
+      "latitude": 35.6522222,
+      "longitude": 139.1666667,
+      "elevationMeters": 855,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "生藤山",
+      "regionID": "jp.tokyo.takao-jinba",
+      "coverageRole": "core",
+      "canonicalName": "生藤山",
+      "searchName": "しょうとうさん",
+      "aliases": ["しょうとうさん"],
+      "latitude": 35.6724482,
+      "longitude": 139.1323654,
+      "elevationMeters": 990,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "大岳山",
+      "regionID": "jp.tokyo.okutama",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "大岳山",
+      "searchName": "おおだけさん",
+      "aliases": ["おおだけさん"],
+      "latitude": 35.7652375,
+      "longitude": 139.1303779,
+      "elevationMeters": 1266,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "三頭山",
+      "regionID": "jp.tokyo.okutama",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "三頭山",
+      "searchName": "みとうさん",
+      "aliases": ["みとうさん"],
+      "latitude": 35.7385665,
+      "longitude": 139.0140887,
+      "elevationMeters": 1531,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "富士山",
+      "regionID": "jp.fuji",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "富士山",
+      "searchName": "ふじさん",
+      "aliases": ["ふじさん", "剣ヶ峰"],
+      "latitude": 35.3627986,
+      "longitude": 138.7307814,
+      "elevationMeters": 3776,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    },
+    {
+      "id": "丹沢山",
+      "regionID": "jp.kanagawa.tanzawa",
+      "coverageRole": "surroundingCandidate",
+      "canonicalName": "丹沢山",
+      "searchName": "たんざわさん",
+      "aliases": ["たんざわさん"],
+      "latitude": 35.4741667,
+      "longitude": 139.1627778,
+      "elevationMeters": 1567,
+      "updatedAt": "2026-08-23T00:00:00Z"
+    }
+  ],
+  "sourceLinks": [
+    {
+      "id": "gsi-major-mountains",
+      "provider": "国土地理院",
+      "title": "日本の主な山岳標高一覧",
+      "url": "https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：国土地理院『日本の主な山岳標高一覧』"
+    },
+    {
+      "id": "hachioji-takao-jinba-map",
+      "provider": "八王子市",
+      "title": "高尾・陣馬エリアの山岳案内",
+      "url": "https://www.city.hachioji.tokyo.jp/shisei/003/003/p025800_d/fil/P31_32.pdf",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：八王子市公式資料"
+    }
+  ],
+  "pointsOfInterest": [],
+  "mountainPointOfInterestLinks": [],
+  "trailheadAccessLinks": [],
+  "trailheadSearchAreas": []
+}

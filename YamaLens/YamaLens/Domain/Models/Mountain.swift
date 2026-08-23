@@ -14,6 +14,7 @@ nonisolated struct Mountain: Identifiable, Equatable, Hashable, Sendable {
     let elevationMeters: Int
     let coordinate: GeoCoordinate
     let coverageRole: MountainCoverageRole
+    let yamapURL: URL?
 
     init(
         id: String,
@@ -23,7 +24,8 @@ nonisolated struct Mountain: Identifiable, Equatable, Hashable, Sendable {
         prefectureName: String,
         elevationMeters: Int,
         coordinate: GeoCoordinate,
-        coverageRole: MountainCoverageRole = .core
+        coverageRole: MountainCoverageRole = .core,
+        yamapURL: URL? = nil
     ) {
         self.id = id
         self.name = name
@@ -33,6 +35,7 @@ nonisolated struct Mountain: Identifiable, Equatable, Hashable, Sendable {
         self.elevationMeters = elevationMeters
         self.coordinate = coordinate
         self.coverageRole = coverageRole
+        self.yamapURL = yamapURL
     }
 
     var searchableText: String {

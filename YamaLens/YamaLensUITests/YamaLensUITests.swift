@@ -254,6 +254,13 @@ final class YamaLensUITests: XCTestCase {
         }
         XCTAssertTrue(genericMapButton.waitForExistence(timeout: 2))
         XCTAssertTrue(genericMapButton.isHittable)
+
+        let yamapLink = app.descendants(matching: .any)["mountain-yamap-link"]
+        for _ in 0..<4 where !yamapLink.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(yamapLink.waitForExistence(timeout: 2))
+        XCTAssertTrue(yamapLink.isHittable)
     }
 
     @MainActor

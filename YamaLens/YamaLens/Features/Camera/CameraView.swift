@@ -7,6 +7,7 @@ struct CameraView: View {
     let model: CameraScreenModel
     let locationModel: LocationSessionModel
     let preview: AnyView
+    let dataContextTitle: String
     let onSelectMountain: (Mountain) -> Void
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -107,7 +108,7 @@ struct CameraView: View {
 
     private var permissionContent: some View {
         VStack(spacing: 0) {
-            statusBar(left: "丹沢・技術試作", right: "候補待機中", symbol: "scope")
+            statusBar(left: dataContextTitle, right: "候補待機中", symbol: "scope")
             Spacer()
             VStack(alignment: .leading, spacing: 16) {
                 Label("カメラで山候補を探す", systemImage: "camera.viewfinder")
@@ -159,6 +160,18 @@ struct CameraView: View {
                     right: qualityText(quality),
                     symbol: quality == .good ? "location.north.fill" : "exclamationmark.triangle"
                 )
+                if let activeTerrainPackageDisplayName = model.activeTerrainPackageDisplayName {
+                    Label(
+                        "地形：\(activeTerrainPackageDisplayName)",
+                        systemImage: "mountain.2"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 36)
+                    .background(.regularMaterial, in: Capsule())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("使用中の地形パック、\(activeTerrainPackageDisplayName)")
+                }
                 if let recorder = model.diagnosticRecorder {
                     diagnosticControls(recorder: recorder, candidates: candidates)
                 }
@@ -478,7 +491,7 @@ struct CameraView: View {
 
     private var sensorWaitingContent: some View {
         VStack(spacing: 12) {
-            statusBar(left: "丹沢・技術試作", right: "センサー準備中", symbol: "location.north")
+            statusBar(left: dataContextTitle, right: "センサー準備中", symbol: "location.north")
             Spacer()
             switch locationModel.state {
             case .denied:

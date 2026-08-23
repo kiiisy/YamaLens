@@ -1,0 +1,10 @@
+{
+  "allowedBounds": { "east": 140.35, "north": 37.40, "south": 36.00, "west": 138.45 },
+  "catalogInput": "../Bootstrap/nantaisan-ar-test-v1.json",
+  "contentVersion": "1.0.0", "createdAt": "2026-08-23T00:00:00Z", "formatVersion": 1,
+  "keyID": "yamalens-pack-development-01", "minimumAppVersion": "0.1.0",
+  "packageID": "jp.nikko.nantaisan.ar-test", "schemaVersion": 1,
+  "sourceLinks": [{ "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）", "checkedAt": "2026-08-23", "id": "gsi-elevation-tiles", "isPrimary": true, "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html", "processingNote": "男体山・日光連山を高解像度DEM、北関東周辺候補域を低解像度DEMとして収録する。", "provider": "国土地理院", "title": "標高タイル（基盤地図情報数値標高モデル）", "url": "https://maps.gsi.go.jp/development/ichiran.html#dem" }],
+  "sourceManifestIDs": ["gsi-dem-nantaisan-ar-test-v1", "nantaisan-ar-test-v1"],
+  "sourceManifestDirectory": "../SourceManifests", "terrainSourceLinkID": "gsi-elevation-tiles"
+}

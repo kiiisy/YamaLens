@@ -50,6 +50,7 @@
       "latitude": 35.4863889,
       "longitude": 139.1388889,
       "elevationMeters": 1673,
+      "yamapURL": "https://yamap.com/mountains/33",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -62,6 +63,7 @@
       "latitude": 35.4741667,
       "longitude": 139.1627778,
       "elevationMeters": 1567,
+      "yamapURL": "https://yamap.com/mountains/110",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -74,6 +76,7 @@
       "latitude": 35.4541667,
       "longitude": 139.1633333,
       "elevationMeters": 1491,
+      "yamapURL": "https://yamap.com/mountains/245",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -86,6 +89,7 @@
       "latitude": 35.4790567,
       "longitude": 139.1027937,
       "elevationMeters": 1601,
+      "yamapURL": "https://yamap.com/mountains/16167",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -98,6 +102,7 @@
       "latitude": 35.4437799,
       "longitude": 139.1413847,
       "elevationMeters": 1273,
+      "yamapURL": "https://yamap.com/mountains/248",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -110,6 +115,7 @@
       "latitude": 35.4408333,
       "longitude": 139.2313889,
       "elevationMeters": 1252,
+      "yamapURL": "https://yamap.com/mountains/32",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -122,6 +128,7 @@
       "latitude": 35.3606,
       "longitude": 138.7274,
       "elevationMeters": 3776,
+      "yamapURL": "https://yamap.com/mountains/14",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -134,6 +141,7 @@
       "latitude": 35.2898,
       "longitude": 139.0047,
       "elevationMeters": 1212,
+      "yamapURL": "https://yamap.com/mountains/91",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -146,6 +154,7 @@
       "latitude": 35.2334,
       "longitude": 139.0206,
       "elevationMeters": 1438,
+      "yamapURL": "https://yamap.com/mountains/3292",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -158,6 +167,7 @@
       "latitude": 35.2250,
       "longitude": 139.0245,
       "elevationMeters": 1356,
+      "yamapURL": "https://yamap.com/mountains/3292",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -170,6 +180,7 @@
       "latitude": 35.8555,
       "longitude": 138.9439,
       "elevationMeters": 2017,
+      "yamapURL": "https://yamap.com/mountains/25",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -182,6 +193,7 @@
       "latitude": 35.7392,
       "longitude": 139.0133,
       "elevationMeters": 1531,
+      "yamapURL": "https://yamap.com/mountains/28",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -194,6 +206,7 @@
       "latitude": 35.7651,
       "longitude": 139.1308,
       "elevationMeters": 1266,
+      "yamapURL": "https://yamap.com/mountains/109",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -206,6 +219,7 @@
       "latitude": 35.7488,
       "longitude": 138.8456,
       "elevationMeters": 2057,
+      "yamapURL": "https://yamap.com/mountains/178",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -218,6 +232,7 @@
       "latitude": 35.5492,
       "longitude": 138.8096,
       "elevationMeters": 1785,
+      "yamapURL": "https://yamap.com/mountains/15998",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -230,6 +245,7 @@
       "latitude": 35.2382,
       "longitude": 138.7947,
       "elevationMeters": 1504,
+      "yamapURL": "https://yamap.com/mountains/3039",
       "updatedAt": "2026-08-22T00:00:00Z"
     },
     {
@@ -242,6 +258,7 @@
       "latitude": 34.8628,
       "longitude": 139.0017,
       "elevationMeters": 1406,
+      "yamapURL": "https://yamap.com/mountains/179",
       "updatedAt": "2026-08-22T00:00:00Z"
     }
   ],

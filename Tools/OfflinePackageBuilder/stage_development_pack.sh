@@ -2,8 +2,17 @@
 set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-source_directory="$repository_root/Data/Generated/tanzawa-detailed-v1/package"
-destination_directory="$repository_root/YamaLens/YamaLens/Resources/DevelopmentOfflinePackages/tanzawa-detailed-v1"
+package_directory_name=${1:-tanzawa-detailed-v1}
+
+case "$package_directory_name" in
+    *[!A-Za-z0-9._-]*|'')
+        echo "Package directory name may contain only letters, digits, period, underscore, and hyphen." >&2
+        exit 1
+        ;;
+esac
+
+source_directory="$repository_root/Data/Generated/$package_directory_name/package"
+destination_directory="$repository_root/YamaLens/YamaLens/Resources/DevelopmentOfflinePackages/$package_directory_name.bundle"
 
 required_files="manifest.json manifest.sig catalog.sqlite terrain.lzfse"
 

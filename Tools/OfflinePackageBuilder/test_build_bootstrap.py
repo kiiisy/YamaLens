@@ -27,6 +27,7 @@ class BuildBootstrapTests(unittest.TestCase):
                     "latitude": 35.0,
                     "longitude": 139.0,
                     "elevationMeters": 1_000,
+                    "yamapURL": "https://yamap.com/mountains/245",
                     "updatedAt": "2026-08-22T00:00:00Z",
                 }
             ],
@@ -80,6 +81,15 @@ class BuildBootstrapTests(unittest.TestCase):
             input_path = Path(directory) / "source.json"
             input_path.write_text(json.dumps(source), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "must be an HTTPS URL"):
+                build_bootstrap.load_source(input_path)
+
+    def test_rejects_non_canonical_yamap_url(self) -> None:
+        source = copy.deepcopy(self.valid_source())
+        source["mountains"][0]["yamapURL"] = "https://example.com/mountains/245"
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "source.json"
+            input_path.write_text(json.dumps(source), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "canonical YAMAP mountain URL"):
                 build_bootstrap.load_source(input_path)
 
 

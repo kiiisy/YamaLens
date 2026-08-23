@@ -7,6 +7,7 @@ struct SettingsPlaceholderView: View {
     let mountains: [Mountain]
     let cameraProjector: MountainCameraProjector
     let offlinePackageModel: OfflinePackageScreenModel
+    let offlinePackagePresentation: OfflinePackagePresentation
     @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
     @AppStorage("externalBrowser.application") private var browserApplicationRawValue = ExternalBrowserApplication.defaultBrowser.rawValue
 
@@ -23,13 +24,15 @@ struct SettingsPlaceholderView: View {
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
         mountains: [Mountain] = [],
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
-        offlinePackageModel: OfflinePackageScreenModel
+        offlinePackageModel: OfflinePackageScreenModel,
+        offlinePackagePresentation: OfflinePackagePresentation = .tanzawa
     ) {
         _showsTerrainHorizon = showsTerrainHorizon
         self.diagnosticLogRepository = diagnosticLogRepository
         self.mountains = mountains
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
+        self.offlinePackagePresentation = offlinePackagePresentation
     }
 
     var body: some View {
@@ -77,6 +80,7 @@ struct SettingsPlaceholderView: View {
                     NavigationLink {
                         OfflineView(
                             model: offlinePackageModel,
+                            presentation: offlinePackagePresentation,
                             coreMountainCount: mountains.filter { $0.coverageRole == .core }.count,
                             surroundingMountainCount: mountains.filter { $0.coverageRole == .surroundingCandidate }.count
                         )

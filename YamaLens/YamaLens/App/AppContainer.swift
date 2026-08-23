@@ -1,10 +1,12 @@
 import Foundation
+import OSLog
 import SwiftUI
 import UIKit
 
 @MainActor
 struct AppContainer {
     let mountainRepository: any MountainRepository
+    let cameraMountains: [Mountain]
     let mountainPointOfInterestRepository: any MountainPointOfInterestRepository
     let locationObservationProvider: any LocationObservationProvider
     let proximityCalculator: MountainProximityCalculator
@@ -14,7 +16,9 @@ struct AppContainer {
     let cameraDiagnosticDevice: CameraDiagnosticDevice?
     let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     let terrainHorizonResolver: (any TerrainHorizonResolving)?
+    let terrainPackageCoverages: [TerrainPackageCoverage]
     let offlinePackageManager: any OfflinePackageManaging
+    let offlinePackagePresentation: OfflinePackagePresentation
     let mountainWeatherRepository: any MountainWeatherRepository
 
     init(
@@ -24,6 +28,16 @@ struct AppContainer {
         backgroundEventsDidFinish: @escaping @Sendable (String) async -> Void = { _ in }
     ) {
         self.mountainRepository = mountainRepository
+        let packageSelections = Self.developmentOfflinePackageSelections()
+        let primaryPackageSelection = packageSelections.first ?? .tanzawa
+        terrainPackageCoverages = packageSelections.map(\.terrainCoverage)
+        offlinePackagePresentation = packageSelections.count > 1
+            ? .fieldTestSet
+            : primaryPackageSelection.presentation
+        cameraMountains = Self.makeCameraMountains(
+            selections: packageSelections,
+            fallbackRepository: mountainRepository
+        )
         mountainPointOfInterestRepository = BootstrapMountainPointOfInterestRepository()
         self.locationObservationProvider = locationObservationProvider
             ?? Self.makeLocationObservationProvider()
@@ -40,14 +54,24 @@ struct AppContainer {
                 rootURL: offlinePackageRootURL,
                 backgroundEventsDidFinish: backgroundEventsDidFinish
             )
-            let terrainResolver = ActiveOfflinePackageTerrainVisibilityResolver(
-                store: offlinePackageStore
-            )
+            let terrainResolver: any TerrainVisibilityResolving & TerrainHorizonResolving
+            if packageSelections.count > 1 {
+                terrainResolver = AutomaticOfflinePackageTerrainResolver(
+                    store: offlinePackageStore,
+                    coverages: packageSelections.map(\.terrainCoverage)
+                )
+            } else {
+                terrainResolver = ActiveOfflinePackageTerrainVisibilityResolver(
+                    store: offlinePackageStore,
+                    packageID: primaryPackageSelection.packageID
+                )
+            }
             terrainVisibilityResolver = terrainResolver
             terrainHorizonResolver = terrainResolver
             offlinePackageManager = Self.makeOfflinePackageManager(
                 store: offlinePackageStore,
-                downloader: offlinePackageDownloader
+                downloader: offlinePackageDownloader,
+                selections: packageSelections
             )
         } else {
             terrainVisibilityResolver = nil
@@ -81,36 +105,37 @@ struct AppContainer {
 
     private static func makeOfflinePackageManager(
         store: OfflinePackageStore,
-        downloader: BackgroundOfflinePackageFileDownloader
+        downloader: BackgroundOfflinePackageFileDownloader,
+        selections: [DevelopmentOfflinePackageSelection]
     ) -> any OfflinePackageManaging {
+        let primarySelection = selections.first ?? .tanzawa
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-ui-test-offline-installed") {
             return FixedOfflinePackageManager()
         }
-        if let developmentPackageDirectoryURL = developmentPackageDirectoryURL(),
-           let source = try? OfflinePackageSource.developmentBundle(
-               packageID: "jp.kanagawa.tanzawa",
-               directoryURL: developmentPackageDirectoryURL
-           ) {
-            let validator = OfflinePackageValidator(
-                publicKeys: OfflinePackageVerificationKeys.all
-            )
-            return OfflinePackageManagementService(
+        var developmentManagers: [any OfflinePackageManaging] = []
+        developmentManagers.reserveCapacity(selections.count)
+        for selection in selections {
+            guard let manager = developmentOfflinePackageManager(
                 store: store,
-                installer: OfflinePackageInstaller(
-                    store: store,
-                    validator: validator,
-                    fileDownloader: DevelopmentBundleOfflinePackageFileDownloader(
-                        sourceDirectoryURL: developmentPackageDirectoryURL
-                    )
-                ),
-                source: source,
-                availableDistribution: .developmentBundle
-            )
+                selection: selection
+            ) else {
+                Logger(subsystem: "com.kiiisy.YamaLens", category: "OfflinePackage")
+                    .error("A required development package is unavailable")
+                return UnavailableOfflinePackageManager()
+            }
+            developmentManagers.append(manager)
+        }
+        if developmentManagers.count > 1 {
+            return OfflinePackageCollectionManager(managers: developmentManagers)
+        }
+        if let manager = developmentManagers.first {
+            return manager
         }
 #endif
         // 配布URLと公開鍵が確定するまでは、ローカル状態の確認と削除だけを有効にする。
         return OfflinePackageManagementService(
+            packageID: primarySelection.packageID,
             store: store,
             activeStagingIdentifiers: {
                 await downloader.activeStagingIdentifiers()
@@ -119,8 +144,53 @@ struct AppContainer {
     }
 
 #if DEBUG
-    private static func developmentPackageDirectoryURL() -> URL? {
-        let subdirectory = "DevelopmentOfflinePackages/tanzawa-detailed-v1"
+    private static func developmentOfflinePackageManager(
+        store: OfflinePackageStore,
+        selection: DevelopmentOfflinePackageSelection
+    ) -> (any OfflinePackageManaging)? {
+        guard let packageDirectoryURL = developmentPackageDirectoryURL(
+            subdirectory: selection.bundleSubdirectory
+        ) else {
+            return nil
+        }
+        let source: OfflinePackageSource
+        do {
+            source = try OfflinePackageSource.developmentBundle(
+                packageID: selection.packageID,
+                directoryURL: packageDirectoryURL
+            )
+        } catch {
+            return nil
+        }
+        let validator = OfflinePackageValidator(
+            publicKeys: OfflinePackageVerificationKeys.all
+        )
+        return OfflinePackageManagementService(
+            packageID: selection.packageID,
+            store: store,
+            installer: OfflinePackageInstaller(
+                store: store,
+                validator: validator,
+                fileDownloader: DevelopmentBundleOfflinePackageFileDownloader(
+                    sourceDirectoryURL: packageDirectoryURL
+                )
+            ),
+            source: source,
+            availableDistribution: .developmentBundle
+        )
+    }
+
+    private static func developmentPackageDirectoryURL(
+        subdirectory: String
+    ) -> URL? {
+        let packageDirectoryName = String(subdirectory.split(separator: "/").last ?? "")
+        if !packageDirectoryName.isEmpty,
+           let bundleURL = Bundle.main.url(
+               forResource: packageDirectoryName,
+               withExtension: "bundle"
+           ) {
+            return bundleURL
+        }
         if let manifestURL = Bundle.main.url(
             forResource: "manifest",
             withExtension: "json",
@@ -128,10 +198,73 @@ struct AppContainer {
         ) {
             return manifestURL.deletingLastPathComponent()
         }
+        guard subdirectory == DevelopmentOfflinePackageSelection.tanzawa.bundleSubdirectory else {
+            return nil
+        }
         return Bundle.main.url(forResource: "manifest", withExtension: "json")?
             .deletingLastPathComponent()
     }
 #endif
+
+    private static func developmentOfflinePackageSelections()
+        -> [DevelopmentOfflinePackageSelection] {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-takao-jinba") {
+            return [.takaoJinbaARTest]
+        }
+        if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-yatsugatake") {
+            return [.yatsugatakeARTest]
+        }
+        if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-senjogatake") {
+            return [.senjogatakeARTest]
+        }
+        if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-nantaisan") {
+            return [.nantaisanARTest]
+        }
+        if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-tanigawadake") {
+            return [.tanigawadakeARTest]
+        }
+        return DevelopmentOfflinePackageSelection.all
+#else
+        return [.tanzawa]
+#endif
+    }
+
+    private static func makeCameraMountains(
+        selections: [DevelopmentOfflinePackageSelection],
+        fallbackRepository: any MountainRepository
+    ) -> [Mountain] {
+        let fallbackMountains = fallbackRepository.fetchMountains()
+#if DEBUG
+        guard selections.contains(where: { $0.presentation.isARTestOnly }) else {
+            return fallbackMountains
+        }
+        var mountains = selections.count > 1 ? fallbackMountains : []
+        var knownMountainIDs = Set(mountains.map(\.id))
+        for selection in selections where selection.presentation.isARTestOnly {
+            guard let packageDirectoryURL = developmentPackageDirectoryURL(
+                subdirectory: selection.bundleSubdirectory
+            ) else {
+                continue
+            }
+            do {
+                let repository = try SQLiteMountainRepository(
+                    databaseURL: packageDirectoryURL.appending(path: "catalog.sqlite")
+                )
+                for mountain in repository.fetchMountains()
+                    where knownMountainIDs.insert(mountain.id).inserted {
+                    mountains.append(mountain)
+                }
+            } catch {
+                Logger(subsystem: "com.kiiisy.YamaLens", category: "OfflinePackage")
+                    .error("An AR test catalog could not be loaded")
+            }
+        }
+        return mountains.isEmpty ? fallbackMountains : mountains
+#else
+        return fallbackMountains
+#endif
+    }
 
     private static func makeLocationObservationProvider() -> any LocationObservationProvider {
 #if DEBUG
@@ -253,6 +386,106 @@ struct AppContainer {
         )
     }
 #endif
+}
+
+private struct DevelopmentOfflinePackageSelection {
+    let packageID: String
+    let bundleSubdirectory: String
+    let presentation: OfflinePackagePresentation
+    let terrainCoverage: TerrainPackageCoverage
+
+    static let tanzawa = DevelopmentOfflinePackageSelection(
+        packageID: "jp.kanagawa.tanzawa",
+        bundleSubdirectory: "DevelopmentOfflinePackages/tanzawa-detailed-v1",
+        presentation: .tanzawa,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.kanagawa.tanzawa",
+            displayName: "丹沢山地",
+            north: 35.60,
+            south: 35.30,
+            east: 139.30,
+            west: 138.95
+        )
+    )
+
+    static let takaoJinbaARTest = DevelopmentOfflinePackageSelection(
+        packageID: "jp.tokyo.takao-jinba.ar-test",
+        bundleSubdirectory: "DevelopmentOfflinePackages/takao-jinba-ar-test-v1",
+        presentation: .takaoJinbaARTest,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.tokyo.takao-jinba.ar-test",
+            displayName: "高尾・陣馬",
+            north: 35.70,
+            south: 35.60,
+            east: 139.27,
+            west: 139.10
+        )
+    )
+
+    static let yatsugatakeARTest = DevelopmentOfflinePackageSelection(
+        packageID: "jp.yatsugatake.ar-test",
+        bundleSubdirectory: "DevelopmentOfflinePackages/yatsugatake-ar-test-v1",
+        presentation: .yatsugatakeARTest,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.yatsugatake.ar-test",
+            displayName: "八ヶ岳",
+            north: 36.11,
+            south: 35.90,
+            east: 138.43,
+            west: 138.29
+        )
+    )
+
+    static let senjogatakeARTest = DevelopmentOfflinePackageSelection(
+        packageID: "jp.southern-alps.senjogatake.ar-test",
+        bundleSubdirectory: "DevelopmentOfflinePackages/senjogatake-ar-test-v1",
+        presentation: .senjogatakeARTest,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.southern-alps.senjogatake.ar-test",
+            displayName: "仙丈ヶ岳・南アルプス北部",
+            north: 35.82,
+            south: 35.56,
+            east: 138.32,
+            west: 138.10
+        )
+    )
+
+    static let nantaisanARTest = DevelopmentOfflinePackageSelection(
+        packageID: "jp.nikko.nantaisan.ar-test",
+        bundleSubdirectory: "DevelopmentOfflinePackages/nantaisan-ar-test-v1",
+        presentation: .nantaisanARTest,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.nikko.nantaisan.ar-test",
+            displayName: "男体山・日光連山",
+            north: 36.87,
+            south: 36.68,
+            east: 139.60,
+            west: 139.30
+        )
+    )
+
+    static let tanigawadakeARTest = DevelopmentOfflinePackageSelection(
+        packageID: "jp.tanigawa.tanigawadake.ar-test",
+        bundleSubdirectory: "DevelopmentOfflinePackages/tanigawadake-ar-test-v1",
+        presentation: .tanigawadakeARTest,
+        terrainCoverage: TerrainPackageCoverage(
+            packageID: "jp.tanigawa.tanigawadake.ar-test",
+            displayName: "谷川岳・谷川連峰",
+            north: 36.92,
+            south: 36.75,
+            east: 139.03,
+            west: 138.75
+        )
+    )
+
+    static let all: [DevelopmentOfflinePackageSelection] = [
+        .tanzawa,
+        .takaoJinbaARTest,
+        .yatsugatakeARTest,
+        .senjogatakeARTest,
+        .nantaisanARTest,
+        .tanigawadakeARTest,
+    ]
 }
 
 #if DEBUG

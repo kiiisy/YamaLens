@@ -56,7 +56,7 @@ class DetailedPackBuilderTests(unittest.TestCase):
         self.assertEqual((output / "manifest.sig").stat().st_size, 64)
         self.assertEqual(public_key.stat().st_size, 32)
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["packageID"], "jp.kanagawa.tanzawa.test")
+        self.assertEqual(manifest["packageID"], "jp.tokyo.takao-jinba.ar-test")
         self.assertEqual([record["path"] for record in manifest["files"]], [
             "catalog.sqlite",
             "terrain.lzfse",
@@ -73,7 +73,7 @@ class DetailedPackBuilderTests(unittest.TestCase):
             ).fetchone()
         finally:
             connection.close()
-        self.assertEqual(metadata["package_id"], "jp.kanagawa.tanzawa.test")
+        self.assertEqual(metadata["package_id"], "jp.tokyo.takao-jinba.ar-test")
         self.assertEqual(metadata["content_version"], "1.0.0")
         self.assertIsNotNone(tile_row)
         offset, compressed_bytes, expected_hash = tile_row
@@ -251,7 +251,7 @@ class DetailedPackBuilderTests(unittest.TestCase):
             json.dumps(
                 {
                     "formatVersion": 1,
-                    "packageID": "jp.kanagawa.tanzawa.test",
+                    "packageID": "jp.tokyo.takao-jinba.ar-test",
                     "contentVersion": "1.0.0",
                     "schemaVersion": 1,
                     "keyID": "test-key-01",

@@ -51,7 +51,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1673,
-                coordinate: GeoCoordinate(latitude: 35.4863889, longitude: 139.1388889)
+                coordinate: GeoCoordinate(latitude: 35.4863889, longitude: 139.1388889),
+                yamapURL: URL(string: "https://yamap.com/mountains/33")
             ),
             Mountain(
                 id: "丹沢山",
@@ -60,7 +61,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1567,
-                coordinate: GeoCoordinate(latitude: 35.4741667, longitude: 139.1627778)
+                coordinate: GeoCoordinate(latitude: 35.4741667, longitude: 139.1627778),
+                yamapURL: URL(string: "https://yamap.com/mountains/110")
             ),
             Mountain(
                 id: "塔ノ岳",
@@ -69,7 +71,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1491,
-                coordinate: GeoCoordinate(latitude: 35.4541667, longitude: 139.1633333)
+                coordinate: GeoCoordinate(latitude: 35.4541667, longitude: 139.1633333),
+                yamapURL: URL(string: "https://yamap.com/mountains/245")
             ),
             Mountain(
                 id: "檜洞丸",
@@ -78,7 +81,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1601,
-                coordinate: GeoCoordinate(latitude: 35.4790567, longitude: 139.1027937)
+                coordinate: GeoCoordinate(latitude: 35.4790567, longitude: 139.1027937),
+                yamapURL: URL(string: "https://yamap.com/mountains/16167")
             ),
             Mountain(
                 id: "鍋割山",
@@ -87,7 +91,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1273,
-                coordinate: GeoCoordinate(latitude: 35.4437799, longitude: 139.1413847)
+                coordinate: GeoCoordinate(latitude: 35.4437799, longitude: 139.1413847),
+                yamapURL: URL(string: "https://yamap.com/mountains/248")
             ),
             Mountain(
                 id: "大山",
@@ -96,7 +101,8 @@ private nonisolated struct EmergencyMountainRepository: MountainRepository {
                 regionName: "丹沢山地",
                 prefectureName: "神奈川県",
                 elevationMeters: 1252,
-                coordinate: GeoCoordinate(latitude: 35.4408333, longitude: 139.2313889)
+                coordinate: GeoCoordinate(latitude: 35.4408333, longitude: 139.2313889),
+                yamapURL: URL(string: "https://yamap.com/mountains/32")
             ),
         ]
     }

@@ -1,0 +1,42 @@
+id: gsi-dem-takao-jinba-ar-test-v1
+title: YamaLens 高尾・陣馬ARテスト用地形データ
+status: development_signed_package_ready
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+terms_checked_at: 2026-08-23
+acquired_at: 2026-08-23T04:01:30Z
+scope:
+  allowed_bounds:
+    north: 36.04
+    south: 35.17
+    east: 139.40
+    west: 138.51
+  datasets_by_priority:
+    - DEM5A
+    - DEM5B
+    - DEM5C
+    - DEM10B
+processing_steps:
+  - 取得計画をData/OfflinePackages/takao-jinba-dem-acquisition-v1.jsonから生成し、対象URLと件数を確認する。
+  - 高尾・陣馬の詳細域と、富士山・丹沢・奥多摩を含む周辺粗地形を別のGit追跡外ディレクトリへ取得する。
+  - build_detailed_pack.pyで入力索引、LZFSE地形、SQLite、manifest、Ed25519署名を生成する。
+input_files:
+  - path: Data/Generated/GSI/takao-jinba-ar-test-v1/acquisition-inventory.json
+    sha256: e5af6734feba17f0bcbc76a7a6de76e7819bcfc34cc647ff0a1535a94d8f563f
+  - path: Data/Generated/takao-jinba-ar-test-v1/terrain-index.json
+    sha256: 497a12a2aeb92f01ccef2c304e8790414c2ddc8df2934b28bce9939c74fd9147
+acquisition_summary:
+  planned_tiles: 669
+  acquired_tiles: 285
+  unavailable_tiles: 384
+  acquired_by_dataset:
+    DEM5A: 192
+    DEM5B: 0
+    DEM5C: 0
+    DEM10B: 93
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+legal_note: "開発・現地試験専用。商用配布へ転用する場合は、実際の保存・加工・再配布形態について利用手続を再確認する。"
+verification_note: "国土地理院の公開HTTPS標高タイルを2026-08-23に取得し、285タイルの索引・LZFSE・SQLite・Ed25519署名を生成時に検証した。"

@@ -20,6 +20,7 @@ struct SQLiteMountainRepositoryTests {
         #expect(tonodake.regionName == "丹沢山地")
         #expect(tonodake.prefectureName == "神奈川県")
         #expect(tonodake.elevationMeters == 1_491)
+        #expect(tonodake.yamapURL?.absoluteString == "https://yamap.com/mountains/245")
         let mountFuji = try #require(mountains.first { $0.id == "富士山" })
         #expect(mountFuji.coverageRole == .surroundingCandidate)
         #expect(mountFuji.regionName == "富士山周辺")

@@ -1,0 +1,22 @@
+id: gsi-dem-senjogatake-ar-test-v1
+title: YamaLens 仙丈ヶ岳ARテスト用地形データ
+status: development_signed_package_ready
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+terms_checked_at: 2026-08-23
+acquired_at: 2026-08-23T10:50:20Z
+input_files:
+  - path: Data/Generated/GSI/senjogatake-ar-test-v1/acquisition-inventory.json
+    sha256: bb9bbb5c9489a53caba0935b19e17d3f6612f304093a3a046f76caff4b4213c9
+  - path: Data/Generated/senjogatake-ar-test-v1/terrain-index.json
+    sha256: 2717fb3a7c6c2d7d7c6be9e9c4f122aab1660b72c6dc788b5fac14309a721c1a
+acquisition_summary:
+  planned_tiles: 2147
+  acquired_tiles: 887
+  unavailable_tiles: 1260
+  acquired_by_dataset: { DEM5A: 630, DEM5B: 0, DEM5C: 0, DEM10B: 257 }
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+verification_note: "公開HTTPS標高タイルを取得し、887タイルの索引・LZFSE・SQLite・Ed25519署名を生成時に検証した。"

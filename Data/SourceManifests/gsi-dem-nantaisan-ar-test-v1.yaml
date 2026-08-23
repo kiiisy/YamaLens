@@ -1,0 +1,22 @@
+id: gsi-dem-nantaisan-ar-test-v1
+title: YamaLens 男体山ARテスト用地形データ
+status: development_signed_package_ready
+provider: 国土地理院
+dataset: 標高タイル（基盤地図情報数値標高モデル）
+download_url: https://cyberjapandata.gsi.go.jp/xyz/{tileSet}/{z}/{x}/{y}.png
+source_information_url: https://maps.gsi.go.jp/development/ichiran.html#dem
+terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+terms_checked_at: 2026-08-23
+acquired_at: 2026-08-23T10:56:17Z
+input_files:
+  - path: Data/Generated/GSI/nantaisan-ar-test-v1/acquisition-inventory.json
+    sha256: b783e02af93f9444fc41c3ee7808b70497079ee45c8440f6fcae4faf0e61279a
+  - path: Data/Generated/nantaisan-ar-test-v1/terrain-index.json
+    sha256: a4d324f5ee582daa115f5ba8ebc0e228c7a74cff355d25896a8c74d6bea5b86d
+acquisition_summary:
+  planned_tiles: 2118
+  acquired_tiles: 886
+  unavailable_tiles: 1232
+  acquired_by_dataset: { DEM5A: 616, DEM5B: 0, DEM5C: 0, DEM10B: 270 }
+attribution: "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）"
+verification_note: "公開HTTPS標高タイルを取得し、886タイルの索引・LZFSE・SQLite・Ed25519署名を生成時に検証した。"

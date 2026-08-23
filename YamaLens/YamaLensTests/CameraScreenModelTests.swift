@@ -21,6 +21,27 @@ struct CameraScreenModelTests {
         #expect(quality == .good)
     }
 
+    @Test("現在地に対応する地形パック名を表示用状態へ反映する")
+    func exposesSelectedTerrainPackageName() {
+        let coverage = TerrainPackageCoverage(
+            packageID: "test.tanzawa",
+            displayName: "丹沢山地",
+            north: 35.60,
+            south: 35.30,
+            east: 139.30,
+            west: 138.95
+        )
+        let model = makeModel(terrainPackageCoverages: [coverage])
+
+        model.updateLocationState(.available(location(age: 0), quality: .good))
+
+        #expect(model.activeTerrainPackageDisplayName == "丹沢山地")
+
+        model.updateLocationState(.notRequested)
+
+        #expect(model.activeTerrainPackageDisplayName == nil)
+    }
+
     @Test("方位が一時的に利用不能になると候補を消し、復帰後に再表示する")
     func recoversAfterHeadingBecomesAvailableAgain() {
         let model = makeModel()
@@ -245,7 +266,8 @@ struct CameraScreenModelTests {
 
     private func makeModel(
         terrainVisibilityResolver: (any TerrainVisibilityResolving)? = nil,
-        terrainHorizonResolver: (any TerrainHorizonResolving)? = nil
+        terrainHorizonResolver: (any TerrainHorizonResolving)? = nil,
+        terrainPackageCoverages: [TerrainPackageCoverage] = []
     ) -> CameraScreenModel {
         CameraScreenModel(
             provider: InertCameraObservationProvider(),
@@ -253,6 +275,7 @@ struct CameraScreenModelTests {
             projector: MountainCameraProjector(),
             terrainVisibilityResolver: terrainVisibilityResolver,
             terrainHorizonResolver: terrainHorizonResolver,
+            terrainPackageCoverages: terrainPackageCoverages,
             now: { fixedNow }
         )
     }

@@ -1,0 +1,17 @@
+id: tanigawadake-ar-test-v1
+title: YamaLens 谷川岳ARテスト用山頂データ
+status: development_test_only_verified
+checked_at: 2026-08-23
+scope: [mountain_name, alias, summit_coordinate, elevation]
+sources:
+  - provider: 国土地理院
+    role: 主要山岳の座標・標高の一次情報
+    url: https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41139.html
+    terms_url: https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html
+  - provider: 国土地理院
+    role: 平標山の地名座標・DEM標高の照合
+    url: https://maps.gsi.go.jp/
+attribution: "出典：国土地理院『日本の主な山岳標高一覧』・地理院地図"
+processing_note: "谷川連峰と上越・尾瀬周辺の主峰をAR候補用に加工する。"
+verification_note: "主要峰は2026年3月31日版GeoJSON、平標山は地理院地図の地名検索座標とDEM標高を2026-08-23に照合した。施設・気象・交通情報は収録しない。"
+distribution_note: "開発用ARテストパック専用。正式対応地域の表示へ混在させない。"
