@@ -11,18 +11,25 @@ nonisolated enum SQLiteMountainPointOfInterestRepositoryError: Error, Equatable,
 
 nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInterestRepository {
     private let pointsByMountainID: [String: [MountainPointOfInterest]]
+    private let trailheadAccessGuidesByMountainID: [String: [TrailheadAccessGuide]]
 
     init(databaseURL: URL) throws {
-        pointsByMountainID = try Self.loadPointsOfInterest(from: databaseURL)
+        let catalog = try Self.loadCatalog(from: databaseURL)
+        pointsByMountainID = catalog.pointsByMountainID
+        trailheadAccessGuidesByMountainID = catalog.trailheadAccessGuidesByMountainID
     }
 
     func fetchPointsOfInterest(for mountainID: String) -> [MountainPointOfInterest] {
         pointsByMountainID[mountainID] ?? []
     }
 
-    private static func loadPointsOfInterest(
+    func fetchTrailheadAccessGuides(for mountainID: String) -> [TrailheadAccessGuide] {
+        trailheadAccessGuidesByMountainID[mountainID] ?? []
+    }
+
+    private static func loadCatalog(
         from databaseURL: URL
-    ) throws -> [String: [MountainPointOfInterest]] {
+    ) throws -> MountainPointOfInterestCatalog {
         var database: OpaquePointer?
         let openResult = sqlite3_open_v2(
             databaseURL.path,
@@ -43,7 +50,17 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
             in: database
         )
         try validateDatabase(database)
-        return try loadRows(from: database)
+        let pointsByMountainID = try loadRows(from: database)
+        let accessPointIDsByTrailheadID = try loadAccessPointIDs(from: database)
+        let searchAreasByTrailheadID = try loadSearchAreas(from: database)
+        return MountainPointOfInterestCatalog(
+            pointsByMountainID: pointsByMountainID,
+            trailheadAccessGuidesByMountainID: makeTrailheadAccessGuides(
+                pointsByMountainID: pointsByMountainID,
+                accessPointIDsByTrailheadID: accessPointIDsByTrailheadID,
+                searchAreasByTrailheadID: searchAreasByTrailheadID
+            )
+        )
     }
 
     private static func validateDatabase(_ database: OpaquePointer) throws {
@@ -156,6 +173,86 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
         )
     }
 
+    private static func loadAccessPointIDs(
+        from database: OpaquePointer
+    ) throws -> [String: [String]] {
+        let query = """
+        SELECT trailhead_id, point_of_interest_id
+        FROM trailhead_access_points
+        ORDER BY trailhead_id, display_order;
+        """
+        var statement: OpaquePointer?
+        let result = sqlite3_prepare_v2(database, query, -1, &statement, nil)
+        guard result == SQLITE_OK, let statement else {
+            throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: result)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var pointIDsByTrailheadID: [String: [String]] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let trailheadID = try text(in: statement, column: 0)
+            let pointID = try text(in: statement, column: 1)
+            pointIDsByTrailheadID[trailheadID, default: []].append(pointID)
+        }
+        return pointIDsByTrailheadID
+    }
+
+    private static func loadSearchAreas(
+        from database: OpaquePointer
+    ) throws -> [String: [NearbySearchArea]] {
+        let query = """
+        SELECT id, trailhead_id, name
+        FROM trailhead_search_areas
+        ORDER BY trailhead_id, display_order;
+        """
+        var statement: OpaquePointer?
+        let result = sqlite3_prepare_v2(database, query, -1, &statement, nil)
+        guard result == SQLITE_OK, let statement else {
+            throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: result)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var areasByTrailheadID: [String: [NearbySearchArea]] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let identifier = try text(in: statement, column: 0)
+            let trailheadID = try text(in: statement, column: 1)
+            let name = try text(in: statement, column: 2)
+            areasByTrailheadID[trailheadID, default: []].append(
+                NearbySearchArea(
+                    id: identifier,
+                    name: name
+                )
+            )
+        }
+        return areasByTrailheadID
+    }
+
+    private static func makeTrailheadAccessGuides(
+        pointsByMountainID: [String: [MountainPointOfInterest]],
+        accessPointIDsByTrailheadID: [String: [String]],
+        searchAreasByTrailheadID: [String: [NearbySearchArea]]
+    ) -> [String: [TrailheadAccessGuide]] {
+        let pointsByID = pointsByMountainID.values
+            .flatMap { $0 }
+            .reduce(into: [String: MountainPointOfInterest]()) { result, point in
+                result[point.id] = point
+            }
+        return pointsByMountainID.mapValues { points in
+            points.compactMap { trailhead in
+                guard trailhead.type == .trailhead else { return nil }
+                let accessPoints = (accessPointIDsByTrailheadID[trailhead.id] ?? []).compactMap {
+                    pointsByID[$0]
+                }
+                let searchAreas = searchAreasByTrailheadID[trailhead.id] ?? []
+                return TrailheadAccessGuide(
+                    trailhead: trailhead,
+                    accessPoints: accessPoints,
+                    nearbySearchAreas: searchAreas
+                )
+            }
+        }
+    }
+
     private static func validatedHTTPSURL(_ value: String) -> URL? {
         guard
             value.count <= 2_048,
@@ -222,4 +319,9 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
         }
         return String(cString: value)
     }
+}
+
+private struct MountainPointOfInterestCatalog {
+    let pointsByMountainID: [String: [MountainPointOfInterest]]
+    let trailheadAccessGuidesByMountainID: [String: [TrailheadAccessGuide]]
 }

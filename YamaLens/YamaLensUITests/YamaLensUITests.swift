@@ -179,19 +179,81 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(daylight.waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["日の出・日の入り"].exists)
 
-        let facilityName = app.staticTexts["尊仏山荘"]
-        for _ in 0..<4 where !facilityName.isHittable {
+        let facilityRow = app.buttons["facility-row-tonodake-sonbutsu-sanso"]
+        for _ in 0..<5 where !facilityRow.isHittable {
             app.swipeUp(velocity: .slow)
         }
-        XCTAssertTrue(facilityName.waitForExistence(timeout: 2))
+        if !facilityRow.isHittable {
+            app.swipeDown(velocity: .slow)
+        }
+        XCTAssertTrue(facilityRow.waitForExistence(timeout: 2))
+        XCTAssertTrue(facilityRow.isHittable)
         XCTAssertTrue(
             app.descendants(matching: .any)["mountain-facility-section"].exists
         )
+        facilityRow.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["facility-detail-sheet"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.staticTexts["尊仏山荘"].exists)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["facility-official-link"].exists
+        )
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "日の出と公式施設情報"
+        screenshot.name = "施設情報の簡易詳細"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+
+        app.buttons["facility-detail-close-button"].tap()
+        let trailheadHeading = app.staticTexts["登山口"]
+        for _ in 0..<4 where !trailheadHeading.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(trailheadHeading.waitForExistence(timeout: 2))
+
+        let trailheadRow = app.buttons["trailhead-row-tonodake-okura-trailhead"]
+        for _ in 0..<4 where !trailheadRow.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(trailheadRow.waitForExistence(timeout: 2))
+        XCTAssertTrue(
+            app.buttons["trailhead-row-tonodake-yabitsu-trailhead"].exists
+        )
+        trailheadRow.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["trailhead-access-sheet"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.staticTexts["立ち寄り"].exists)
+        XCTAssertTrue(app.buttons["trailhead-open-maps-button"].exists)
+    }
+
+    @MainActor
+    func testMountainWithoutFacilityDataOffersMapAndDirectNotes() throws {
+        let app = makeApplication()
+        app.launch()
+
+        app.buttons["search-button"].tap()
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.typeText("蛭ヶ岳")
+        app.buttons["search-result-蛭ヶ岳"].tap()
+
+        XCTAssertTrue(
+            app.buttons["mountain-hero-photo-picker"].waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.buttons["mountain-note-before"].exists)
+        XCTAssertTrue(app.buttons["mountain-note-during"].exists)
+        XCTAssertTrue(app.buttons["mountain-note-after"].exists)
+
+        let genericMapButton = app.buttons["mountain-generic-map-button"]
+        for _ in 0..<8 where !genericMapButton.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(genericMapButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(genericMapButton.isHittable)
     }
 
     @MainActor

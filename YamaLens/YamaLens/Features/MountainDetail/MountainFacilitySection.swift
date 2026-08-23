@@ -2,92 +2,168 @@ import Foundation
 import SwiftUI
 
 struct MountainFacilitySection: View {
+    let mountainName: String
     let pointsOfInterest: [MountainPointOfInterest]
+    let trailheadAccessGuides: [TrailheadAccessGuide]
+    @Environment(\.openURL) private var openURL
+    @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
+    @State private var selectedPoint: MountainPointOfInterest?
+    @State private var selectedTrailhead: TrailheadAccessGuide?
+    @State private var pendingMapSearch: ExternalMapSearch?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            if pointsOfInterest.isEmpty {
+            YamaSectionHeader(
+                title: "施設情報",
+                subtitle: mountainHuts.isEmpty && trailheadAccessGuides.isEmpty
+                    ? nil
+                    : "山小屋と登山口を確認"
+            )
+            .accessibilityIdentifier("mountain-facility-section")
+
+            if mountainHuts.isEmpty && trailheadAccessGuides.isEmpty {
                 emptyState
             } else {
-                ForEach(groups) { group in
+                if !mountainHuts.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        YamaSectionHeader(title: group.title)
-                        ForEach(group.points) { point in
-                            facilityCard(point)
-                        }
+                        YamaSectionHeader(title: "山小屋")
+                        facilityCards
+                    }
+                }
+
+                if !trailheadAccessGuides.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        YamaSectionHeader(
+                            title: "登山口",
+                            subtitle: "選ぶとアクセスと周辺検索を確認"
+                        )
+                        trailheadCards
                     }
                 }
             }
         }
-        .accessibilityIdentifier("mountain-facility-section")
+        .sheet(item: $selectedPoint) { point in
+            NavigationStack {
+                MountainFacilityDetailSheet(point: point)
+            }
+            .presentationDetents([.fraction(0.72), .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $selectedTrailhead) { guide in
+            NavigationStack {
+                MountainTrailheadAccessSheet(guide: guide)
+            }
+            .presentationDetents([.fraction(0.72), .large])
+            .presentationDragIndicator(.visible)
+        }
+        .confirmationDialog(
+            "地図アプリを選択",
+            isPresented: Binding(
+                get: { pendingMapSearch != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        pendingMapSearch = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let pendingMapSearch {
+                Button("Appleマップ") { openAppleMaps(search: pendingMapSearch) }
+                if ExternalMapApplicationAvailability.isGoogleMapsAvailable {
+                    Button("Google Maps") { openGoogleMaps(search: pendingMapSearch) }
+                }
+            }
+            Button("キャンセル", role: .cancel) {}
+        }
     }
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            YamaSectionHeader(title: "山小屋・アクセス情報")
+        VStack(alignment: .leading, spacing: 14) {
             YamaEmptyCard(
                 title: "公式情報を確認中",
                 message: "この山に紐づく施設情報はまだ登録されていません。推測値は表示しません。",
                 systemImage: "building.2"
             )
+
+            Button {
+                openMaps(query: mountainName)
+            } label: {
+                Label("地図で\(mountainName)を開く", systemImage: "map")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .tint(YamaColor.alpineTeal)
+            .accessibilityIdentifier("mountain-generic-map-button")
         }
     }
 
-    private var groups: [FacilityGroup] {
-        [
-            FacilityGroup(
-                id: "mountain-huts",
-                title: "山小屋",
-                points: pointsOfInterest.filter { $0.type == .mountainHut }
-            ),
-            FacilityGroup(
-                id: "trailhead-access",
-                title: "登山口・交通",
-                points: pointsOfInterest.filter {
-                    [.trailhead, .parking, .publicTransport, .cableway].contains($0.type)
+    private var mountainHuts: [MountainPointOfInterest] {
+        pointsOfInterest.filter { $0.type == .mountainHut }
+    }
+
+    @ViewBuilder
+    private var facilityCards: some View {
+        if mountainHuts.count == 1, let point = mountainHuts.first {
+            facilityCard(point)
+        } else {
+            LazyVGrid(columns: twoColumnLayout, spacing: 12) {
+                ForEach(mountainHuts) { point in
+                    facilityCard(point)
                 }
-            ),
-            FacilityGroup(
-                id: "nearby",
-                title: "立ち寄り情報",
-                points: pointsOfInterest.filter { $0.type == .hotSpring }
-            ),
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var trailheadCards: some View {
+        if trailheadAccessGuides.count == 1, let guide = trailheadAccessGuides.first {
+            trailheadCard(guide)
+        } else {
+            LazyVGrid(columns: twoColumnLayout, spacing: 12) {
+                ForEach(trailheadAccessGuides) { guide in
+                    trailheadCard(guide)
+                }
+            }
+        }
+    }
+
+    private var twoColumnLayout: [GridItem] {
+        [
+            GridItem(.flexible(minimum: 140), spacing: 12),
+            GridItem(.flexible(minimum: 140), spacing: 12),
         ]
-        .filter { !$0.points.isEmpty }
     }
 
     private func facilityCard(_ point: MountainPointOfInterest) -> some View {
-        Link(destination: point.officialURL) {
-            HStack(alignment: .top, spacing: 14) {
+        Button {
+            selectedPoint = point
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
                 Image(systemName: point.type.systemImage)
                     .font(.headline)
                     .foregroundStyle(YamaColor.alpineTeal)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 40, height: 40)
                     .background(YamaColor.alpineTeal.opacity(0.14), in: Circle())
                     .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 7) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(point.name)
                         .font(.headline)
                         .foregroundStyle(YamaColor.primaryText)
-                    Text(point.summary)
-                        .font(.subheadline)
+                    Text("確認 \(point.checkedAt.formatted(.dateTime.year().month().day()))")
+                        .font(.caption)
                         .foregroundStyle(YamaColor.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Label(
-                        "\(point.sourceProvider)・確認 \(point.checkedAt.formatted(.dateTime.year().month().day()))",
-                        systemImage: "checkmark.seal"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(YamaColor.moss)
                 }
 
-                Spacer(minLength: 4)
-                Image(systemName: "arrow.up.right")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(YamaColor.secondaryText)
-                    .accessibilityHidden(true)
+                if mountainHuts.count == 1 {
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(YamaColor.secondaryText)
+                        .accessibilityHidden(true)
+                }
             }
+            .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(
@@ -95,21 +171,84 @@ struct MountainFacilitySection: View {
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .accessibilityElement(children: .combine)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(point.name)、\(point.type.displayName)、提供元 \(point.sourceProvider)")
-        .accessibilityHint("公式ページを開きます")
-        .accessibilityIdentifier("facility-\(point.id)")
+        .accessibilityHint("施設の詳細を表示します")
+        .accessibilityIdentifier("facility-row-\(point.id)")
+    }
+
+    private func trailheadCard(_ guide: TrailheadAccessGuide) -> some View {
+        Button {
+            selectedTrailhead = guide
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                Image(systemName: "figure.hiking")
+                    .font(.headline)
+                    .foregroundStyle(YamaColor.alpineTeal)
+                    .frame(width: 40, height: 40)
+                    .background(YamaColor.alpineTeal.opacity(0.14), in: Circle())
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(guide.trailhead.name)
+                        .font(.headline)
+                        .foregroundStyle(YamaColor.primaryText)
+                    Text(accessSummary(for: guide))
+                        .font(.caption)
+                        .foregroundStyle(YamaColor.secondaryText)
+                }
+
+                Text("アクセスを見る")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(YamaColor.alpineTeal)
+            }
+            .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(guide.trailhead.name)、\(accessSummary(for: guide))")
+        .accessibilityHint("アクセスと立ち寄り検索を表示します")
+        .accessibilityIdentifier("trailhead-row-\(guide.id)")
+    }
+
+    private func accessSummary(for guide: TrailheadAccessGuide) -> String {
+        let labels = guide.accessPoints.map(\.type.displayName)
+        return labels.isEmpty ? "アクセス情報を確認" : labels.joined(separator: "・")
+    }
+
+    private func openMaps(query: String) {
+        let search = ExternalMapSearch(query: query, center: nil)
+        switch ExternalMapApplication(rawValue: mapApplicationRawValue) ?? .appleMaps {
+        case .appleMaps:
+            openAppleMaps(search: search)
+        case .googleMaps:
+            if ExternalMapApplicationAvailability.isGoogleMapsAvailable {
+                openGoogleMaps(search: search)
+            } else {
+                openAppleMaps(search: search)
+            }
+        case .askEveryTime:
+            pendingMapSearch = search
+        }
+    }
+
+    private func openAppleMaps(search: ExternalMapSearch) {
+        guard let url = ExternalMapURLBuilder.appleMapsURL(for: search) else { return }
+        openURL(url)
+    }
+
+    private func openGoogleMaps(search: ExternalMapSearch) {
+        guard let url = ExternalMapURLBuilder.googleMapsURL(for: search) else { return }
+        openURL(url)
     }
 }
 
-private struct FacilityGroup: Identifiable {
-    let id: String
-    let title: String
-    let points: [MountainPointOfInterest]
-}
-
-private extension MountainPointOfInterestType {
+extension MountainPointOfInterestType {
     var displayName: String {
         switch self {
         case .mountainHut: "山小屋"

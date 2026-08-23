@@ -1,7 +1,7 @@
 id: tanzawa-bootstrap-v1
 title: YamaLens 丹沢bootstrap初期データ
 status: provisional_requires_official_verification
-checked_at: 2026-08-22
+checked_at: 2026-08-23
 scope:
   - mountain_name
   - alias
@@ -27,6 +27,12 @@ sources:
   - provider: 秦野市
     role: 弘法の里湯の公式情報
     url: https://www.city.hadano.kanagawa.jp/kanko/onsen/2674.html
+  - provider: 秦野市
+    role: ヤビツ峠から表尾根経由で塔ノ岳へ向かう登山口・バスの公式情報
+    url: https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html
+  - provider: 神奈川県
+    role: ヤビツ峠登山口の駐車場に関する公式情報
+    url: https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/documents/tanzawaohyama.html
   - provider: 大山観光電鉄
     role: 大山ケーブルカーの運営者公式情報
     url: https://www.ooyama-cable.co.jp/access/
@@ -37,4 +43,4 @@ attribution: "出典：国土地理院ウェブサイト"
 processing_note: "国土地理院の情報を照合し、YamaLens向けSQLiteへ加工した場合は、その旨と対象データセットをアプリ内に表示する。"
 legal_note: "基盤地図情報等の測量成果を配布物へ収録する前に、測量法上の複製・使用承認の要否をデータセットと利用形態ごとに確認する。"
 verification_note: "丹沢中心6座の座標・標高は、国土地理院『日本の主な山岳標高一覧』および地理院地図検索で2026-08-22に照合した。周辺候補11座の名称、別名、座標、標高と配布許諾は正式配布前に一次情報で最終確認する。"
-facility_verification_note: "大山・塔ノ岳・鍋割山に紐づける代表施設8件の名称、用途、公式URLを2026-08-22に運営者・自治体等の公式ページで確認した。営業時間、料金、運行・営業状況は変動情報として固定せず、アプリから公式ページを確認する。"
+facility_verification_note: "大山・塔ノ岳・鍋割山に紐づける代表施設11件の名称、用途、公式URLを2026-08-23に運営者・自治体等の公式ページで確認した。塔ノ岳には大倉登山口と、表尾根経由のヤビツ峠登山口を紐付けた。営業時間、料金、運行・営業状況は変動情報として固定せず、アプリから公式ページを確認する。"

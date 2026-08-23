@@ -521,6 +521,8 @@ nonisolated struct OfflinePackageValidator: Sendable {
             "mountain_names",
             "points_of_interest",
             "mountain_points_of_interest",
+            "trailhead_access_points",
+            "trailhead_search_areas",
             "source_links",
             "entity_sources",
             "terrain_tiles",

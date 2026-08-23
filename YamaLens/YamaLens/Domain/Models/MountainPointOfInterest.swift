@@ -19,3 +19,16 @@ nonisolated struct MountainPointOfInterest: Identifiable, Equatable, Sendable {
     let checkedAt: Date
     let sourceProvider: String
 }
+
+nonisolated struct TrailheadAccessGuide: Identifiable, Equatable, Sendable {
+    let trailhead: MountainPointOfInterest
+    let accessPoints: [MountainPointOfInterest]
+    let nearbySearchAreas: [NearbySearchArea]
+
+    var id: String { trailhead.id }
+}
+
+nonisolated struct NearbySearchArea: Identifiable, Equatable, Sendable {
+    let id: String
+    let name: String
+}

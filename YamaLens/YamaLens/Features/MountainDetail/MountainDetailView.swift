@@ -1,5 +1,7 @@
+import PhotosUI
 import SwiftData
 import SwiftUI
+import UIKit
 
 enum MountainDetailDismissalStyle {
     case zoomToSource
@@ -11,13 +13,16 @@ struct MountainDetailView: View {
     private let currentLocationState: CurrentLocationState
     private let proximityCalculator: MountainProximityCalculator
     private let pointsOfInterest: [MountainPointOfInterest]
+    private let trailheadAccessGuides: [TrailheadAccessGuide]
     private let daylight: MountainDaylight?
     private let onClose: ((MountainDetailDismissalStyle) -> Void)?
     private let overlayTopInset: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Query private var records: [UserMountainRecord]
-    @State private var isNotesPresented = false
+    @State private var selectedNotePhase: MountainNotePhase?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var photoSelectionError: String?
     @State private var dismissDragDistance: CGFloat = 0
     @State private var isDraggingToDismiss = false
     @State private var scrollOffset: CGFloat = 0
@@ -39,6 +44,7 @@ struct MountainDetailView: View {
         self.currentLocationState = currentLocationState
         self.proximityCalculator = proximityCalculator
         pointsOfInterest = pointOfInterestRepository.fetchPointsOfInterest(for: mountain.id)
+        trailheadAccessGuides = pointOfInterestRepository.fetchTrailheadAccessGuides(for: mountain.id)
         daylight = daylightCalculator.daylight(
             on: daylightDate,
             at: mountain.coordinate,
@@ -67,9 +73,12 @@ struct MountainDetailView: View {
                         weatherSection
                         MountainDaylightSection(daylight: daylight)
                             .padding(.horizontal, 18)
-                        MountainFacilitySection(pointsOfInterest: pointsOfInterest)
+                        MountainFacilitySection(
+                            mountainName: mountain.name,
+                            pointsOfInterest: pointsOfInterest,
+                            trailheadAccessGuides: trailheadAccessGuides
+                        )
                             .padding(.horizontal, 18)
-                        accessSection
                         notesSection
                     }
                     .padding(.bottom, 40)
@@ -118,12 +127,26 @@ struct MountainDetailView: View {
             }
         }
         .task { markViewed() }
-        .sheet(isPresented: $isNotesPresented) {
+        .sheet(item: $selectedNotePhase) { phase in
             if let record {
-                MountainNotesView(mountain: mountain, record: record)
+                MountainNotesView(mountain: mountain, record: record, phase: phase)
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+        }
+        .onChange(of: selectedPhoto) { _, item in
+            guard let item else { return }
+            Task { await saveSelectedPhoto(item) }
+        }
+        .alert("写真を設定できません", isPresented: Binding(
+            get: { photoSelectionError != nil },
+            set: { isPresented in
+                if !isPresented { photoSelectionError = nil }
+            }
+        )) {
+            Button("閉じる", role: .cancel) {}
+        } message: {
+            Text(photoSelectionError ?? "")
         }
         .preferredColorScheme(.dark)
     }
@@ -247,8 +270,11 @@ struct MountainDetailView: View {
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
+    @ViewBuilder
     private var hero: some View {
-        MountainArtworkView(mountain: mountain, height: 350)
+        let hasCustomHeroImage = record?.heroImageData != nil
+
+        heroArtwork
             .overlay {
                 LinearGradient(colors: [.clear, YamaColor.canvas], startPoint: .center, endPoint: .bottom)
             }
@@ -268,6 +294,43 @@ struct MountainDetailView: View {
                 .padding(.horizontal, 18)
                 .padding(.bottom, 8)
             }
+            .overlay(alignment: .bottomTrailing) {
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Label(
+                        hasCustomHeroImage ? "写真を変更" : "写真を設定",
+                        systemImage: hasCustomHeroImage ? "photo.badge.arrow.down" : "photo.badge.plus"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel(hasCustomHeroImage ? "山の写真を変更" : "山の写真を設定")
+                .accessibilityIdentifier("mountain-hero-photo-picker")
+                .padding(.trailing, 18)
+                .padding(.bottom, 92)
+            }
+            .contextMenu {
+                if record?.heroImageData != nil {
+                    Button("写真を削除", role: .destructive) {
+                        ensureRecord().heroImageData = nil
+                    }
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var heroArtwork: some View {
+        if let data = record?.heroImageData, let image = UIImage(data: data) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 350)
+                .clipped()
+                .accessibilityHidden(true)
+        } else {
+            MountainArtworkView(mountain: mountain, height: 350)
+        }
     }
 
     @ViewBuilder
@@ -343,53 +406,70 @@ struct MountainDetailView: View {
         .padding(.horizontal, 18)
     }
 
-    private var accessSection: some View {
-        Button(action: {}) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("登山口へのアクセス")
-                        .font(.headline)
-                    Text("出発地と地図アプリを毎回選びます")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.72))
-                }
-                Spacer()
-                Image(systemName: "arrow.up.right")
-            }
-            .foregroundStyle(.white)
-            .padding(18)
-            .background(YamaColor.forest, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 18)
-    }
-
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             YamaSectionHeader(title: "山ノート", subtitle: "このiPhone内に保存")
             HStack(spacing: 10) {
-                notePhase("行く前", icon: "backpack")
-                notePhase("山行中", icon: "figure.hiking")
-                notePhase("行ったあと", icon: "checkmark.seal")
+                notePhase(.before, icon: "backpack")
+                notePhase(.during, icon: "figure.hiking")
+                notePhase(.after, icon: "checkmark.seal")
             }
-            Button("山ノートを開く") {
-                _ = ensureRecord()
-                isNotesPresented = true
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(YamaColor.forest)
-            .controlSize(.large)
         }
         .padding(.horizontal, 18)
     }
 
-    private func notePhase(_ title: String, icon: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon).foregroundStyle(YamaColor.moss)
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(YamaColor.primaryText)
+    private func notePhase(_ phase: MountainNotePhase, icon: String) -> some View {
+        Button {
+            _ = ensureRecord()
+            selectedNotePhase = phase
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon).foregroundStyle(YamaColor.moss)
+                Text(phase.title).font(.caption.weight(.semibold)).foregroundStyle(YamaColor.primaryText)
+            }
+            .frame(maxWidth: .infinity, minHeight: 74)
+            .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .frame(maxWidth: .infinity, minHeight: 74)
-        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .buttonStyle(.plain)
+        .contextMenu {
+            Text(notePreview(for: phase))
+                .font(.subheadline)
+        } preview: {
+            NotePreviewCard(phase: phase, text: noteText(for: phase))
+        }
+        .accessibilityLabel("山ノート、\(phase.title)")
+        .accessibilityHint("タップで入力します。長押しで保存済みメモをプレビューします")
+        .accessibilityIdentifier("mountain-note-\(phase.rawValue)")
+    }
+
+    private func noteText(for phase: MountainNotePhase) -> String {
+        guard let record else { return "" }
+        switch phase {
+        case .before: return record.beforeNote
+        case .during: return record.duringNote
+        case .after: return record.afterNote
+        }
+    }
+
+    private func notePreview(for phase: MountainNotePhase) -> String {
+        let text = noteText(for: phase).trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? "\(phase.title)のメモはまだありません" : text
+    }
+
+    private func saveSelectedPhoto(_ item: PhotosPickerItem) async {
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                photoSelectionError = "選択した写真を読み込めませんでした。別の写真を選んでください。"
+                return
+            }
+            guard let image = UIImage(data: data), let compressedData = image.yamaLensHeroImageData else {
+                photoSelectionError = "この形式の写真は設定できません。別の写真を選んでください。"
+                return
+            }
+            ensureRecord().heroImageData = compressedData
+        } catch {
+            photoSelectionError = "写真の読み込みに失敗しました。もう一度お試しください。"
+        }
     }
 
     @discardableResult
@@ -416,28 +496,90 @@ struct MountainDetailView: View {
     }
 }
 
+private enum MountainNotePhase: String, Identifiable {
+    case before
+    case during
+    case after
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .before: "行く前"
+        case .during: "山行中"
+        case .after: "行ったあと"
+        }
+    }
+}
+
+private struct NotePreviewCard: View {
+    let phase: MountainNotePhase
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(phase.title)
+                .font(.headline)
+            Text(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "まだメモはありません" : text)
+                .font(.subheadline)
+                .lineLimit(6)
+        }
+        .padding(18)
+    }
+}
+
 private struct MountainNotesView: View {
     let mountain: Mountain
     @Bindable var record: UserMountainRecord
+    let phase: MountainNotePhase
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("行く前") { TextEditor(text: $record.beforeNote).frame(minHeight: 100) }
-                Section("山行中") { TextEditor(text: $record.duringNote).frame(minHeight: 100) }
-                Section("行ったあと") { TextEditor(text: $record.afterNote).frame(minHeight: 100) }
+                Section(phase.title) {
+                    TextEditor(text: noteBinding)
+                        .frame(minHeight: 180)
+                }
                 Section {
                     Text("山ノートはこのiPhone内に保存されます。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(mountain.name)
+            .navigationTitle("\(mountain.name)・\(phase.title)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("完了") { dismiss() } }
             }
         }
+    }
+
+    private var noteBinding: Binding<String> {
+        switch phase {
+        case .before: $record.beforeNote
+        case .during: $record.duringNote
+        case .after: $record.afterNote
+        }
+    }
+}
+
+private extension UIImage {
+    var yamaLensHeroImageData: Data? {
+        let maximumDimension: CGFloat = 1_600
+        let longestSide = max(size.width, size.height)
+        let targetSize: CGSize
+        if longestSide > maximumDimension {
+            let scale = maximumDimension / longestSide
+            targetSize = CGSize(width: size.width * scale, height: size.height * scale)
+        } else {
+            targetSize = size
+        }
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return resized.jpegData(compressionQuality: 0.82)
     }
 }

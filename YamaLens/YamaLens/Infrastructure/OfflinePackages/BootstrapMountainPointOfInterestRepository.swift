@@ -26,4 +26,8 @@ nonisolated struct BootstrapMountainPointOfInterestRepository: MountainPointOfIn
     func fetchPointsOfInterest(for mountainID: String) -> [MountainPointOfInterest] {
         repository.fetchPointsOfInterest(for: mountainID)
     }
+
+    func fetchTrailheadAccessGuides(for mountainID: String) -> [TrailheadAccessGuide] {
+        repository.fetchTrailheadAccessGuides(for: mountainID)
+    }
 }

@@ -9,6 +9,7 @@ final class UserMountainRecord {
     var beforeNote: String
     var duringNote: String
     var afterNote: String
+    @Attribute(.externalStorage) var heroImageData: Data?
     var lastViewedAt: Date?
     var summitedAt: Date?
 
@@ -19,6 +20,7 @@ final class UserMountainRecord {
         beforeNote: String = "",
         duringNote: String = "",
         afterNote: String = "",
+        heroImageData: Data? = nil,
         lastViewedAt: Date? = nil,
         summitedAt: Date? = nil
     ) {
@@ -28,6 +30,7 @@ final class UserMountainRecord {
         self.beforeNote = beforeNote
         self.duringNote = duringNote
         self.afterNote = afterNote
+        self.heroImageData = heroImageData
         self.lastViewedAt = lastViewedAt
         self.summitedAt = summitedAt
     }

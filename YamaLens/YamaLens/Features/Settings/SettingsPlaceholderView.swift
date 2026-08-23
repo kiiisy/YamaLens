@@ -7,6 +7,16 @@ struct SettingsPlaceholderView: View {
     let mountains: [Mountain]
     let cameraProjector: MountainCameraProjector
     let offlinePackageModel: OfflinePackageScreenModel
+    @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
+    @AppStorage("externalBrowser.application") private var browserApplicationRawValue = ExternalBrowserApplication.defaultBrowser.rawValue
+
+    private var mapApplication: ExternalMapApplication {
+        ExternalMapApplication(rawValue: mapApplicationRawValue) ?? .appleMaps
+    }
+
+    private var browserApplication: ExternalBrowserApplication {
+        ExternalBrowserApplication(rawValue: browserApplicationRawValue) ?? .defaultBrowser
+    }
 
     init(
         showsTerrainHorizon: Binding<Bool> = .constant(true),
@@ -39,7 +49,28 @@ struct SettingsPlaceholderView: View {
 
                 Section("位置情報とアクセス") {
                     SettingsLink(title: "よく使う出発駅", value: "未登録", systemImage: "tram")
-                    SettingsLink(title: "地図アプリ", value: "毎回選択", systemImage: "map")
+                    NavigationLink {
+                        ExternalMapApplicationSettingsView(
+                            selectedApplicationRawValue: $mapApplicationRawValue
+                        )
+                    } label: {
+                        SettingsLink(
+                            title: "地図アプリ",
+                            value: mapApplication.displayName,
+                            systemImage: "map"
+                        )
+                    }
+                    NavigationLink {
+                        ExternalBrowserApplicationSettingsView(
+                            selectedApplicationRawValue: $browserApplicationRawValue
+                        )
+                    } label: {
+                        SettingsLink(
+                            title: "公式サイトを開くブラウザ",
+                            value: browserApplication.displayName,
+                            systemImage: "safari"
+                        )
+                    }
                 }
 
                 Section("オフライン") {
@@ -101,6 +132,98 @@ struct SettingsPlaceholderView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+}
+
+private struct ExternalMapApplicationSettingsView: View {
+    @Binding var selectedApplicationRawValue: String
+
+    private var selectedApplication: ExternalMapApplication {
+        ExternalMapApplication(rawValue: selectedApplicationRawValue) ?? .appleMaps
+    }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(availableApplications, id: \.self) { application in
+                    Button {
+                        selectedApplicationRawValue = application.rawValue
+                    } label: {
+                        HStack {
+                            Text(application.displayName)
+                            Spacer()
+                            if selectedApplication == application {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(YamaColor.alpineTeal)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel(application.displayName)
+                    .accessibilityAddTraits(selectedApplication == application ? .isSelected : [])
+                }
+            } footer: {
+                Text("Google MapsはこのiPhoneにインストールされている場合だけ表示されます。")
+            }
+        }
+        .navigationTitle("地図アプリ")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var availableApplications: [ExternalMapApplication] {
+        var applications: [ExternalMapApplication] = [.appleMaps]
+        if ExternalMapApplicationAvailability.isGoogleMapsAvailable {
+            applications.append(.googleMaps)
+        }
+        applications.append(.askEveryTime)
+        return applications
+    }
+}
+
+private struct ExternalBrowserApplicationSettingsView: View {
+    @Binding var selectedApplicationRawValue: String
+
+    private var selectedApplication: ExternalBrowserApplication {
+        ExternalBrowserApplication(rawValue: selectedApplicationRawValue) ?? .defaultBrowser
+    }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(availableApplications, id: \.self) { application in
+                    Button {
+                        selectedApplicationRawValue = application.rawValue
+                    } label: {
+                        HStack {
+                            Text(application.displayName)
+                            Spacer()
+                            if selectedApplication == application {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(YamaColor.alpineTeal)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel(application.displayName)
+                    .accessibilityAddTraits(selectedApplication == application ? .isSelected : [])
+                }
+            } footer: {
+                Text("既定のブラウザはiPhoneの設定に従います。ChromeはこのiPhoneにインストールされている場合だけ表示されます。")
+            }
+        }
+        .navigationTitle("公式サイトを開くブラウザ")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var availableApplications: [ExternalBrowserApplication] {
+        var applications: [ExternalBrowserApplication] = [.defaultBrowser]
+        if ExternalBrowserApplicationAvailability.isChromeAvailable {
+            applications.append(.chrome)
+        }
+        applications.append(.askEveryTime)
+        return applications
     }
 }
 

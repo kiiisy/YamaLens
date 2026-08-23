@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "1.1.1",
+  "contentVersion": "1.1.2",
   "regions": [
     {
       "id": "jp.kanagawa.tanzawa",
@@ -255,6 +255,22 @@
       "attributionText": "出典：神奈川県『丹沢登山』"
     },
     {
+      "id": "hadano-omoteone-tonodake",
+      "provider": "秦野市",
+      "title": "表尾根縦走コース（塔ノ岳）",
+      "url": "https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：秦野市公式ホームページ『表尾根縦走コース』"
+    },
+    {
+      "id": "kanagawa-yabitsu-trailhead",
+      "provider": "神奈川県",
+      "title": "丹沢大山を旅して元気に！",
+      "url": "https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/documents/tanzawaohyama.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：神奈川県『丹沢大山を旅して元気に！』"
+    },
+    {
       "id": "sonbutsu-sanso-official",
       "provider": "尊仏山荘",
       "title": "塔ノ岳 尊仏山荘",
@@ -315,6 +331,36 @@
       "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/tanzawa_tozan.html",
       "checkedAt": "2026-08-22",
       "sourceID": "kanagawa-tanzawa-climbing"
+    },
+    {
+      "id": "tonodake-yabitsu-trailhead",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "trailhead",
+      "name": "ヤビツ峠登山口",
+      "summary": "表尾根を経由して塔ノ岳へ向かう登山口。コース状況と公共交通の運行情報は公式案内で確認してください。",
+      "officialURL": "https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "hadano-omoteone-tonodake"
+    },
+    {
+      "id": "tonodake-yabitsu-bus",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "publicTransport",
+      "name": "ヤビツ峠バス停",
+      "summary": "秦野駅からヤビツ峠行きのバスを利用。運行本数や運休情報は交通事業者の最新情報を確認してください。",
+      "officialURL": "https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "hadano-omoteone-tonodake"
+    },
+    {
+      "id": "tonodake-yabitsu-parking",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "parking",
+      "name": "ヤビツ峠駐車場",
+      "summary": "利用条件、満車時の対応、道路状況は公式案内で確認してください。",
+      "officialURL": "https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/documents/tanzawaohyama.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "kanagawa-yabitsu-trailhead"
     },
     {
       "id": "tonodake-okura-bus",
@@ -382,6 +428,9 @@
     {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-trailhead"},
     {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-bus"},
     {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-parking"},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-trailhead"},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-bus"},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-parking"},
     {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-kobo-no-satoyu"},
     {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-okura-trailhead"},
     {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-okura-bus"},
@@ -390,5 +439,21 @@
     {"mountainID": "大山", "pointOfInterestID": "ooyama-cable-trailhead"},
     {"mountainID": "大山", "pointOfInterestID": "ooyama-cableway"},
     {"mountainID": "大山", "pointOfInterestID": "ooyama-municipal-parking-1"}
+  ],
+  "trailheadAccessPoints": [
+    {"trailheadID": "tonodake-okura-trailhead", "pointOfInterestID": "tonodake-okura-bus", "displayOrder": 0},
+    {"trailheadID": "tonodake-okura-trailhead", "pointOfInterestID": "tonodake-okura-parking", "displayOrder": 1},
+    {"trailheadID": "tonodake-yabitsu-trailhead", "pointOfInterestID": "tonodake-yabitsu-bus", "displayOrder": 0},
+    {"trailheadID": "tonodake-yabitsu-trailhead", "pointOfInterestID": "tonodake-yabitsu-parking", "displayOrder": 1},
+    {"trailheadID": "ooyama-cable-trailhead", "pointOfInterestID": "ooyama-cableway", "displayOrder": 0},
+    {"trailheadID": "ooyama-cable-trailhead", "pointOfInterestID": "ooyama-municipal-parking-1", "displayOrder": 1}
+  ],
+  "trailheadSearchAreas": [
+    {"id": "tonodake-okura-trailhead-area", "trailheadID": "tonodake-okura-trailhead", "name": "大倉登山口", "displayOrder": 0},
+    {"id": "tonodake-okura-station-area", "trailheadID": "tonodake-okura-trailhead", "name": "渋沢駅", "displayOrder": 1},
+    {"id": "tonodake-yabitsu-trailhead-area", "trailheadID": "tonodake-yabitsu-trailhead", "name": "ヤビツ峠", "displayOrder": 0},
+    {"id": "tonodake-yabitsu-station-area", "trailheadID": "tonodake-yabitsu-trailhead", "name": "秦野駅", "displayOrder": 1},
+    {"id": "ooyama-cable-trailhead-area", "trailheadID": "ooyama-cable-trailhead", "name": "大山ケーブル", "displayOrder": 0},
+    {"id": "ooyama-cable-station-area", "trailheadID": "ooyama-cable-trailhead", "name": "伊勢原駅", "displayOrder": 1}
   ]
 }

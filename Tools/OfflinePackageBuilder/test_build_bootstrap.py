@@ -55,6 +55,15 @@ class BuildBootstrapTests(unittest.TestCase):
             "mountainPointOfInterestLinks": [
                 {"mountainID": "test-mountain", "pointOfInterestID": "test-trailhead"}
             ],
+            "trailheadAccessPoints": [],
+            "trailheadSearchAreas": [
+                {
+                    "id": "test-trailhead-area",
+                    "trailheadID": "test-trailhead",
+                    "name": "テスト登山口",
+                    "displayOrder": 0,
+                }
+            ],
         }
 
     def test_writes_facility_and_source_records(self) -> None:

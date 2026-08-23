@@ -72,6 +72,18 @@ CREATE TABLE mountain_points_of_interest (
     point_of_interest_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
     PRIMARY KEY(mountain_id, point_of_interest_id)
 );
+CREATE TABLE trailhead_access_points (
+    trailhead_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
+    point_of_interest_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
+    display_order INTEGER NOT NULL CHECK(display_order >= 0),
+    PRIMARY KEY(trailhead_id, point_of_interest_id)
+);
+CREATE TABLE trailhead_search_areas (
+    id TEXT PRIMARY KEY,
+    trailhead_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    display_order INTEGER NOT NULL CHECK(display_order >= 0)
+);
 CREATE TABLE source_links (
     id TEXT PRIMARY KEY,
     provider TEXT NOT NULL,
@@ -107,6 +119,8 @@ CREATE INDEX mountains_region_id_idx ON mountains(region_id);
 CREATE INDEX mountains_search_name_idx ON mountains(search_name);
 CREATE INDEX mountain_names_search_name_idx ON mountain_names(search_name);
 CREATE INDEX points_of_interest_region_type_idx ON points_of_interest(region_id, type);
+CREATE INDEX trailhead_access_points_trailhead_id_idx ON trailhead_access_points(trailhead_id, display_order);
+CREATE INDEX trailhead_search_areas_trailhead_id_idx ON trailhead_search_areas(trailhead_id, display_order);
 CREATE INDEX terrain_tiles_bounds_idx ON terrain_tiles(south, north, west, east);
 """
 
@@ -282,6 +296,44 @@ def load_source(path: Path) -> dict[str, Any]:
         if pair in link_pairs:
             raise ValueError(f"duplicate mountain point of interest link: {pair}")
         link_pairs.add(pair)
+
+    trailhead_access_points = payload.get("trailheadAccessPoints", [])
+    if not isinstance(trailhead_access_points, list) or len(trailhead_access_points) > 50_000:
+        raise ValueError("trailheadAccessPoints must contain at most 50000 records")
+    access_pairs: set[tuple[str, str]] = set()
+    for index, link in enumerate(trailhead_access_points):
+        if not isinstance(link, dict):
+            raise ValueError(f"trailheadAccessPoints[{index}] must be an object")
+        trailhead_id = require_text(link.get("trailheadID"), f"trailheadAccessPoints[{index}].trailheadID", 128)
+        point_id = require_text(link.get("pointOfInterestID"), f"trailheadAccessPoints[{index}].pointOfInterestID", 128)
+        if trailhead_id not in point_ids or point_id not in point_ids:
+            raise ValueError(f"trailheadAccessPoints[{index}] references an unknown point of interest")
+        if next(point["type"] for point in points_of_interest if point["id"] == trailhead_id) != "trailhead":
+            raise ValueError(f"trailheadAccessPoints[{index}].trailheadID must reference a trailhead")
+        require_number(link.get("displayOrder"), f"trailheadAccessPoints[{index}].displayOrder", 0, 10_000)
+        pair = (trailhead_id, point_id)
+        if pair in access_pairs:
+            raise ValueError(f"duplicate trailhead access point link: {pair}")
+        access_pairs.add(pair)
+
+    search_areas = payload.get("trailheadSearchAreas", [])
+    if not isinstance(search_areas, list) or len(search_areas) > 10_000:
+        raise ValueError("trailheadSearchAreas must contain at most 10000 records")
+    search_area_ids: set[str] = set()
+    for index, area in enumerate(search_areas):
+        if not isinstance(area, dict):
+            raise ValueError(f"trailheadSearchAreas[{index}] must be an object")
+        area_id = require_text(area.get("id"), f"trailheadSearchAreas[{index}].id", 128)
+        if area_id in search_area_ids:
+            raise ValueError(f"duplicate trailhead search area id: {area_id}")
+        search_area_ids.add(area_id)
+        trailhead_id = require_text(area.get("trailheadID"), f"trailheadSearchAreas[{index}].trailheadID", 128)
+        if trailhead_id not in point_ids:
+            raise ValueError(f"trailheadSearchAreas[{index}].trailheadID references an unknown point of interest")
+        if next(point["type"] for point in points_of_interest if point["id"] == trailhead_id) != "trailhead":
+            raise ValueError(f"trailheadSearchAreas[{index}].trailheadID must reference a trailhead")
+        require_text(area.get("name"), f"trailheadSearchAreas[{index}].name", 128)
+        require_number(area.get("displayOrder"), f"trailheadSearchAreas[{index}].displayOrder", 0, 10_000)
     return payload
 
 
@@ -392,6 +444,31 @@ def create_database(source: dict[str, Any], output: Path) -> None:
             [
                 (link["mountainID"], link["pointOfInterestID"])
                 for link in source.get("mountainPointOfInterestLinks", [])
+            ],
+        )
+        connection.executemany(
+            """
+            INSERT INTO trailhead_access_points(trailhead_id, point_of_interest_id, display_order)
+            VALUES(?, ?, ?)
+            """,
+            [
+                (link["trailheadID"], link["pointOfInterestID"], link["displayOrder"])
+                for link in source.get("trailheadAccessPoints", [])
+            ],
+        )
+        connection.executemany(
+            """
+            INSERT INTO trailhead_search_areas(id, trailhead_id, name, display_order)
+            VALUES(?, ?, ?, ?)
+            """,
+            [
+                (
+                    area["id"],
+                    area["trailheadID"],
+                    area["name"],
+                    area["displayOrder"],
+                )
+                for area in source.get("trailheadSearchAreas", [])
             ],
         )
         connection.commit()
