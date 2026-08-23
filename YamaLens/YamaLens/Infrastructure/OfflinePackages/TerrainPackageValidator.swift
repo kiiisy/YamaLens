@@ -521,12 +521,28 @@ nonisolated struct OfflinePackageValidator: Sendable {
             "mountain_names",
             "points_of_interest",
             "mountain_points_of_interest",
-            "trailhead_access_points",
-            "trailhead_search_areas",
             "source_links",
             "entity_sources",
             "terrain_tiles",
         ]
+        for table in requiredTables where try !tableExists(table, database: database) {
+            return false
+        }
+
+        // schema v1初期版の詳細パックには登山口アクセス関係がない。
+        // 2テーブルともない場合だけ旧版として受理し、片方だけの不完全なschemaは拒否する。
+        let hasTrailheadAccessPoints = try tableExists(
+            "trailhead_access_points",
+            database: database
+        )
+        let hasTrailheadSearchAreas = try tableExists(
+            "trailhead_search_areas",
+            database: database
+        )
+        return hasTrailheadAccessPoints == hasTrailheadSearchAreas
+    }
+
+    private func tableExists(_ table: String, database: OpaquePointer) throws -> Bool {
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(
             database,
@@ -538,16 +554,11 @@ nonisolated struct OfflinePackageValidator: Sendable {
             throw OfflinePackageValidationError.invalidCatalog
         }
         defer { sqlite3_finalize(statement) }
-        for table in requiredTables {
-            sqlite3_reset(statement)
-            sqlite3_clear_bindings(statement)
-            let exists = table.withCString { tablePointer in
-                sqlite3_bind_text(statement, 1, tablePointer, -1, nil) == SQLITE_OK
-                    && sqlite3_step(statement) == SQLITE_ROW
-            }
-            guard exists else { return false }
+        let exists = table.withCString { tablePointer in
+            sqlite3_bind_text(statement, 1, tablePointer, -1, nil) == SQLITE_OK
+                && sqlite3_step(statement) == SQLITE_ROW
         }
-        return true
+        return exists
     }
 }
 

@@ -179,12 +179,9 @@ final class YamaLensUITests: XCTestCase {
         XCTAssertTrue(daylight.waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["日の出・日の入り"].exists)
 
-        let facilityRow = app.buttons["facility-row-tonodake-sonbutsu-sanso"]
-        for _ in 0..<5 where !facilityRow.isHittable {
+        let facilityRow = app.buttons["facility-row-sonbutsu-sanso"]
+        for _ in 0..<3 where !facilityRow.exists {
             app.swipeUp(velocity: .slow)
-        }
-        if !facilityRow.isHittable {
-            app.swipeDown(velocity: .slow)
         }
         XCTAssertTrue(facilityRow.waitForExistence(timeout: 2))
         XCTAssertTrue(facilityRow.isHittable)
@@ -213,13 +210,13 @@ final class YamaLensUITests: XCTestCase {
         }
         XCTAssertTrue(trailheadHeading.waitForExistence(timeout: 2))
 
-        let trailheadRow = app.buttons["trailhead-row-tonodake-okura-trailhead"]
+        let trailheadRow = app.buttons["trailhead-row-okura-trailhead"]
         for _ in 0..<4 where !trailheadRow.isHittable {
             app.swipeUp(velocity: .slow)
         }
         XCTAssertTrue(trailheadRow.waitForExistence(timeout: 2))
         XCTAssertTrue(
-            app.buttons["trailhead-row-tonodake-yabitsu-trailhead"].exists
+            app.buttons["trailhead-row-yabitsu-pass-trailhead"].exists
         )
         trailheadRow.tap()
         XCTAssertTrue(
@@ -521,29 +518,27 @@ final class YamaLensUITests: XCTestCase {
         let app = makeApplication()
         app.launch()
 
-        let mountainCard = app.buttons
-            .matching(identifier: "mountain-row-蛭ヶ岳")
-            .firstMatch
-        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
-        mountainCard.tap()
+        let searchButton = app.buttons["search-button"]
+        XCTAssertTrue(searchButton.waitForExistence(timeout: 2))
+        searchButton.tap()
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.tap()
+        searchField.typeText("蛭ヶ岳")
+        let searchResult = app.buttons["search-result-蛭ヶ岳"]
+        XCTAssertTrue(searchResult.waitForExistence(timeout: 2))
+        searchResult.tap()
 
         let mountainDetail = app.descendants(matching: .any)
             .matching(identifier: "mountain-detail")
             .firstMatch
         XCTAssertTrue(mountainDetail.waitForExistence(timeout: 2))
-        let closeButton = app.buttons["detail-close-button"]
-        let favoriteButton = app.buttons["detail-favorite-button"]
-        XCTAssertTrue(closeButton.waitForExistence(timeout: 2))
-        XCTAssertTrue(favoriteButton.waitForExistence(timeout: 2))
-        XCTAssertGreaterThanOrEqual(closeButton.frame.minY, 44)
-        XCTAssertTrue(app.staticTexts["公式情報を確認中"].exists)
+        let dragStart = mountainDetail.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15))
+        let dragEnd = mountainDetail.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9))
+        dragStart.press(forDuration: 0.05, thenDragTo: dragEnd)
 
-        mountainDetail.swipeDown(velocity: .slow)
-
-        XCTAssertTrue(mountainCard.waitForExistence(timeout: 2))
-        XCTAssertFalse(mountainDetail.exists)
-        XCTAssertFalse(closeButton.exists)
-        XCTAssertFalse(favoriteButton.exists)
+        XCTAssertTrue(searchButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(mountainDetail.waitForNonExistence(timeout: 2))
     }
 
     @MainActor

@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "reviewStatus": "approved",
+  "sourceID": "kanagawa-hadano-tokawa-park-v1",
+  "parserVersion": "kanagawa-park-ckan-v1",
+  "canonicalPointOfInterestID": "hadano-tokawa-okura-parking",
+  "candidateSHA256": "36a6e7a443da727095bb1997d3a7a18fe56a8c4e96f8331d61467038ec3f80cb",
+  "expectedContentVersion": "1.2.0",
+  "reviewedContentVersion": "1.2.1",
+  "reviewedAt": "2026-08-24",
+  "reviewedByRole": "repositoryMaintainer",
+  "officialEvidence": {
+    "url": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
+    "checkedAt": "2026-08-24",
+    "note": "公式ページで大倉駐車場、有料料金表、入庫可能時間6:30〜21:00、24時間出庫可能を照合した。"
+  },
+  "candidateFieldDecisions": {
+    "sourceName": {
+      "status": "acceptedAsSupportingEvidence",
+      "reason": "秦野戸川公園という施設名は公式ページと一致する。"
+    },
+    "address": {
+      "status": "rejectedForCanonicalUse",
+      "reason": "公園・パークセンターの所在地であり、大倉駐車場固有の所在地とは扱わない。"
+    },
+    "hasFreeParking": {
+      "status": "rejectedForCanonicalUse",
+      "reason": "公式料金表では30分未満と二輪車が無料であり、単純な無料駐車場なしという表示は誤解を招く。"
+    },
+    "hasPaidParking": {
+      "status": "acceptedAsSupportingEvidence",
+      "reason": "有料駐車場であることを公式料金表でも確認した。"
+    },
+    "openingHours": {
+      "status": "rejectedForCanonicalUse",
+      "reason": "取得値はパークセンターの開館時間であり、駐車場の入庫可能時間ではない。"
+    },
+    "closedDays": {
+      "status": "rejectedForCanonicalUse",
+      "reason": "取得値は公園・パークセンターの休園・休館情報であり、駐車場の休止日とは扱わない。"
+    },
+    "sourceUpdatedAt": {
+      "status": "acceptedAsSupportingEvidence",
+      "reason": "構造化データの鮮度確認に使用し、公式ページの確認日とは分けて扱う。"
+    }
+  },
+  "expectedCanonicalBefore": {
+    "name": "秦野戸川公園 大倉駐車場",
+    "summary": "利用時間・料金・混雑情報は秦野戸川公園の公式案内で確認してください。",
+    "officialURL": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
+    "checkedAt": "2026-08-22"
+  },
+  "canonicalPatch": {
+    "summary": "有料駐車場です。入庫可能時間は6:30〜21:00、出庫は24時間可能です。料金・混雑情報は秦野戸川公園の公式案内で確認してください。",
+    "checkedAt": "2026-08-24"
+  },
+  "expectedCanonicalSourceBefore": {
+    "id": "hadano-tokawa-access",
+    "url": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
+    "checkedAt": "2026-08-22"
+  },
+  "canonicalSourcePatch": {
+    "checkedAt": "2026-08-24"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "1.2.0",
+  "contentVersion": "1.2.1",
   "regions": [
     {
       "id": "jp.kanagawa.tanzawa",
@@ -300,7 +300,7 @@
       "provider": "神奈川県公園協会",
       "title": "秦野戸川公園 アクセス・駐車場",
       "url": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
-      "checkedAt": "2026-08-22",
+      "checkedAt": "2026-08-24",
       "attributionText": "出典：神奈川県立秦野戸川公園公式サイト"
     },
     {
@@ -458,9 +458,9 @@
       "regionID": "jp.kanagawa.tanzawa",
       "type": "parking",
       "name": "秦野戸川公園 大倉駐車場",
-      "summary": "利用時間・料金・混雑情報は秦野戸川公園の公式案内で確認してください。",
+      "summary": "有料駐車場です。入庫可能時間は6:30〜21:00、出庫は24時間可能です。料金・混雑情報は秦野戸川公園の公式案内で確認してください。",
       "officialURL": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
-      "checkedAt": "2026-08-22",
+      "checkedAt": "2026-08-24",
       "sourceID": "hadano-tokawa-access"
     },
     {

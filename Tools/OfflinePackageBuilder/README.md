@@ -46,7 +46,19 @@ python3 Tools/OfflinePackageBuilder/acquire_facility_updates.py \
 - `candidate.json`: 許可項目だけから生成した候補値
 - `review-diff.json`: 現行の駐車場レコードとの確認用差分
 
-このコマンドは `Data/Bootstrap/tanzawa-bootstrap-v1.json` を変更しない。候補の住所、駐車場種別、開園時間、休園日、更新日を公式ページと照合し、採用すると判断した項目だけを別の変更として正規JSONへ反映する。その後、既存のSQLite生成・検証・署名工程を実行する。最短取得間隔は設定上168時間であり、現段階ではスケジューラーから自動実行しない。
+このコマンドは `Data/Bootstrap/tanzawa-bootstrap-v1.json` を変更しない。候補の住所、駐車場種別、開園時間、休園日、更新日を公式ページと照合し、全候補項目の採否、根拠URL、確認日、反映前の値、反映後の内容版を `Data/FacilityReviews/` のレビュー記録へ残す。
+
+承認後は、候補ファイルのSHA-256と反映前データがレビュー時点から変わっていないことを検証し、新しいJSONへだけ反映する。
+
+```sh
+python3 Tools/OfflinePackageBuilder/apply_facility_review.py \
+  --candidate Data/Generated/FacilityUpdates/kanagawa-hadano-tokawa-park-YYYY-MM-DD/candidate.json \
+  --review Data/FacilityReviews/kanagawa-hadano-tokawa-park-YYYY-MM-DD.json \
+  --canonical Data/Bootstrap/tanzawa-bootstrap-v1.json \
+  --output Data/Generated/FacilityUpdates/kanagawa-hadano-tokawa-park-YYYY-MM-DD/reviewed-bootstrap.json
+```
+
+出力先が既に存在する場合は上書きしない。生成されたJSONの差分を確認してから、同じ変更を正本JSONへ最小差分で適用し、既存のSQLite生成・検証・署名工程を実行する。最短取得間隔は設定上168時間であり、現段階ではスケジューラーから自動実行しない。
 
 ## 0. 正式な開発用原本を取得する
 

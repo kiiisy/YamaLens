@@ -17,6 +17,36 @@ struct OfflinePackageValidatorTests {
         #expect(validated.manifest.contentVersion == "1.0.0")
     }
 
+    @Test("登山口アクセス関係が未収録のschema v1初期パックを受理する")
+    func acceptsLegacySchemaWithoutTrailheadRelations() throws {
+        let root = try makeTemporaryDirectory(named: "legacy-trailhead-relations")
+        defer { removeTemporaryDirectory(root) }
+        let fixture = try OfflinePackageFixture.make(at: root.appending(path: "package"))
+        try fixture.executeCatalogSQL(
+            "DROP TABLE trailhead_access_points; DROP TABLE trailhead_search_areas;"
+        )
+        try fixture.rewriteManifestAndSignature()
+        let validator = OfflinePackageValidator(publicKeys: fixture.publicKeys)
+
+        let validated = try validator.validatePackage(at: fixture.directoryURL)
+
+        #expect(validated.manifest.schemaVersion == 1)
+    }
+
+    @Test("登山口アクセス関係が片方だけの不完全なschemaを拒否する")
+    func rejectsPartialTrailheadRelations() throws {
+        let root = try makeTemporaryDirectory(named: "partial-trailhead-relations")
+        defer { removeTemporaryDirectory(root) }
+        let fixture = try OfflinePackageFixture.make(at: root.appending(path: "package"))
+        try fixture.executeCatalogSQL("DROP TABLE trailhead_search_areas;")
+        try fixture.rewriteManifestAndSignature()
+        let validator = OfflinePackageValidator(publicKeys: fixture.publicKeys)
+
+        #expect(throws: OfflinePackageValidationError.invalidCatalog) {
+            try validator.validatePackage(at: fixture.directoryURL)
+        }
+    }
+
     @Test("未知の署名鍵を拒否する")
     func rejectsUnknownSigningKey() throws {
         let root = try makeTemporaryDirectory(named: "unknown-key")
