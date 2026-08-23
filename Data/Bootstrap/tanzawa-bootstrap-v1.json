@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "1.1.2",
+  "contentVersion": "1.2.0",
   "regions": [
     {
       "id": "jp.kanagawa.tanzawa",
@@ -326,11 +326,75 @@
       "url": "https://www.city.isehara.kanagawa.jp/docs/2012032600026/index.html.r",
       "checkedAt": "2026-08-22",
       "attributionText": "出典：伊勢原市公式ホームページ"
+    },
+    {
+      "id": "tanzawa-vc-hut-links",
+      "provider": "神奈川県公園協会",
+      "title": "丹沢のビジターセンター リンク集",
+      "url": "https://www.kanagawa-park.or.jp/tanzawavc/link.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：神奈川県立丹沢ビジターセンター公式サイト"
+    },
+    {
+      "id": "miyama-sanso-official",
+      "provider": "みやま山荘",
+      "title": "丹沢山 みやま山荘",
+      "url": "https://miyamasansou.com/",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：みやま山荘公式サイト"
+    },
+    {
+      "id": "hirugatake-sanso-official",
+      "provider": "蛭ヶ岳山荘",
+      "title": "蛭ヶ岳山荘 公式予約サイト",
+      "url": "https://hirugadake-sanso.reserven.jp/",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：蛭ヶ岳山荘公式予約サイト"
+    },
+    {
+      "id": "nabewari-sanso-official",
+      "provider": "鍋割山荘",
+      "title": "鍋割山荘",
+      "url": "https://nabewari.net/",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：鍋割山荘公式サイト"
+    },
+    {
+      "id": "west-tanzawa-vc-official",
+      "provider": "神奈川県公園協会",
+      "title": "西丹沢ビジターセンター 施設紹介・アクセス",
+      "url": "https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：神奈川県立西丹沢ビジターセンター公式サイト"
+    },
+    {
+      "id": "kanagawa-west-tanzawa-parking",
+      "provider": "神奈川県",
+      "title": "自然公園歩道情報",
+      "url": "https://www.pref.kanagawa.jp/docs/f4y/02yama/kouen_kouenhodou/kouenhodou_top.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：神奈川県ホームページ"
+    },
+    {
+      "id": "yamakita-bunanoyu-official",
+      "provider": "山北町",
+      "title": "町立中川温泉ぶなの湯",
+      "url": "https://www.town.yamakita.kanagawa.jp/0000004453.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：山北町公式ホームページ"
+    },
+    {
+      "id": "kanagawa-oyama-access",
+      "provider": "神奈川県",
+      "title": "大山から日向へのハイキング 伊勢原コース",
+      "url": "https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/p1189872.html",
+      "checkedAt": "2026-08-23",
+      "attributionText": "出典：神奈川県ホームページ"
     }
   ],
   "pointsOfInterest": [
     {
-      "id": "tonodake-sonbutsu-sanso",
+      "id": "sonbutsu-sanso",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "mountainHut",
       "name": "尊仏山荘",
@@ -340,7 +404,7 @@
       "sourceID": "sonbutsu-sanso-official"
     },
     {
-      "id": "tonodake-okura-trailhead",
+      "id": "okura-trailhead",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "trailhead",
       "name": "大倉登山口",
@@ -350,7 +414,7 @@
       "sourceID": "kanagawa-tanzawa-climbing"
     },
     {
-      "id": "tonodake-yabitsu-trailhead",
+      "id": "yabitsu-pass-trailhead",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "trailhead",
       "name": "ヤビツ峠登山口",
@@ -360,7 +424,7 @@
       "sourceID": "hadano-omoteone-tonodake"
     },
     {
-      "id": "tonodake-yabitsu-bus",
+      "id": "yabitsu-pass-bus-stop",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "publicTransport",
       "name": "ヤビツ峠バス停",
@@ -370,7 +434,7 @@
       "sourceID": "hadano-omoteone-tonodake"
     },
     {
-      "id": "tonodake-yabitsu-parking",
+      "id": "yabitsu-pass-parking",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "parking",
       "name": "ヤビツ峠駐車場",
@@ -380,7 +444,7 @@
       "sourceID": "kanagawa-yabitsu-trailhead"
     },
     {
-      "id": "tonodake-okura-bus",
+      "id": "okura-bus-stop",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "publicTransport",
       "name": "大倉バス停",
@@ -390,7 +454,7 @@
       "sourceID": "hadano-tokawa-access"
     },
     {
-      "id": "tonodake-okura-parking",
+      "id": "hadano-tokawa-okura-parking",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "parking",
       "name": "秦野戸川公園 大倉駐車場",
@@ -400,7 +464,7 @@
       "sourceID": "hadano-tokawa-access"
     },
     {
-      "id": "tonodake-kobo-no-satoyu",
+      "id": "kobo-no-satoyu",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "hotSpring",
       "name": "弘法の里湯",
@@ -410,7 +474,7 @@
       "sourceID": "hadano-kobo-no-satoyu"
     },
     {
-      "id": "ooyama-cable-trailhead",
+      "id": "oyama-cable-trailhead",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "trailhead",
       "name": "大山ケーブル登山口",
@@ -420,7 +484,7 @@
       "sourceID": "kanagawa-tanzawa-climbing"
     },
     {
-      "id": "ooyama-cableway",
+      "id": "oyama-cable",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "cableway",
       "name": "大山ケーブルカー",
@@ -430,7 +494,7 @@
       "sourceID": "ooyama-cable-official"
     },
     {
-      "id": "ooyama-municipal-parking-1",
+      "id": "isehara-municipal-oyama-parking-1",
       "regionID": "jp.kanagawa.tanzawa",
       "type": "parking",
       "name": "市営大山第1駐車場",
@@ -438,39 +502,153 @@
       "officialURL": "https://www.city.isehara.kanagawa.jp/docs/2012032600026/index.html.r",
       "checkedAt": "2026-08-22",
       "sourceID": "isehara-ooyama-parking"
+    },
+    {
+      "id": "miyama-sanso",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "mountainHut",
+      "name": "みやま山荘",
+      "summary": "丹沢山山頂の山小屋。予約方法や営業情報は公式サイトで最新情報を確認してください。",
+      "officialURL": "https://miyamasansou.com/",
+      "checkedAt": "2026-08-23",
+      "sourceID": "miyama-sanso-official"
+    },
+    {
+      "id": "hirugatake-sanso",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "mountainHut",
+      "name": "蛭ヶ岳山荘",
+      "summary": "蛭ヶ岳山頂の山小屋。予約方法や営業情報は公式サイトで最新情報を確認してください。",
+      "officialURL": "https://hirugadake-sanso.reserven.jp/",
+      "checkedAt": "2026-08-23",
+      "sourceID": "hirugatake-sanso-official"
+    },
+    {
+      "id": "nabewari-sanso",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "mountainHut",
+      "name": "鍋割山荘",
+      "summary": "鍋割山山頂の山小屋。営業日や提供内容は変わるため公式サイトで最新情報を確認してください。",
+      "officialURL": "https://nabewari.net/",
+      "checkedAt": "2026-08-23",
+      "sourceID": "nabewari-sanso-official"
+    },
+    {
+      "id": "aogadake-sanso",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "mountainHut",
+      "name": "青ヶ岳山荘",
+      "summary": "檜洞丸山頂付近の山小屋。利用前にリンク先から運営者の最新情報を確認してください。",
+      "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/link.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "tanzawa-vc-hut-links"
+    },
+    {
+      "id": "west-tanzawa-vc-trailhead",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "trailhead",
+      "name": "西丹沢ビジターセンター登山口",
+      "summary": "檜洞丸など西丹沢の山へ向かう登山拠点。登山道情報は公式サイトで確認してください。",
+      "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "west-tanzawa-vc-official"
+    },
+    {
+      "id": "west-tanzawa-vc-bus-stop",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "publicTransport",
+      "name": "西丹沢ビジターセンターバス停",
+      "summary": "新松田駅または谷峨駅から西丹沢行きバスを利用。時刻表と運行情報は交通事業者の最新情報を確認してください。",
+      "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "west-tanzawa-vc-official"
+    },
+    {
+      "id": "west-tanzawa-vc-parking",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "parking",
+      "name": "西丹沢ビジターセンター駐車場",
+      "summary": "台数が限られるため、利用条件と周辺道路の状況を神奈川県の最新案内で確認してください。",
+      "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/kouen_kouenhodou/kouenhodou_top.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "kanagawa-west-tanzawa-parking"
+    },
+    {
+      "id": "bunanoyu",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "hotSpring",
+      "name": "中川温泉ぶなの湯",
+      "summary": "西丹沢周辺の日帰り温泉。営業時間・休館日・料金は山北町の公式ページで確認してください。",
+      "officialURL": "https://www.town.yamakita.kanagawa.jp/0000004453.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "yamakita-bunanoyu-official"
+    },
+    {
+      "id": "oyama-cable-bus-stop",
+      "regionID": "jp.kanagawa.tanzawa",
+      "type": "publicTransport",
+      "name": "大山ケーブルバス停",
+      "summary": "伊勢原駅北口から大山ケーブル行きバスを利用。時刻表と運行情報は交通事業者の最新情報を確認してください。",
+      "officialURL": "https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/p1189872.html",
+      "checkedAt": "2026-08-23",
+      "sourceID": "kanagawa-oyama-access"
     }
   ],
   "mountainPointOfInterestLinks": [
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-sonbutsu-sanso"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-trailhead"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-bus"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-okura-parking"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-trailhead"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-bus"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-yabitsu-parking"},
-    {"mountainID": "塔ノ岳", "pointOfInterestID": "tonodake-kobo-no-satoyu"},
-    {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-okura-trailhead"},
-    {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-okura-bus"},
-    {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-okura-parking"},
-    {"mountainID": "鍋割山", "pointOfInterestID": "tonodake-kobo-no-satoyu"},
-    {"mountainID": "大山", "pointOfInterestID": "ooyama-cable-trailhead"},
-    {"mountainID": "大山", "pointOfInterestID": "ooyama-cableway"},
-    {"mountainID": "大山", "pointOfInterestID": "ooyama-municipal-parking-1"}
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "sonbutsu-sanso", "displayOrder": 0},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "okura-trailhead", "displayOrder": 0},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "yabitsu-pass-trailhead", "displayOrder": 1},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "okura-bus-stop", "displayOrder": 0},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "yabitsu-pass-bus-stop", "displayOrder": 1},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "hadano-tokawa-okura-parking", "displayOrder": 0},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "yabitsu-pass-parking", "displayOrder": 1},
+    {"mountainID": "塔ノ岳", "pointOfInterestID": "kobo-no-satoyu", "displayOrder": 0},
+    {"mountainID": "丹沢山", "pointOfInterestID": "miyama-sanso", "displayOrder": 0},
+    {"mountainID": "丹沢山", "pointOfInterestID": "okura-trailhead", "displayOrder": 0},
+    {"mountainID": "丹沢山", "pointOfInterestID": "okura-bus-stop", "displayOrder": 0},
+    {"mountainID": "丹沢山", "pointOfInterestID": "hadano-tokawa-okura-parking", "displayOrder": 0},
+    {"mountainID": "丹沢山", "pointOfInterestID": "kobo-no-satoyu", "displayOrder": 0},
+    {"mountainID": "蛭ヶ岳", "pointOfInterestID": "hirugatake-sanso", "displayOrder": 0},
+    {"mountainID": "蛭ヶ岳", "pointOfInterestID": "west-tanzawa-vc-trailhead", "displayOrder": 0},
+    {"mountainID": "蛭ヶ岳", "pointOfInterestID": "west-tanzawa-vc-bus-stop", "displayOrder": 0},
+    {"mountainID": "蛭ヶ岳", "pointOfInterestID": "west-tanzawa-vc-parking", "displayOrder": 0},
+    {"mountainID": "蛭ヶ岳", "pointOfInterestID": "bunanoyu", "displayOrder": 0},
+    {"mountainID": "檜洞丸", "pointOfInterestID": "aogadake-sanso", "displayOrder": 0},
+    {"mountainID": "檜洞丸", "pointOfInterestID": "west-tanzawa-vc-trailhead", "displayOrder": 0},
+    {"mountainID": "檜洞丸", "pointOfInterestID": "west-tanzawa-vc-bus-stop", "displayOrder": 0},
+    {"mountainID": "檜洞丸", "pointOfInterestID": "west-tanzawa-vc-parking", "displayOrder": 0},
+    {"mountainID": "檜洞丸", "pointOfInterestID": "bunanoyu", "displayOrder": 0},
+    {"mountainID": "鍋割山", "pointOfInterestID": "nabewari-sanso", "displayOrder": 0},
+    {"mountainID": "鍋割山", "pointOfInterestID": "okura-trailhead", "displayOrder": 0},
+    {"mountainID": "鍋割山", "pointOfInterestID": "okura-bus-stop", "displayOrder": 0},
+    {"mountainID": "鍋割山", "pointOfInterestID": "hadano-tokawa-okura-parking", "displayOrder": 0},
+    {"mountainID": "鍋割山", "pointOfInterestID": "kobo-no-satoyu", "displayOrder": 0},
+    {"mountainID": "大山", "pointOfInterestID": "oyama-cable-trailhead", "displayOrder": 0},
+    {"mountainID": "大山", "pointOfInterestID": "oyama-cable-bus-stop", "displayOrder": 0},
+    {"mountainID": "大山", "pointOfInterestID": "oyama-cable", "displayOrder": 0},
+    {"mountainID": "大山", "pointOfInterestID": "isehara-municipal-oyama-parking-1", "displayOrder": 0}
   ],
   "trailheadAccessPoints": [
-    {"trailheadID": "tonodake-okura-trailhead", "pointOfInterestID": "tonodake-okura-bus", "displayOrder": 0},
-    {"trailheadID": "tonodake-okura-trailhead", "pointOfInterestID": "tonodake-okura-parking", "displayOrder": 1},
-    {"trailheadID": "tonodake-yabitsu-trailhead", "pointOfInterestID": "tonodake-yabitsu-bus", "displayOrder": 0},
-    {"trailheadID": "tonodake-yabitsu-trailhead", "pointOfInterestID": "tonodake-yabitsu-parking", "displayOrder": 1},
-    {"trailheadID": "ooyama-cable-trailhead", "pointOfInterestID": "ooyama-cableway", "displayOrder": 0},
-    {"trailheadID": "ooyama-cable-trailhead", "pointOfInterestID": "ooyama-municipal-parking-1", "displayOrder": 1}
+    {"trailheadID": "okura-trailhead", "pointOfInterestID": "okura-bus-stop", "displayOrder": 0},
+    {"trailheadID": "okura-trailhead", "pointOfInterestID": "hadano-tokawa-okura-parking", "displayOrder": 1},
+    {"trailheadID": "okura-trailhead", "pointOfInterestID": "kobo-no-satoyu", "displayOrder": 2},
+    {"trailheadID": "yabitsu-pass-trailhead", "pointOfInterestID": "yabitsu-pass-bus-stop", "displayOrder": 0},
+    {"trailheadID": "yabitsu-pass-trailhead", "pointOfInterestID": "yabitsu-pass-parking", "displayOrder": 1},
+    {"trailheadID": "oyama-cable-trailhead", "pointOfInterestID": "oyama-cable", "displayOrder": 0},
+    {"trailheadID": "oyama-cable-trailhead", "pointOfInterestID": "oyama-cable-bus-stop", "displayOrder": 1},
+    {"trailheadID": "oyama-cable-trailhead", "pointOfInterestID": "isehara-municipal-oyama-parking-1", "displayOrder": 2},
+    {"trailheadID": "west-tanzawa-vc-trailhead", "pointOfInterestID": "west-tanzawa-vc-bus-stop", "displayOrder": 0},
+    {"trailheadID": "west-tanzawa-vc-trailhead", "pointOfInterestID": "west-tanzawa-vc-parking", "displayOrder": 1},
+    {"trailheadID": "west-tanzawa-vc-trailhead", "pointOfInterestID": "bunanoyu", "displayOrder": 2}
   ],
   "trailheadSearchAreas": [
-    {"id": "tonodake-okura-trailhead-area", "trailheadID": "tonodake-okura-trailhead", "name": "大倉登山口", "displayOrder": 0},
-    {"id": "tonodake-okura-station-area", "trailheadID": "tonodake-okura-trailhead", "name": "渋沢駅", "displayOrder": 1},
-    {"id": "tonodake-yabitsu-trailhead-area", "trailheadID": "tonodake-yabitsu-trailhead", "name": "ヤビツ峠", "displayOrder": 0},
-    {"id": "tonodake-yabitsu-station-area", "trailheadID": "tonodake-yabitsu-trailhead", "name": "秦野駅", "displayOrder": 1},
-    {"id": "ooyama-cable-trailhead-area", "trailheadID": "ooyama-cable-trailhead", "name": "大山ケーブル", "displayOrder": 0},
-    {"id": "ooyama-cable-station-area", "trailheadID": "ooyama-cable-trailhead", "name": "伊勢原駅", "displayOrder": 1}
+    {"id": "okura-trailhead-area", "trailheadID": "okura-trailhead", "name": "大倉登山口", "displayOrder": 0},
+    {"id": "okura-station-area", "trailheadID": "okura-trailhead", "name": "渋沢駅", "displayOrder": 1},
+    {"id": "yabitsu-pass-trailhead-area", "trailheadID": "yabitsu-pass-trailhead", "name": "ヤビツ峠", "displayOrder": 0},
+    {"id": "yabitsu-pass-station-area", "trailheadID": "yabitsu-pass-trailhead", "name": "秦野駅", "displayOrder": 1},
+    {"id": "oyama-cable-trailhead-area", "trailheadID": "oyama-cable-trailhead", "name": "大山ケーブル", "displayOrder": 0},
+    {"id": "oyama-cable-station-area", "trailheadID": "oyama-cable-trailhead", "name": "伊勢原駅", "displayOrder": 1},
+    {"id": "west-tanzawa-vc-trailhead-area", "trailheadID": "west-tanzawa-vc-trailhead", "name": "西丹沢ビジターセンター", "displayOrder": 0},
+    {"id": "west-tanzawa-vc-station-area", "trailheadID": "west-tanzawa-vc-trailhead", "name": "新松田駅", "displayOrder": 1}
   ]
 }

@@ -231,29 +231,26 @@ final class YamaLensUITests: XCTestCase {
     }
 
     @MainActor
-    func testMountainWithoutFacilityDataOffersMapAndDirectNotes() throws {
+    func testCoreMountainOffersFacilitiesAndExternalServices() throws {
         let app = makeApplication()
         app.launch()
 
         app.buttons["search-button"].tap()
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+        searchField.tap()
         searchField.typeText("蛭ヶ岳")
         app.buttons["search-result-蛭ヶ岳"].tap()
 
         XCTAssertTrue(
             app.buttons["mountain-hero-photo-picker"].waitForExistence(timeout: 2)
         )
-        XCTAssertTrue(app.buttons["mountain-note-before"].exists)
-        XCTAssertTrue(app.buttons["mountain-note-during"].exists)
-        XCTAssertTrue(app.buttons["mountain-note-after"].exists)
-
-        let genericMapButton = app.buttons["mountain-generic-map-button"]
-        for _ in 0..<8 where !genericMapButton.isHittable {
+        let mountainHut = app.staticTexts["蛭ヶ岳山荘"]
+        for _ in 0..<8 where !mountainHut.exists {
             app.swipeUp(velocity: .slow)
         }
-        XCTAssertTrue(genericMapButton.waitForExistence(timeout: 2))
-        XCTAssertTrue(genericMapButton.isHittable)
+        XCTAssertTrue(mountainHut.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["西丹沢ビジターセンター登山口"].exists)
 
         let yamapLink = app.descendants(matching: .any)["mountain-yamap-link"]
         for _ in 0..<4 where !yamapLink.isHittable {

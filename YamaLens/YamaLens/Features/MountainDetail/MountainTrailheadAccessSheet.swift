@@ -8,6 +8,7 @@ struct MountainTrailheadAccessSheet: View {
     @State private var accessMode: TrailheadAccessMode = .publicTransport
     @State private var pendingMapSearch: ExternalMapSearch?
     @State private var isResolvingNearbySearch = false
+    @State private var selectedStop: MountainPointOfInterest?
     private let nearbySearchCenterResolver: any NearbySearchCenterResolving
 
     init(
@@ -24,6 +25,7 @@ struct MountainTrailheadAccessSheet: View {
                 identityHeader
                 accessModePicker
                 accessPointsSection
+                representativeStopsSection
                 nearbySearchSection
                 privacyNotice
             }
@@ -67,6 +69,13 @@ struct MountainTrailheadAccessSheet: View {
                 }
             }
             Button("キャンセル", role: .cancel) {}
+        }
+        .sheet(item: $selectedStop) { point in
+            NavigationStack {
+                MountainFacilityDetailSheet(point: point)
+            }
+            .presentationDetents([.fraction(0.72), .large])
+            .presentationDragIndicator(.visible)
         }
         .accessibilityIdentifier("trailhead-access-sheet")
         .preferredColorScheme(.dark)
@@ -201,6 +210,53 @@ struct MountainTrailheadAccessSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(point.name)、\(point.type.displayName)を地図アプリで開く")
+    }
+
+    @ViewBuilder
+    private var representativeStopsSection: some View {
+        if !representativeHotSprings.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                YamaSectionHeader(
+                    title: "代表的な温泉",
+                    subtitle: "営業情報は公式サイトで確認"
+                )
+                VStack(spacing: 0) {
+                    ForEach(Array(representativeHotSprings.enumerated()), id: \.element.id) { index, point in
+                        Button {
+                            selectedStop = point
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: point.type.systemImage)
+                                    .foregroundStyle(YamaColor.alpineTeal)
+                                    .frame(width: 24)
+                                    .accessibilityHidden(true)
+                                Text(point.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(YamaColor.primaryText)
+                                Spacer(minLength: 12)
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(YamaColor.secondaryText)
+                                    .accessibilityHidden(true)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(point.name)の公式情報を確認")
+                        if index < representativeHotSprings.count - 1 {
+                            Divider()
+                                .overlay(.white.opacity(0.10))
+                                .padding(.leading, 52)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+        }
+    }
+
+    private var representativeHotSprings: [MountainPointOfInterest] {
+        guide.accessPoints.filter { $0.type == .hotSpring }
     }
 
     private var nearbySearchSection: some View {

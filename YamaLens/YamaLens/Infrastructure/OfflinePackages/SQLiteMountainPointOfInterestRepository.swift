@@ -78,6 +78,11 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
     private static func loadRows(
         from database: OpaquePointer
     ) throws -> [String: [MountainPointOfInterest]] {
+        let orderSelection = try hasColumn(
+            "display_order",
+            in: "mountain_points_of_interest",
+            database: database
+        ) ? "mountain_points_of_interest.display_order" : "points_of_interest.name"
         let query = """
         SELECT
             mountain_points_of_interest.mountain_id,
@@ -97,7 +102,7 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
             ON entity_sources.entity_type = 'point_of_interest'
             AND entity_sources.entity_id = points_of_interest.id
         INNER JOIN source_links ON source_links.id = entity_sources.source_id
-        ORDER BY mountain_points_of_interest.mountain_id, points_of_interest.type, points_of_interest.name;
+        ORDER BY mountain_points_of_interest.mountain_id, points_of_interest.type, \(orderSelection), points_of_interest.name;
         """
         var statement: OpaquePointer?
         let prepareResult = sqlite3_prepare_v2(database, query, -1, &statement, nil)
@@ -120,6 +125,26 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
                 throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: stepResult)
             }
         }
+    }
+
+    private static func hasColumn(
+        _ columnName: String,
+        in tableName: String,
+        database: OpaquePointer
+    ) throws -> Bool {
+        var statement: OpaquePointer?
+        let result = sqlite3_prepare_v2(database, "PRAGMA table_info(\(tableName));", -1, &statement, nil)
+        guard result == SQLITE_OK, let statement else {
+            throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: result)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if try text(in: statement, column: 1) == columnName {
+                return true
+            }
+        }
+        return false
     }
 
     private static func pointOfInterest(

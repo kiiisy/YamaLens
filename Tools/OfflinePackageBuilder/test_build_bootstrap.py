@@ -54,7 +54,11 @@ class BuildBootstrapTests(unittest.TestCase):
                 }
             ],
             "mountainPointOfInterestLinks": [
-                {"mountainID": "test-mountain", "pointOfInterestID": "test-trailhead"}
+                {
+                    "mountainID": "test-mountain",
+                    "pointOfInterestID": "test-trailhead",
+                    "displayOrder": 0,
+                }
             ],
             "trailheadAccessPoints": [],
             "trailheadSearchAreas": [
@@ -90,6 +94,15 @@ class BuildBootstrapTests(unittest.TestCase):
             input_path = Path(directory) / "source.json"
             input_path.write_text(json.dumps(source), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "canonical YAMAP mountain URL"):
+                build_bootstrap.load_source(input_path)
+
+    def test_requires_facility_display_order(self) -> None:
+        source = copy.deepcopy(self.valid_source())
+        del source["mountainPointOfInterestLinks"][0]["displayOrder"]
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "source.json"
+            input_path.write_text(json.dumps(source), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "displayOrder must be a number"):
                 build_bootstrap.load_source(input_path)
 
 

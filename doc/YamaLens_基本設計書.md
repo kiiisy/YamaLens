@@ -374,8 +374,8 @@ tanzawa/1.0.0/
 | `mountains` | `id TEXT PRIMARY KEY`、`region_id`、`canonical_name`、`search_name`、`coverage_role`（`core`／`surroundingCandidate`）、`latitude`、`longitude`、`elevation_m`、任意の`yamap_url`、`updated_at` |
 | `mountain_names` | `mountain_id`、`name`、`search_name`、`kind`。`PRIMARY KEY(mountain_id, name)` |
 | `points_of_interest` | `id TEXT PRIMARY KEY`、`region_id`、`type`、`name`、任意座標、`summary`、`official_url`、`checked_at` |
-| `mountain_points_of_interest` | `mountain_id`、`point_of_interest_id`。複合PRIMARY KEY |
-| `trailhead_access_points` | `trailhead_id`、`point_of_interest_id`、`display_order`。登山口と駐車場・交通の関連 |
+| `mountain_points_of_interest` | `mountain_id`、`point_of_interest_id`、`display_order`。複合PRIMARY KEY。施設IDは山名に依存せず、同じ施設を複数の山から参照できる |
+| `trailhead_access_points` | `trailhead_id`、`point_of_interest_id`、`display_order`。登山口と駐車場・交通・代表的な温泉の関連 |
 | `trailhead_search_areas` | `id TEXT PRIMARY KEY`、`trailhead_id`、`name`、`display_order`。登山口または最寄り駅周辺を外部地図で検索する地点 |
 | `source_links` | `id TEXT PRIMARY KEY`、`provider`、`title`、`url`、`license_url`、`checked_at`、`is_primary`、`attribution_text`、`processing_note` |
 | `entity_sources` | `entity_type`、`entity_id`、`source_id`。複合PRIMARY KEY |
@@ -383,6 +383,7 @@ tanzawa/1.0.0/
 
 - 外部キーを有効にし、ID、検索名、山域、施設種別、地形範囲に必要なindexを作る。
 - `points_of_interest.checked_at` と `source_links.checked_at` は、人が確認したデータでは最終確認日時、自動取得したデータでは検証済み取得日時を表す。取得方法と抽出規則の版は対応するSource Manifestで追跡する。
+- `mountain_points_of_interest.display_order` は同じ施設種別内の表示順として使用する。列を持たない既存schema v1パックは名称順へフォールバックして互換読込する。
 - `mountains.yamap_url` は人が対象山との対応を確認した `https://yamap.com/mountains/<正の整数ID>` だけを許可する。生成時にscheme、host、path、query、fragmentを検証し、アプリ読込時にも同じ形式以外は導線へ渡さない。既存のschema v1パックに列がない場合はリンクなしとして互換読込する。
 - 山名検索は `search_name` に、大文字小文字、全角半角、ひらがな・カタカナ、空白を正規化した値を保存する。MVPでは外部検索ライブラリやFTSを必須にせず、実測で必要になった場合だけ追加する。
 - `terrain.lzfse` は固定16byteのheaderと、個別にLZFSE圧縮した256×256の標高タイルで構成する。headerはASCII `YLTF`（byte 0〜3）、format version UInt16（4〜5）、header size UInt16（6〜7）、tile count UInt32（8〜11）、flags UInt32（12〜15）のlittle-endianとする。v1はversion 1、header size 16、flags 0とし、未知のflagsを拒否する。標高値は1m単位の符号付き16bit整数、欠損値は `-32768` とする。
@@ -439,6 +440,17 @@ tanzawa/1.0.0/
 - 更新に失敗しても、旧データを削除せず、最終取得時刻を明示して表示する。
 - 日の出・日の入りは山頂座標、対象日、地点のタイムゾーンから端末内で計算する。丹沢では `Asia/Tokyo` を使用し、標準的な大気差を含む太陽天頂角90.833度を初期値とする。周辺地形による遮蔽や現地照度は計算結果へ含めない。
 - 施設レコードは種別、名称、任意座標、短い説明、HTTPSの公式URL、最終確認日、提供元を持つ。自動取得した変動情報は取得日時、取得方法、抽出規則の版をSource Manifestから追跡可能にする。登山口とアクセス施設、立ち寄り検索地点は明示的な関連テーブルで結ぶ。SQLite読込時にもURL、日付、種別、座標範囲を検証し、不正なレコードを画面へ渡さない。
+
+施設情報の自動取得は、次の生成側パイプラインとして段階導入する。
+
+1. Source Manifestで承認済みの公式情報源だけを取得対象にする。情報源ごとに取得方式、利用条件・robots.txtの確認結果、取得間隔、許可する抽出項目、専用抽出規則の版を持つ。
+2. 取得した原文または構造化応答を作業用領域へ保存し、取得日時、最終URL、HTTP状態、本文SHA-256を記録する。アプリへ原文を配布しない。
+3. 情報源専用の抽出規則で候補値へ変換し、型、文字数、日付、座標、HTTPS URL、件数上限を検証する。取得できない項目を推測で補完しない。
+4. 現行の検証済みJSONとの差分を作り、新規施設、削除候補、抽出規則変更、大幅な値変化、営業・通行に関する曖昧な文だけを人手確認待ちにする。確認されていない候補値は正本JSONへ自動反映しない。
+5. 承認済み差分だけを正本JSONへ反映し、既存のSQLite生成・整合性検証・署名済みパック生成へ渡す。差分がなければ内容版を更新しない。
+6. 取得、抽出、検証、署名のいずれかに失敗した場合は、公開中のパックと直前の正常値を保持する。アプリは既存のパック更新導線で検証済み内容だけを受け取る。
+
+MVPでは更新頻度を低く保ち、施設情報の変更も既存の `catalog.sqlite` を含む山域パックの内容版更新として配布する。施設更新だけで大きな地形ファイルを再取得する負担が実測で問題になった場合に、Info Overlayを独立署名・独立ロールバックできるパック形式へ改定する。自動取得の開始条件として先に配布形式を分割する必要はない。
 
 ### 5.3 気象の鮮度と注意表示
 

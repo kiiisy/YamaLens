@@ -1,6 +1,7 @@
 id: tanzawa-bootstrap-v1
 title: YamaLens 丹沢bootstrap初期データ
 status: provisional_requires_official_verification
+facility_status: core_mountains_representative_facilities_verified
 checked_at: 2026-08-23
 scope:
   - mountain_name
@@ -39,8 +40,32 @@ sources:
   - provider: 伊勢原市
     role: 市営大山第1駐車場の公式情報
     url: https://www.city.isehara.kanagawa.jp/docs/2012032600026/index.html.r
+  - provider: 神奈川県公園協会
+    role: 丹沢山小屋一覧と西丹沢ビジターセンターの公式情報
+    url: https://www.kanagawa-park.or.jp/tanzawavc/link.html
+  - provider: みやま山荘
+    role: みやま山荘の運営者公式情報
+    url: https://miyamasansou.com/
+  - provider: 蛭ヶ岳山荘
+    role: 蛭ヶ岳山荘の公式予約情報
+    url: https://hirugadake-sanso.reserven.jp/
+  - provider: 鍋割山荘
+    role: 鍋割山荘の運営者公式情報
+    url: https://nabewari.net/
+  - provider: 神奈川県公園協会
+    role: 西丹沢ビジターセンターの登山口・公共交通公式情報
+    url: https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html
+  - provider: 神奈川県
+    role: 西丹沢ビジターセンター駐車場の公式情報
+    url: https://www.pref.kanagawa.jp/docs/f4y/02yama/kouen_kouenhodou/kouenhodou_top.html
+  - provider: 山北町
+    role: 中川温泉ぶなの湯の公式情報
+    url: https://www.town.yamakita.kanagawa.jp/0000004453.html
+  - provider: 神奈川県
+    role: 大山ケーブルバス停の公式アクセス情報
+    url: https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/p1189872.html
 attribution: "出典：国土地理院ウェブサイト"
 processing_note: "国土地理院の情報を照合し、YamaLens向けSQLiteへ加工した場合は、その旨と対象データセットをアプリ内に表示する。"
 legal_note: "基盤地図情報等の測量成果を配布物へ収録する前に、測量法上の複製・使用承認の要否をデータセットと利用形態ごとに確認する。"
 verification_note: "丹沢中心6座の座標・標高は、国土地理院『日本の主な山岳標高一覧』および地理院地図検索で2026-08-22に照合した。周辺候補11座の名称、別名、座標、標高と配布許諾は正式配布前に一次情報で最終確認する。"
-facility_verification_note: "大山・塔ノ岳・鍋割山に紐づける代表施設11件の名称、用途、公式URLを2026-08-23に運営者・自治体等の公式ページで確認した。塔ノ岳には大倉登山口と、表尾根経由のヤビツ峠登山口を紐付けた。営業時間、料金、運行・営業状況は変動情報として固定せず、アプリから公式ページを確認する。"
+facility_verification_note: "丹沢中心6座（蛭ヶ岳、丹沢山、塔ノ岳、檜洞丸、鍋割山、大山）に紐づける代表施設20件の名称、用途、公式URLを2026-08-23に運営者・自治体等の公式ページで確認した。施設IDは山名に依存しない安定IDへ統一し、同じ登山口・交通・駐車場・温泉を複数の山から参照する。塔ノ岳では大倉登山口を先、ヤビツ峠登山口を次に表示する。営業時間、料金、運行・営業状況は変動情報として固定せず、アプリから公式ページを確認する。"

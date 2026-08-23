@@ -72,6 +72,7 @@ CREATE TABLE points_of_interest (
 CREATE TABLE mountain_points_of_interest (
     mountain_id TEXT NOT NULL REFERENCES mountains(id) ON DELETE CASCADE,
     point_of_interest_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
+    display_order INTEGER NOT NULL CHECK(display_order >= 0),
     PRIMARY KEY(mountain_id, point_of_interest_id)
 );
 CREATE TABLE trailhead_access_points (
@@ -313,6 +314,12 @@ def load_source(path: Path) -> dict[str, Any]:
         )
         if mountain_id not in ids or point_id not in point_ids:
             raise ValueError(f"mountainPointOfInterestLinks[{index}] references an unknown record")
+        require_number(
+            link.get("displayOrder"),
+            f"mountainPointOfInterestLinks[{index}].displayOrder",
+            0,
+            10_000,
+        )
         pair = (mountain_id, point_id)
         if pair in link_pairs:
             raise ValueError(f"duplicate mountain point of interest link: {pair}")
@@ -460,11 +467,12 @@ def create_database(source: dict[str, Any], output: Path) -> None:
             )
         connection.executemany(
             """
-            INSERT INTO mountain_points_of_interest(mountain_id, point_of_interest_id)
-            VALUES(?, ?)
+            INSERT INTO mountain_points_of_interest(
+                mountain_id, point_of_interest_id, display_order
+            ) VALUES(?, ?, ?)
             """,
             [
-                (link["mountainID"], link["pointOfInterestID"])
+                (link["mountainID"], link["pointOfInterestID"], link["displayOrder"])
                 for link in source.get("mountainPointOfInterestLinks", [])
             ],
         )
@@ -547,6 +555,20 @@ def verify_database(source: dict[str, Any], output: Path) -> None:
         )
         if point_rows != expected_points:
             raise ValueError("database points of interest do not match source data")
+        link_rows = connection.execute(
+            "SELECT mountain_id, point_of_interest_id, display_order "
+            "FROM mountain_points_of_interest ORDER BY mountain_id, display_order, point_of_interest_id"
+        ).fetchall()
+        expected_links = sorted(
+            (
+                link["mountainID"],
+                link["pointOfInterestID"],
+                link["displayOrder"],
+            )
+            for link in source.get("mountainPointOfInterestLinks", [])
+        )
+        if link_rows != expected_links:
+            raise ValueError("database mountain point of interest links do not match source data")
     finally:
         connection.close()
 
