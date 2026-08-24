@@ -73,18 +73,21 @@ struct MountainHeroImageView: View {
     let height: CGFloat
 
     var body: some View {
-        Group {
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                MountainArtworkView(mountain: mountain, height: height)
+        GeometryReader { geometry in
+            Group {
+                if let imageData, let image = UIImage(data: imageData) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    MountainArtworkView(mountain: mountain, height: geometry.size.height)
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .clipped()
         .accessibilityHidden(true)
     }
 }

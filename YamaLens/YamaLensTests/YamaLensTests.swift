@@ -6,7 +6,9 @@
 //
 
 import Foundation
+import SwiftUI
 import Testing
+import UIKit
 @testable import YamaLens
 
 @MainActor
@@ -73,6 +75,34 @@ struct YamaLensTests {
         #expect(point.name == "渋沢駅")
         #expect(point.coordinate == GeoCoordinate(latitude: 35.374, longitude: 139.185))
         #expect(point.updatedAt == Date(timeIntervalSince1970: 200))
+    }
+
+    @Test(
+        "縦長と横長の写真を同じヒーロー領域へ収める",
+        arguments: [
+            CGSize(width: 300, height: 1_200),
+            CGSize(width: 1_200, height: 300),
+        ]
+    )
+    func heroImageKeepsFixedContainerSize(imageSize: CGSize) throws {
+        let sourceImage = UIGraphicsImageRenderer(size: imageSize).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(origin: .zero, size: imageSize))
+        }
+        let imageData = try #require(sourceImage.jpegData(compressionQuality: 0.8))
+        let renderer = ImageRenderer(
+            content: MountainHeroImageView(
+                mountain: mountains[0],
+                imageData: imageData,
+                height: 350
+            )
+            .frame(width: 390)
+        )
+        renderer.scale = 1
+
+        let renderedImage = try #require(renderer.uiImage)
+
+        #expect(renderedImage.size == CGSize(width: 390, height: 350))
     }
 
 }

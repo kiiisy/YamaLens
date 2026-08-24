@@ -109,7 +109,7 @@ struct MountainDetailView: View {
             .offset(y: dismissDragDistance)
             .simultaneousGesture(dismissGesture(containerHeight: geometry.size.height))
         }
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea()
         .toolbar(onClose == nil ? .automatic : .hidden, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)

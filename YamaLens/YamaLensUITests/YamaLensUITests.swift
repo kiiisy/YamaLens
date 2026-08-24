@@ -172,6 +172,8 @@ final class YamaLensUITests: XCTestCase {
 
         let detail = app.descendants(matching: .any)["mountain-detail"]
         XCTAssertTrue(detail.waitForExistence(timeout: 2))
+        let windowFrame = app.windows.firstMatch.frame
+        XCTAssertGreaterThanOrEqual(detail.frame.maxY, windowFrame.maxY - 1)
         let daylight = app.descendants(matching: .any)["mountain-daylight-section"]
         for _ in 0..<5 where !daylight.isHittable {
             app.swipeUp()
