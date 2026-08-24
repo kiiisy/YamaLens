@@ -21,6 +21,11 @@ struct SQLiteMountainPointOfInterestRepositoryTests {
         #expect(tonodake.count == 8)
         #expect(ooyama.count == 4)
         #expect(tonodake.contains { $0.type == .mountainHut && $0.name == "尊仏山荘" })
+        let sonbutsuSanso = try #require(tonodake.first { $0.id == "sonbutsu-sanso" })
+        #expect(sonbutsuSanso.details == [
+            MountainPointOfInterestDetail(kind: .operatingPeriod, value: "通年"),
+            MountainPointOfInterestDetail(kind: .reservation, value: "宿泊予約は公式サイトで確認"),
+        ])
         #expect(ooyama.contains { $0.type == .cableway && $0.name == "大山ケーブルカー" })
         #expect(tanzawasan.contains { $0.type == .mountainHut && $0.name == "みやま山荘" })
         #expect(hirugatake.contains { $0.type == .mountainHut && $0.name == "蛭ヶ岳山荘" })

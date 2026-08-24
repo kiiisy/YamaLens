@@ -69,6 +69,13 @@ CREATE TABLE points_of_interest (
     official_url TEXT,
     checked_at TEXT
 );
+CREATE TABLE point_of_interest_details (
+    point_of_interest_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    value TEXT NOT NULL,
+    display_order INTEGER NOT NULL CHECK(display_order >= 0),
+    PRIMARY KEY(point_of_interest_id, kind)
+);
 CREATE TABLE mountain_points_of_interest (
     mountain_id TEXT NOT NULL REFERENCES mountains(id) ON DELETE CASCADE,
     point_of_interest_id TEXT NOT NULL REFERENCES points_of_interest(id) ON DELETE CASCADE,
@@ -122,6 +129,7 @@ CREATE INDEX mountains_region_id_idx ON mountains(region_id);
 CREATE INDEX mountains_search_name_idx ON mountains(search_name);
 CREATE INDEX mountain_names_search_name_idx ON mountain_names(search_name);
 CREATE INDEX points_of_interest_region_type_idx ON points_of_interest(region_id, type);
+CREATE INDEX point_of_interest_details_point_id_idx ON point_of_interest_details(point_of_interest_id, display_order);
 CREATE INDEX trailhead_access_points_trailhead_id_idx ON trailhead_access_points(trailhead_id, display_order);
 CREATE INDEX trailhead_search_areas_trailhead_id_idx ON trailhead_search_areas(trailhead_id, display_order);
 CREATE INDEX terrain_tiles_bounds_idx ON terrain_tiles(south, north, west, east);
@@ -294,6 +302,31 @@ def load_source(path: Path) -> dict[str, Any]:
         if latitude is not None:
             require_number(latitude, f"pointsOfInterest[{index}].latitude", -90, 90)
             require_number(longitude, f"pointsOfInterest[{index}].longitude", -180, 180)
+        details = point.get("details", [])
+        if not isinstance(details, list) or len(details) > 16:
+            raise ValueError(f"pointsOfInterest[{index}].details must contain at most 16 records")
+        detail_kinds: set[str] = set()
+        for detail_index, detail in enumerate(details):
+            if not isinstance(detail, dict):
+                raise ValueError(f"pointsOfInterest[{index}].details[{detail_index}] must be an object")
+            kind = require_text(
+                detail.get("kind"),
+                f"pointsOfInterest[{index}].details[{detail_index}].kind",
+                64,
+            )
+            if kind not in {
+                "operatingPeriod", "reservation", "capacity", "fee",
+                "openingHours", "closedDays", "access", "transportOperator",
+            }:
+                raise ValueError(f"pointsOfInterest[{index}].details[{detail_index}].kind is unsupported")
+            if kind in detail_kinds:
+                raise ValueError(f"pointsOfInterest[{index}].details contains duplicate kind: {kind}")
+            detail_kinds.add(kind)
+            require_text(
+                detail.get("value"),
+                f"pointsOfInterest[{index}].details[{detail_index}].value",
+                256,
+            )
 
     links = payload.get("mountainPointOfInterestLinks", [])
     if not isinstance(links, list) or len(links) > 50_000:
@@ -465,6 +498,17 @@ def create_database(source: dict[str, Any], output: Path) -> None:
                 """,
                 (point["id"], point["sourceID"]),
             )
+            connection.executemany(
+                """
+                INSERT INTO point_of_interest_details(
+                    point_of_interest_id, kind, value, display_order
+                ) VALUES(?, ?, ?, ?)
+                """,
+                [
+                    (point["id"], detail["kind"], detail["value"], display_order)
+                    for display_order, detail in enumerate(point.get("details", []))
+                ],
+            )
         connection.executemany(
             """
             INSERT INTO mountain_points_of_interest(
@@ -555,6 +599,25 @@ def verify_database(source: dict[str, Any], output: Path) -> None:
         )
         if point_rows != expected_points:
             raise ValueError("database points of interest do not match source data")
+        detail_rows = connection.execute(
+            "SELECT point_of_interest_id, kind, value, display_order "
+            "FROM point_of_interest_details ORDER BY point_of_interest_id, display_order"
+        ).fetchall()
+        expected_details = sorted(
+            [
+                (
+                    point["id"],
+                    detail["kind"],
+                    detail["value"],
+                    display_order,
+                )
+                for point in source.get("pointsOfInterest", [])
+                for display_order, detail in enumerate(point.get("details", []))
+            ],
+            key=lambda item: (item[0], item[3]),
+        )
+        if detail_rows != expected_details:
+            raise ValueError("database point of interest details do not match source data")
         link_rows = connection.execute(
             "SELECT mountain_id, point_of_interest_id, display_order "
             "FROM mountain_points_of_interest ORDER BY mountain_id, display_order, point_of_interest_id"

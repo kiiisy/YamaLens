@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsPlaceholderView: View {
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +11,7 @@ struct SettingsPlaceholderView: View {
     let offlinePackagePresentation: OfflinePackagePresentation
     @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
     @AppStorage("externalBrowser.application") private var browserApplicationRawValue = ExternalBrowserApplication.defaultBrowser.rawValue
+    @Query private var savedDeparturePoints: [SavedDeparturePoint]
 
     private var mapApplication: ExternalMapApplication {
         ExternalMapApplication(rawValue: mapApplicationRawValue) ?? .appleMaps
@@ -51,7 +53,15 @@ struct SettingsPlaceholderView: View {
                 }
 
                 Section("位置情報とアクセス") {
-                    SettingsLink(title: "よく使う出発駅", value: "未登録", systemImage: "tram")
+                    NavigationLink {
+                        SavedDeparturePointSettingsView()
+                    } label: {
+                        SettingsLink(
+                            title: "よく使う出発駅",
+                            value: savedDeparturePoints.first?.name ?? "未登録",
+                            systemImage: "tram"
+                        )
+                    }
                     NavigationLink {
                         ExternalMapApplicationSettingsView(
                             selectedApplicationRawValue: $mapApplicationRawValue

@@ -9,6 +9,7 @@ struct MountainTrailheadAccessSheet: View {
     @State private var pendingMapSearch: ExternalMapSearch?
     @State private var isResolvingNearbySearch = false
     @State private var selectedStop: MountainPointOfInterest?
+    @State private var routeDestination: MountainRouteDestination?
     private let nearbySearchCenterResolver: any NearbySearchCenterResolving
 
     init(
@@ -75,6 +76,13 @@ struct MountainTrailheadAccessSheet: View {
                 MountainFacilityDetailSheet(point: point)
             }
             .presentationDetents([.fraction(0.72), .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $routeDestination) { destination in
+            NavigationStack {
+                MountainRouteSheet(destination: destination)
+            }
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .accessibilityIdentifier("trailhead-access-sheet")
@@ -152,7 +160,10 @@ struct MountainTrailheadAccessSheet: View {
 
                 Button {
                     guard let point = selectedAccessPoints.first else { return }
-                    openMaps(query: point.name)
+                    routeDestination = MountainRouteDestination(
+                        point: point,
+                        suggestedMode: accessMode.travelMode
+                    )
                 } label: {
                     Label(accessMode.mapButtonTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
                         .font(.headline)
@@ -186,7 +197,10 @@ struct MountainTrailheadAccessSheet: View {
 
     private func accessPointRow(_ point: MountainPointOfInterest) -> some View {
         Button {
-            openMaps(query: point.name)
+            routeDestination = MountainRouteDestination(
+                point: point,
+                suggestedMode: accessMode.travelMode
+            )
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: point.type.systemImage)
@@ -388,6 +402,13 @@ private enum TrailheadAccessMode: Hashable {
         switch self {
         case .publicTransport: "公共交通の入口を地図で開く"
         case .car: "駐車場を地図で開く"
+        }
+    }
+
+    var travelMode: ExternalMapTravelMode {
+        switch self {
+        case .publicTransport: .publicTransport
+        case .car: .driving
         }
     }
 

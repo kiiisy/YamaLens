@@ -195,6 +195,11 @@ final class YamaLensUITests: XCTestCase {
         )
         XCTAssertTrue(app.staticTexts["尊仏山荘"].exists)
         XCTAssertTrue(
+            app.descendants(matching: .any)["facility-structured-details"].exists
+        )
+        XCTAssertTrue(app.staticTexts["営業期間"].exists)
+        XCTAssertTrue(app.staticTexts["通年"].exists)
+        XCTAssertTrue(
             app.descendants(matching: .any)["facility-official-link"].exists
         )
 
@@ -224,7 +229,15 @@ final class YamaLensUITests: XCTestCase {
                 .waitForExistence(timeout: 2)
         )
         XCTAssertTrue(app.staticTexts["立ち寄り"].exists)
-        XCTAssertTrue(app.buttons["trailhead-open-maps-button"].exists)
+        let routeButton = app.buttons["trailhead-open-maps-button"]
+        XCTAssertTrue(routeButton.exists)
+        routeButton.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["mountain-route-sheet"]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.staticTexts["現在地"].exists)
+        XCTAssertTrue(app.buttons["route-open-maps-button"].exists)
     }
 
     @MainActor

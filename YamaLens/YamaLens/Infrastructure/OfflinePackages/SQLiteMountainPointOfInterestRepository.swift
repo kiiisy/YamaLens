@@ -50,7 +50,11 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
             in: database
         )
         try validateDatabase(database)
-        let pointsByMountainID = try loadRows(from: database)
+        let detailsByPointID = try loadDetails(from: database)
+        let pointsByMountainID = try loadRows(
+            from: database,
+            detailsByPointID: detailsByPointID
+        )
         let accessPointIDsByTrailheadID = try loadAccessPointIDs(from: database)
         let searchAreasByTrailheadID = try loadSearchAreas(from: database)
         return MountainPointOfInterestCatalog(
@@ -76,7 +80,8 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
     }
 
     private static func loadRows(
-        from database: OpaquePointer
+        from database: OpaquePointer,
+        detailsByPointID: [String: [MountainPointOfInterestDetail]]
     ) throws -> [String: [MountainPointOfInterest]] {
         let orderSelection = try hasColumn(
             "display_order",
@@ -117,7 +122,10 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
             switch stepResult {
             case SQLITE_ROW:
                 let mountainID = try text(in: statement, column: 0)
-                let point = try pointOfInterest(from: statement)
+                let point = try pointOfInterest(
+                    from: statement,
+                    details: detailsByPointID[try text(in: statement, column: 1)] ?? []
+                )
                 result[mountainID, default: []].append(point)
             case SQLITE_DONE:
                 return result
@@ -148,7 +156,8 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
     }
 
     private static func pointOfInterest(
-        from statement: OpaquePointer
+        from statement: OpaquePointer,
+        details: [MountainPointOfInterestDetail]
     ) throws -> MountainPointOfInterest {
         let identifier = try text(in: statement, column: 1)
         let typeText = try text(in: statement, column: 2)
@@ -194,8 +203,69 @@ nonisolated struct SQLiteMountainPointOfInterestRepository: MountainPointOfInter
             summary: summary,
             officialURL: officialURL,
             checkedAt: checkedAt,
-            sourceProvider: sourceProvider
+            sourceProvider: sourceProvider,
+            details: details
         )
+    }
+
+    private static func loadDetails(
+        from database: OpaquePointer
+    ) throws -> [String: [MountainPointOfInterestDetail]] {
+        guard try hasTable("point_of_interest_details", database: database) else {
+            return [:]
+        }
+        let query = """
+        SELECT point_of_interest_id, kind, value
+        FROM point_of_interest_details
+        ORDER BY point_of_interest_id, display_order;
+        """
+        var statement: OpaquePointer?
+        let result = sqlite3_prepare_v2(database, query, -1, &statement, nil)
+        guard result == SQLITE_OK, let statement else {
+            throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: result)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var detailsByPointID: [String: [MountainPointOfInterestDetail]] = [:]
+        while true {
+            let stepResult = sqlite3_step(statement)
+            switch stepResult {
+            case SQLITE_ROW:
+                let pointID = try text(in: statement, column: 0)
+                let kindText = try text(in: statement, column: 1)
+                let value = try text(in: statement, column: 2)
+                guard
+                    let kind = MountainPointOfInterestDetailKind(rawValue: kindText),
+                    !value.isEmpty
+                else {
+                    throw SQLiteMountainPointOfInterestRepositoryError.invalidRecord
+                }
+                detailsByPointID[pointID, default: []].append(
+                    MountainPointOfInterestDetail(kind: kind, value: value)
+                )
+            case SQLITE_DONE:
+                return detailsByPointID
+            default:
+                throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: stepResult)
+            }
+        }
+    }
+
+    private static func hasTable(
+        _ tableName: String,
+        database: OpaquePointer
+    ) throws -> Bool {
+        var statement: OpaquePointer?
+        guard tableName.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else {
+            throw SQLiteMountainPointOfInterestRepositoryError.invalidRecord
+        }
+        let query = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '\(tableName)' LIMIT 1;"
+        let result = sqlite3_prepare_v2(database, query, -1, &statement, nil)
+        guard result == SQLITE_OK, let statement else {
+            throw SQLiteMountainPointOfInterestRepositoryError.sqliteFailure(code: result)
+        }
+        defer { sqlite3_finalize(statement) }
+        return sqlite3_step(statement) == SQLITE_ROW
     }
 
     private static func loadAccessPointIDs(

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "1.2.2",
+  "contentVersion": "1.3.0",
   "regions": [
     {
       "id": "jp.kanagawa.tanzawa",
@@ -399,6 +399,10 @@
       "type": "mountainHut",
       "name": "尊仏山荘",
       "summary": "塔ノ岳山頂の通年営業・宿泊可能な山小屋です。宿泊予約や当日の営業情報は公式サイトで確認してください。",
+      "details": [
+        { "kind": "operatingPeriod", "value": "通年" },
+        { "kind": "reservation", "value": "宿泊予約は公式サイトで確認" }
+      ],
       "officialURL": "https://sonbutsusanso.amebaownd.com/",
       "checkedAt": "2026-08-24",
       "sourceID": "sonbutsu-sanso-official"
@@ -409,6 +413,9 @@
       "type": "trailhead",
       "name": "大倉登山口",
       "summary": "大倉尾根などへ向かう主要な登山口です。渋沢駅から大倉行きバスを利用できます。登山道状況と交通の最新情報は公式案内で確認してください。",
+      "details": [
+        { "kind": "access", "value": "渋沢駅から大倉行きバス" }
+      ],
       "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/tanzawa_tozan.html",
       "checkedAt": "2026-08-24",
       "sourceID": "kanagawa-tanzawa-climbing"
@@ -419,6 +426,9 @@
       "type": "trailhead",
       "name": "ヤビツ峠登山口",
       "summary": "表尾根を経て塔ノ岳へ向かう登山口です。秦野駅からヤビツ峠行きバスを利用できます。登山道状況と交通の最新情報は公式案内で確認してください。",
+      "details": [
+        { "kind": "access", "value": "秦野駅からヤビツ峠行きバス" }
+      ],
       "officialURL": "https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html",
       "checkedAt": "2026-08-24",
       "sourceID": "hadano-omoteone-tonodake"
@@ -429,6 +439,10 @@
       "type": "publicTransport",
       "name": "ヤビツ峠バス停",
       "summary": "秦野駅からヤビツ峠行きバスで約50分です。時刻表、臨時便、運休情報は神奈川中央交通の最新情報も確認してください。",
+      "details": [
+        { "kind": "access", "value": "秦野駅から約50分" },
+        { "kind": "transportOperator", "value": "神奈川中央交通" }
+      ],
       "officialURL": "https://www.city.hadano.kanagawa.jp/kanko/tozan-hiking/1/4946.html",
       "checkedAt": "2026-08-24",
       "sourceID": "hadano-omoteone-tonodake"
@@ -439,6 +453,10 @@
       "type": "parking",
       "name": "ヤビツ峠駐車場",
       "summary": "24台分の無料駐車場です。満車時の対応や周辺道路の状況は神奈川県の最新案内で確認し、公共交通の利用も検討してください。",
+      "details": [
+        { "kind": "capacity", "value": "24台" },
+        { "kind": "fee", "value": "無料" }
+      ],
       "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/kouen_kouenhodou/kouenhodou_top.html",
       "checkedAt": "2026-08-24",
       "sourceID": "kanagawa-west-tanzawa-parking"
@@ -449,6 +467,10 @@
       "type": "publicTransport",
       "name": "大倉バス停",
       "summary": "渋沢駅北口から大倉行きバスで約15分、終点下車です。時刻表と運行情報は神奈川中央交通の最新情報も確認してください。",
+      "details": [
+        { "kind": "access", "value": "渋沢駅北口から約15分・終点" },
+        { "kind": "transportOperator", "value": "神奈川中央交通" }
+      ],
       "officialURL": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
       "checkedAt": "2026-08-24",
       "sourceID": "hadano-tokawa-access"
@@ -459,6 +481,11 @@
       "type": "parking",
       "name": "秦野戸川公園 大倉駐車場",
       "summary": "中型車10台・普通車150台の有料駐車場です。入庫可能時間は6:30〜21:00、出庫は24時間可能です。料金・混雑情報は公式案内で確認してください。",
+      "details": [
+        { "kind": "capacity", "value": "中型車10台・普通車150台" },
+        { "kind": "fee", "value": "有料・最新料金は公式案内で確認" },
+        { "kind": "openingHours", "value": "入庫6:30〜21:00・出庫24時間" }
+      ],
       "officialURL": "https://www.kanagawa-park.or.jp/hadanotokawa/access.html",
       "checkedAt": "2026-08-24",
       "sourceID": "hadano-tokawa-access"
@@ -469,6 +496,11 @@
       "type": "hotSpring",
       "name": "弘法の里湯",
       "summary": "鶴巻温泉駅から徒歩約2分の日帰り温泉です。通常10:00〜21:00、月曜などが休館です。年末年始や臨時変更は公式ページで確認してください。",
+      "details": [
+        { "kind": "access", "value": "鶴巻温泉駅から徒歩約2分" },
+        { "kind": "openingHours", "value": "通常10:00〜21:00" },
+        { "kind": "closedDays", "value": "月曜など・最新情報は公式ページで確認" }
+      ],
       "officialURL": "https://www.city.hadano.kanagawa.jp/kanko/onsen/2674.html",
       "checkedAt": "2026-08-24",
       "sourceID": "hadano-kobo-no-satoyu"
@@ -479,6 +511,9 @@
       "type": "trailhead",
       "name": "大山ケーブル登山口",
       "summary": "大山表参道方面の主要な登山口です。大山ケーブルバス停からこま参道を歩き、ケーブルカー利用または徒歩で下社方面へ向かいます。",
+      "details": [
+        { "kind": "access", "value": "大山ケーブルバス停からこま参道経由" }
+      ],
       "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/tanzawa_tozan.html",
       "checkedAt": "2026-08-24",
       "sourceID": "kanagawa-tanzawa-climbing"
@@ -489,6 +524,9 @@
       "type": "cableway",
       "name": "大山ケーブルカー",
       "summary": "大山ケーブル駅と阿夫利神社駅を結ぶケーブルカーです。運行状況・時刻・運賃は公式サイトで確認してください。",
+      "details": [
+        { "kind": "access", "value": "大山ケーブル駅〜阿夫利神社駅" }
+      ],
       "officialURL": "https://www.ooyama-cable.co.jp/access/",
       "checkedAt": "2026-08-24",
       "sourceID": "ooyama-cable-official"
@@ -499,6 +537,10 @@
       "type": "parking",
       "name": "市営大山第1駐車場",
       "summary": "普通車84台・大型車6台の市営駐車場です。普通車料金は1日1回600円です。最新の料金・利用条件は伊勢原市の公式ページで確認してください。",
+      "details": [
+        { "kind": "capacity", "value": "普通車84台・大型車6台" },
+        { "kind": "fee", "value": "普通車1日1回600円" }
+      ],
       "officialURL": "https://www.city.isehara.kanagawa.jp/docs/2012032600026/index.html.r",
       "checkedAt": "2026-08-24",
       "sourceID": "isehara-ooyama-parking"
@@ -509,6 +551,10 @@
       "type": "mountainHut",
       "name": "みやま山荘",
       "summary": "丹沢山山頂の通年営業の山小屋です。宿泊は予約制です。予約方法や当日の営業情報は公式サイトで確認してください。",
+      "details": [
+        { "kind": "operatingPeriod", "value": "通年" },
+        { "kind": "reservation", "value": "宿泊は予約制" }
+      ],
       "officialURL": "https://miyamasansou.com/",
       "checkedAt": "2026-08-24",
       "sourceID": "miyama-sanso-official"
@@ -519,6 +565,10 @@
       "type": "mountainHut",
       "name": "蛭ヶ岳山荘",
       "summary": "蛭ヶ岳山頂の通年営業の山小屋です。宿泊予約や当日の営業情報は公式予約サイトで確認してください。",
+      "details": [
+        { "kind": "operatingPeriod", "value": "通年" },
+        { "kind": "reservation", "value": "公式予約サイトで確認" }
+      ],
       "officialURL": "https://hirugadake-sanso.reserven.jp/",
       "checkedAt": "2026-08-24",
       "sourceID": "hirugatake-sanso-official"
@@ -529,6 +579,10 @@
       "type": "mountainHut",
       "name": "鍋割山荘",
       "summary": "鍋割山山頂の山小屋です。定休日や悪天候による営業変更があるため、宿泊予約・営業日・提供内容は公式サイトで確認してください。",
+      "details": [
+        { "kind": "operatingPeriod", "value": "営業日は公式サイトで確認" },
+        { "kind": "reservation", "value": "宿泊予約は公式サイトで確認" }
+      ],
       "officialURL": "https://nabewari.net/",
       "checkedAt": "2026-08-24",
       "sourceID": "nabewari-sanso-official"
@@ -539,6 +593,10 @@
       "type": "mountainHut",
       "name": "青ヶ岳山荘",
       "summary": "檜洞丸山頂付近の通年営業の山小屋です。宿泊予約や当日の営業情報はリンク先から運営者の最新案内を確認してください。",
+      "details": [
+        { "kind": "operatingPeriod", "value": "通年" },
+        { "kind": "reservation", "value": "運営者の最新案内で確認" }
+      ],
       "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/link.html",
       "checkedAt": "2026-08-24",
       "sourceID": "tanzawa-vc-hut-links"
@@ -549,6 +607,9 @@
       "type": "trailhead",
       "name": "西丹沢ビジターセンター登山口",
       "summary": "檜洞丸など西丹沢の山へ向かう登山拠点です。登山道状況や施設の開館情報は公式サイトで確認してください。",
+      "details": [
+        { "kind": "access", "value": "西丹沢行きバス終点" }
+      ],
       "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html",
       "checkedAt": "2026-08-24",
       "sourceID": "west-tanzawa-vc-official"
@@ -559,6 +620,9 @@
       "type": "publicTransport",
       "name": "西丹沢ビジターセンターバス停",
       "summary": "新松田駅から約70分、谷峨駅から約55分の西丹沢行きバスで終点下車です。時刻表と運行情報は交通事業者の最新情報も確認してください。",
+      "details": [
+        { "kind": "access", "value": "新松田駅から約70分・谷峨駅から約55分" }
+      ],
       "officialURL": "https://www.kanagawa-park.or.jp/tanzawavc/shisetsu2.html",
       "checkedAt": "2026-08-24",
       "sourceID": "west-tanzawa-vc-official"
@@ -569,6 +633,10 @@
       "type": "parking",
       "name": "西丹沢ビジターセンター駐車場",
       "summary": "10台分の無料駐車場です。早朝に満車となる場合があり、路上駐車は周辺交通の支障になります。公式案内を確認し、公共交通の利用も検討してください。",
+      "details": [
+        { "kind": "capacity", "value": "10台" },
+        { "kind": "fee", "value": "無料" }
+      ],
       "officialURL": "https://www.pref.kanagawa.jp/docs/f4y/02yama/kouen_kouenhodou/kouenhodou_top.html",
       "checkedAt": "2026-08-24",
       "sourceID": "kanagawa-west-tanzawa-parking"
@@ -579,6 +647,10 @@
       "type": "hotSpring",
       "name": "中川温泉ぶなの湯",
       "summary": "西丹沢周辺の日帰り温泉です。平日は10:00〜18:00で、土日祝は季節により終了時刻が異なります。定休日・臨時変更は公式ページで確認してください。",
+      "details": [
+        { "kind": "openingHours", "value": "平日10:00〜18:00・土日祝は季節変動" },
+        { "kind": "closedDays", "value": "公式ページで確認" }
+      ],
       "officialURL": "https://www.town.yamakita.kanagawa.jp/0000004453.html",
       "checkedAt": "2026-08-24",
       "sourceID": "yamakita-bunanoyu-official"
@@ -589,6 +661,10 @@
       "type": "publicTransport",
       "name": "大山ケーブルバス停",
       "summary": "伊勢原駅北口から大山ケーブル行きバスで約30分、終点下車です。時刻表、臨時便、運休情報は神奈川中央交通の最新情報も確認してください。",
+      "details": [
+        { "kind": "access", "value": "伊勢原駅北口から約30分・終点" },
+        { "kind": "transportOperator", "value": "神奈川中央交通" }
+      ],
       "officialURL": "https://www.pref.kanagawa.jp/docs/ph7/cnt/f7631/p1189872.html",
       "checkedAt": "2026-08-24",
       "sourceID": "kanagawa-oyama-access"

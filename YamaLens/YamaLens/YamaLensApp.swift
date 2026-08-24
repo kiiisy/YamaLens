@@ -31,7 +31,10 @@ struct YamaLensApp: App {
                 offlinePackagePresentation: appDelegate.appContainer.offlinePackagePresentation,
                 mountainWeatherRepository: appDelegate.appContainer.mountainWeatherRepository
             )
-                .modelContainer(for: UserMountainRecord.self)
+                .modelContainer(for: [
+                    UserMountainRecord.self,
+                    SavedDeparturePoint.self,
+                ])
         }
     }
 }
@@ -80,6 +83,7 @@ private struct YamaLensRootView: View {
     @State private var locationModel: LocationSessionModel
     @State private var cameraModel: CameraScreenModel
     @State private var offlinePackageModel: OfflinePackageScreenModel
+    @Query private var records: [UserMountainRecord]
     @AppStorage("camera.showsTerrainHorizon") private var showsTerrainHorizon = true
 
     init(
@@ -225,6 +229,9 @@ private struct YamaLensRootView: View {
 
                     transitionArtwork(
                         mountain: detailPresentation.mountain,
+                        imageData: records.first {
+                            $0.mountainID == detailPresentation.mountain.id
+                        }?.heroImageData,
                         frame: artworkFrame,
                         containerFrame: containerFrame
                     )
@@ -340,10 +347,15 @@ private struct YamaLensRootView: View {
 
     private func transitionArtwork(
         mountain: Mountain,
+        imageData: Data?,
         frame: CGRect,
         containerFrame: CGRect
     ) -> some View {
-        MountainArtworkView(mountain: mountain, height: frame.height)
+        MountainHeroImageView(
+            mountain: mountain,
+            imageData: imageData,
+            height: frame.height
+        )
             .overlay {
                 LinearGradient(
                     colors: [.clear, YamaColor.canvas],

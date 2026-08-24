@@ -371,7 +371,11 @@ struct HomeView: View {
                 )
             )
         } label: {
-            MountainPosterCard(mountain: mountain, badge: badge)
+            MountainPosterCard(
+                mountain: mountain,
+                badge: badge,
+                heroImageData: records.first { $0.mountainID == mountain.id }?.heroImageData
+            )
                 .onGeometryChange(for: CGRect.self) { geometry in
                     geometry.frame(in: .global)
                 } action: { frame in

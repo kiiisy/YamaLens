@@ -51,6 +51,9 @@ class BuildBootstrapTests(unittest.TestCase):
                     "officialURL": "https://example.com/official",
                     "checkedAt": "2026-08-22",
                     "sourceID": "test-official",
+                    "details": [
+                        {"kind": "access", "value": "テスト駅からバス"}
+                    ],
                 }
             ],
             "mountainPointOfInterestLinks": [
@@ -103,6 +106,15 @@ class BuildBootstrapTests(unittest.TestCase):
             input_path = Path(directory) / "source.json"
             input_path.write_text(json.dumps(source), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "displayOrder must be a number"):
+                build_bootstrap.load_source(input_path)
+
+    def test_rejects_unknown_facility_detail_kind(self) -> None:
+        source = copy.deepcopy(self.valid_source())
+        source["pointsOfInterest"][0]["details"][0]["kind"] = "unknown"
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "source.json"
+            input_path.write_text(json.dumps(source), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "kind is unsupported"):
                 build_bootstrap.load_source(input_path)
 
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct TopographicBackground: View {
     var body: some View {
@@ -66,6 +67,28 @@ struct MountainArtworkView: View {
     }
 }
 
+struct MountainHeroImageView: View {
+    let mountain: Mountain
+    let imageData: Data?
+    let height: CGFloat
+
+    var body: some View {
+        Group {
+            if let imageData, let image = UIImage(data: imageData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                MountainArtworkView(mountain: mountain, height: height)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
+        .accessibilityHidden(true)
+    }
+}
+
 private struct MountainRidgeShape: Shape {
     let phase: CGFloat
 
@@ -108,10 +131,15 @@ struct YamaSectionHeader: View {
 struct MountainPosterCard: View {
     let mountain: Mountain
     var badge: String?
+    var heroImageData: Data?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            MountainArtworkView(mountain: mountain, height: 148)
+            MountainHeroImageView(
+                mountain: mountain,
+                imageData: heroImageData,
+                height: 148
+            )
                 .overlay(alignment: .topLeading) {
                     if let badge {
                         Text(badge)

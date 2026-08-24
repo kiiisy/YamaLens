@@ -322,16 +322,11 @@ struct MountainDetailView: View {
 
     @ViewBuilder
     private var heroArtwork: some View {
-        if let data = record?.heroImageData, let image = UIImage(data: data) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(height: 350)
-                .clipped()
-                .accessibilityHidden(true)
-        } else {
-            MountainArtworkView(mountain: mountain, height: 350)
-        }
+        MountainHeroImageView(
+            mountain: mountain,
+            imageData: record?.heroImageData,
+            height: 350
+        )
     }
 
     @ViewBuilder

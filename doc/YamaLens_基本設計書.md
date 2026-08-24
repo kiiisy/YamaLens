@@ -261,7 +261,7 @@ score = 0.45 * bearingScore
 4. 山小屋: 営業期間、予約要否、連絡先、公式リンク、最終確認日。
 5. アクセス: 登山口、駐車場、公共交通、ロープウェイ、温泉、各公式リンク。
 6. 個人メモ: 自由メモ、行きたい時期、確認リスト。
-7. 山詳細写真: 既定イラストまたは、SwiftDataで端末内へ保存する山ごとのユーザー選択写真。
+7. 山詳細写真: 既定イラストまたは、SwiftDataで端末内へ保存する山ごとのユーザー選択写真。選択写真はホーム等の山カードと山詳細へのズーム遷移でも同じデータを使用する。
 8. 外部導線: 公式サイト、地図アプリでのアクセス検索、検証済みURLがある場合のYAMAP山ページ。
 
 通信がない場合、更新情報の代わりに保存済みの内容と最終取得時刻を表示する。
@@ -374,6 +374,7 @@ tanzawa/1.0.0/
 | `mountains` | `id TEXT PRIMARY KEY`、`region_id`、`canonical_name`、`search_name`、`coverage_role`（`core`／`surroundingCandidate`）、`latitude`、`longitude`、`elevation_m`、任意の`yamap_url`、`updated_at` |
 | `mountain_names` | `mountain_id`、`name`、`search_name`、`kind`。`PRIMARY KEY(mountain_id, name)` |
 | `points_of_interest` | `id TEXT PRIMARY KEY`、`region_id`、`type`、`name`、任意座標、`summary`、`official_url`、`checked_at` |
+| `point_of_interest_details` | `point_of_interest_id`、`kind`、`value`、`display_order`。営業期間、予約、収容人数、料金、営業時間、休業日、アクセス、運行主体等の確認済み属性 |
 | `mountain_points_of_interest` | `mountain_id`、`point_of_interest_id`、`display_order`。複合PRIMARY KEY。施設IDは山名に依存せず、同じ施設を複数の山から参照できる |
 | `trailhead_access_points` | `trailhead_id`、`point_of_interest_id`、`display_order`。登山口と駐車場・交通・代表的な温泉の関連 |
 | `trailhead_search_areas` | `id TEXT PRIMARY KEY`、`trailhead_id`、`name`、`display_order`。登山口または最寄り駅周辺を外部地図で検索する地点 |
@@ -383,6 +384,7 @@ tanzawa/1.0.0/
 
 - 外部キーを有効にし、ID、検索名、山域、施設種別、地形範囲に必要なindexを作る。
 - `points_of_interest.checked_at` と `source_links.checked_at` は、人が確認したデータでは最終確認日時、自動取得したデータでは検証済み取得日時を表す。取得方法と抽出規則の版は対応するSource Manifestで追跡する。
+- `point_of_interest_details` は施設カテゴリを増やすものではなく、施設詳細内で確認済みの属性を個別表示するために使用する。未確認の属性は行を作らず、同じ施設内で `kind` を重複させない。テーブルを持たない既存schema v1パックは詳細属性なしとして互換読込する。
 - `mountain_points_of_interest.display_order` は同じ施設種別内の表示順として使用する。列を持たない既存schema v1パックは名称順へフォールバックして互換読込する。
 - schema v1初期版の詳細パックは `trailhead_access_points` と `trailhead_search_areas` の両方を持たない場合に限り、登山口アクセス関係が未収録の旧版として互換受理する。片方だけ存在する不完全なパックは拒否する。施設アクセス表示は同梱bootstrapまたは両テーブルを持つ更新版を使用する。
 - `mountains.yamap_url` は人が対象山との対応を確認した `https://yamap.com/mountains/<正の整数ID>` だけを許可する。生成時にscheme、host、path、query、fragmentを検証し、アプリ読込時にも同じ形式以外は導線へ渡さない。既存のschema v1パックに列がない場合はリンクなしとして互換読込する。

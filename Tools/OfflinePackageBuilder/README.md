@@ -30,6 +30,12 @@
 
 取得・抽出の失敗時は現行JSONを変更せず、汎用的なHTML抽出やアプリからの直接取得へ切り替えない。MVPでは既存の山域パックを内容版更新するため、自動取得を始める前にInfo Overlayを独立した配布物へ分割する必要はない。
 
+### 施設の構造化詳細
+
+施設JSONの任意 `details` 配列には、概要文から独立して画面に表示する確認済み属性を最大16件まで指定できる。対応する `kind` は `operatingPeriod`、`reservation`、`capacity`、`fee`、`openingHours`、`closedDays`、`access`、`transportOperator` で、同じ施設内で重複させない。値が未確認の項目は追加せず、空文字や推測値で補完しない。
+
+`build_bootstrap.py` と `build_detailed_pack.py` はこれを `point_of_interest_details` へ表示順付きで格納する。アプリはテーブルを持たない既存schema v1パックも詳細属性なしとして読み込める。属性の追加・変更も施設本体と同様にレビュー記録、公式根拠、確認日を伴わせる。
+
 ### 最初の手動パイロット
 
 神奈川県オープンデータ「公園データ一覧」の公式CKAN APIを使い、秦野戸川公園の1件だけを取得対象とする。これは収集範囲を広げるための汎用クローラーではなく、承認済み設定 `Data/FacilitySources/kanagawa-hadano-tokawa-park-v1.json` に固定した情報源専用処理である。

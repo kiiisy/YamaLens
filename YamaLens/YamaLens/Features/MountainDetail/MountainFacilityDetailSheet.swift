@@ -12,6 +12,7 @@ struct MountainFacilityDetailSheet: View {
             VStack(alignment: .leading, spacing: 22) {
                 identityHeader
                 summaryCard
+                structuredDetails
                 sourceCard
                 officialInformationNotice
                 officialLink
@@ -85,6 +86,32 @@ struct MountainFacilityDetailSheet: View {
                 YamaColor.surface,
                 in: RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
+    }
+
+    @ViewBuilder
+    private var structuredDetails: some View {
+        if !point.details.isEmpty {
+            VStack(spacing: 0) {
+                ForEach(Array(point.details.enumerated()), id: \.offset) { index, detail in
+                    informationRow(
+                        title: detail.kind.displayName,
+                        value: detail.value,
+                        systemImage: detail.kind.systemImage
+                    )
+                    if index < point.details.count - 1 {
+                        Divider()
+                            .overlay(.white.opacity(0.10))
+                            .padding(.leading, 48)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .background(
+                YamaColor.surface,
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .accessibilityIdentifier("facility-structured-details")
+        }
     }
 
     private var sourceCard: some View {
@@ -173,5 +200,20 @@ struct MountainFacilityDetailSheet: View {
             return
         }
         openURL(chromeURL)
+    }
+}
+
+private extension MountainPointOfInterestDetailKind {
+    var systemImage: String {
+        switch self {
+        case .operatingPeriod: "calendar"
+        case .reservation: "checkmark.circle"
+        case .capacity: "number.circle"
+        case .fee: "yensign.circle"
+        case .openingHours: "clock"
+        case .closedDays: "calendar.badge.exclamationmark"
+        case .access: "arrow.triangle.turn.up.right.diamond"
+        case .transportOperator: "building.2"
+        }
     }
 }
