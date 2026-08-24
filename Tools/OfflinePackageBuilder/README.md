@@ -21,6 +21,8 @@
 
 現時点の `build_bootstrap.py` と `build_detailed_pack.py` は、人が確認したJSONを検証してSQLite・署名済みパックへ変換する生成工程であり、施設サイトを巡回する機能は持たない。施設情報の自動取得は次の順で別工程として追加する。
 
+ここでいう「承認」はアプリ利用者がアプリ内で行う操作ではない。オフラインパックを作成・配布する開発・運用担当者が、取得候補を公式情報と照合して正本データへの採否を決めるリポジトリ上の作業を指す。アプリには承認待ちの候補を含めず、承認後に検証・生成されたパックだけを配布する。
+
 1. Source Manifestで承認済みの公式API、RSS、GTFS、または公式Webページだけを低頻度で取得する。
 2. 取得日時、最終URL、HTTP状態、本文SHA-256と、情報源専用抽出規則の版を記録する。
 3. 抽出候補を現行の検証済みJSONと比較し、人手確認が必要な差分を一覧化する。
@@ -59,6 +61,21 @@ python3 Tools/OfflinePackageBuilder/apply_facility_review.py \
 ```
 
 出力先が既に存在する場合は上書きしない。生成されたJSONの差分を確認してから、同じ変更を正本JSONへ最小差分で適用し、既存のSQLite生成・検証・署名工程を実行する。最短取得間隔は設定上168時間であり、現段階ではスケジューラーから自動実行しない。
+
+### 既存施設カタログの一括レビュー
+
+自動取得候補がまだない既存施設も、公式情報源との対応を曖昧なままにしない。`Data/FacilityReviews/tanzawa-existing-facilities-2026-08-24.json` は、丹沢の現行20施設と16情報源を公開前に一括確認した基準記録である。各情報源と施設を `confirmed` または `confirmedWithLimitations` とし、交通・営業・料金など変動する内容は制約理由と公式確認の必要性を残す。
+
+一括レビューは正本JSON全体のSHA-256、全施設・全情報源の過不足ないレビュー、公式HTTPS URL、確認日、内容版のpatch更新を検証する。根拠をより直接的な既存情報源へ変更する場合だけ、施設の `officialURL` と `sourceID` を同時に更新できる。
+
+```sh
+python3 Tools/OfflinePackageBuilder/apply_facility_catalog_review.py \
+  --review Data/FacilityReviews/tanzawa-existing-facilities-YYYY-MM-DD.json \
+  --canonical Data/Bootstrap/tanzawa-bootstrap-v1.json \
+  --output Data/Generated/FacilityUpdates/tanzawa-existing-facilities-YYYY-MM-DD.json
+```
+
+この処理も正本を直接上書きしない。生成結果と正本の差分を確認してから内容版を反映し、SQLiteを再生成する。今後追加する施設は、初回の公式確認記録を残したうえで正本へ追加し、専用の構造化API・RSS・GTFS等がある情報源から順に低頻度の自動取得へ移行する。
 
 ## 0. 正式な開発用原本を取得する
 
