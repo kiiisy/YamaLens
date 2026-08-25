@@ -53,13 +53,31 @@ struct ExternalMapURLBuilderTests {
         #expect(components.queryItems?.first(where: { $0.name == "dirflg" })?.value == "r")
     }
 
+    @Test("登録駅名をAppleマップの出発地検索語として渡す")
+    func buildsAppleMapsRouteFromSavedStationName() throws {
+        let route = ExternalMapRoute(
+            origin: .savedStation(ExternalMapPlace(name: "JR新宿駅", coordinate: nil)),
+            destination: ExternalMapPlace(
+                name: "大倉バス停",
+                coordinate: GeoCoordinate(latitude: 35.403, longitude: 139.205)
+            ),
+            travelMode: .publicTransport
+        )
+
+        let url = try #require(ExternalMapURLBuilder.appleMapsURL(for: route))
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+
+        #expect(components.queryItems?.first(where: { $0.name == "saddr" })?.value == "JR新宿駅")
+        #expect(components.queryItems?.first(where: { $0.name == "daddr" })?.value == "35.403,139.205")
+    }
+
     @Test("登録駅から車で向かうGoogle Maps経路は出発地と目的地を渡す")
     func buildsGoogleMapsRouteFromSavedStation() throws {
         let route = ExternalMapRoute(
             origin: .savedStation(
                 ExternalMapPlace(
-                    name: "横浜駅",
-                    coordinate: GeoCoordinate(latitude: 35.466, longitude: 139.622)
+                    name: "JR新宿駅",
+                    coordinate: nil
                 )
             ),
             destination: ExternalMapPlace(
@@ -72,7 +90,7 @@ struct ExternalMapURLBuilderTests {
         let url = try #require(ExternalMapURLBuilder.googleMapsURL(for: route))
         let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
 
-        #expect(components.queryItems?.first(where: { $0.name == "saddr" })?.value == "35.466,139.622")
+        #expect(components.queryItems?.first(where: { $0.name == "saddr" })?.value == "JR新宿駅")
         #expect(components.queryItems?.first(where: { $0.name == "daddr" })?.value == "35.404,139.206")
         #expect(components.queryItems?.first(where: { $0.name == "directionsmode" })?.value == "driving")
     }

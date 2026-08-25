@@ -39,7 +39,7 @@ struct MountainRouteSheet: View {
                     selection: .currentLocation
                 )
                 if let savedPoint = savedDeparturePoints.first,
-                   savedPoint.coordinate != nil {
+                   !savedPoint.name.isEmpty {
                     originButton(
                         title: savedPoint.name,
                         subtitle: "よく使う出発駅",
@@ -134,15 +134,12 @@ struct MountainRouteSheet: View {
         case .currentLocation:
             origin = .currentLocation
         case .savedStation:
-            guard
-                let savedPoint = savedDeparturePoints.first,
-                let coordinate = savedPoint.coordinate
+            guard let savedPoint = savedDeparturePoints.first,
+                  !savedPoint.name.isEmpty
             else {
                 return nil
             }
-            origin = .savedStation(
-                ExternalMapPlace(name: savedPoint.name, coordinate: coordinate)
-            )
+            origin = .savedStation(ExternalMapPlace(name: savedPoint.name, coordinate: nil))
         }
         return ExternalMapRoute(
             origin: origin,

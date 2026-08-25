@@ -60,20 +60,17 @@ struct YamaLensTests {
     @Test("よく使う出発駅は同じ1件を置き換えられる")
     func savedDeparturePointCanBeReplaced() throws {
         let point = SavedDeparturePoint(
-            name: "横浜駅",
-            coordinate: GeoCoordinate(latitude: 35.466, longitude: 139.622),
+            name: "JR新宿駅",
             updatedAt: Date(timeIntervalSince1970: 100)
         )
 
         point.replace(
-            name: "渋沢駅",
-            coordinate: GeoCoordinate(latitude: 35.374, longitude: 139.185),
+            name: "都営地下鉄新宿駅",
             updatedAt: Date(timeIntervalSince1970: 200)
         )
 
         #expect(point.identifier == "frequent-departure-station")
-        #expect(point.name == "渋沢駅")
-        #expect(point.coordinate == GeoCoordinate(latitude: 35.374, longitude: 139.185))
+        #expect(point.name == "都営地下鉄新宿駅")
         #expect(point.updatedAt == Date(timeIntervalSince1970: 200))
     }
 

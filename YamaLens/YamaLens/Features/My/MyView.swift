@@ -48,7 +48,6 @@ struct MyView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 26) {
                         header
-                        summary
                         librarySection
                         offlineSection
                     }
@@ -111,41 +110,6 @@ struct MyView: View {
             .accessibilityIdentifier("settings-button")
         }
         .padding(.top, 14)
-    }
-
-    private var summary: some View {
-        HStack(spacing: 0) {
-            NavigationLink(value: MyMountainCollection.summited) {
-                metric(value: summited.count, label: "登頂済み", icon: "flag.fill")
-            }
-            .buttonStyle(.plain)
-            Divider().overlay(.white.opacity(0.12)).frame(height: 50)
-            NavigationLink(value: MyMountainCollection.favorites) {
-                metric(value: favorites.count, label: "お気に入り", icon: "star.fill")
-            }
-            .buttonStyle(.plain)
-            Divider().overlay(.white.opacity(0.12)).frame(height: 50)
-            NavigationLink(value: MyMountainCollection.recent) {
-                metric(value: recent.count, label: "最近見た", icon: "clock.fill")
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, 18)
-        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.08)) }
-    }
-
-    private func metric(value: Int, label: String, icon: String) -> some View {
-        VStack(spacing: 6) {
-            Label(value.formatted(), systemImage: icon)
-                .font(.title3.bold())
-                .foregroundStyle(YamaColor.moss)
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(YamaColor.secondaryText)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
     }
 
     private var librarySection: some View {

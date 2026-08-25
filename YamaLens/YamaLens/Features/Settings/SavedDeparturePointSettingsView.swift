@@ -4,24 +4,20 @@ import SwiftUI
 struct SavedDeparturePointSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var savedPoints: [SavedDeparturePoint]
-    @State private var query = ""
-    @State private var results: [StationSearchResult] = []
-    @State private var state: SearchState = .idle
-    private let stationSearch: any StationSearching
-
-    init(stationSearch: any StationSearching = MapKitStationSearchService()) {
-        self.stationSearch = stationSearch
-    }
+    @State private var stationName = ""
 
     var body: some View {
-        List {
+        Form {
             currentStationSection
-            searchSection
-            resultsSection
+            stationNameSection
         }
         .navigationTitle("よく使う出発駅")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("saved-departure-settings")
+        .onAppear {
+            guard stationName.isEmpty else { return }
+            stationName = savedPoints.first?.name ?? ""
+        }
     }
 
     @ViewBuilder
@@ -31,123 +27,42 @@ struct SavedDeparturePointSettingsView: View {
                 LabeledContent("駅", value: savedPoint.name)
                 Button("登録を削除", role: .destructive) {
                     modelContext.delete(savedPoint)
+                    stationName = ""
                 }
             }
         }
     }
 
-    private var searchSection: some View {
+    private var stationNameSection: some View {
         Section {
-            TextField("駅名を入力", text: $query)
+            TextField("例: JR新宿駅", text: $stationName)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .submitLabel(.search)
-                .onSubmit(search)
-                .accessibilityIdentifier("station-search-field")
-            Button(action: search) {
-                if state == .loading {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                        Text("検索中")
-                    }
-                } else {
-                    Label("駅を検索", systemImage: "magnifyingglass")
-                }
+                .submitLabel(.done)
+                .accessibilityIdentifier("station-name-field")
+            Button(action: save) {
+                Label(savedPoints.isEmpty ? "出発駅を登録" : "出発駅を更新", systemImage: "checkmark")
             }
-            .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state == .loading)
-            .accessibilityIdentifier("station-search-button")
+            .disabled(trimmedStationName.isEmpty)
+            .accessibilityIdentifier("save-departure-station-button")
         } header: {
-            Text("駅を検索")
+            Text("外部地図で使う出発駅名")
         } footer: {
-            Text("駅名と座標だけをこのiPhone内に保存します。検索語と検索履歴は保存しません。")
+            Text("JR・私鉄・地下鉄を含む、地図アプリで検索できる正式名称を入力してください。例: JR新宿駅。入力した名称を外部地図の出発地検索語として使います。")
         }
     }
 
-    @ViewBuilder
-    private var resultsSection: some View {
-        switch state {
-        case .idle, .loading:
-            EmptyView()
-        case .loaded where results.isEmpty:
-            Section {
-                ContentUnavailableView(
-                    "駅が見つかりません",
-                    systemImage: "tram",
-                    description: Text("駅名を変えて、もう一度検索してください。")
-                )
-            }
-        case .loaded:
-            Section("検索結果") {
-                ForEach(results) { result in
-                    Button {
-                        save(result)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(result.name)
-                                .foregroundStyle(.primary)
-                            if let locality = result.locality {
-                                Text(locality)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }
-                    .accessibilityLabel("\(result.name)をよく使う出発駅に登録")
-                }
-            }
-        case .failed:
-            Section {
-                ContentUnavailableView(
-                    "駅を検索できません",
-                    systemImage: "wifi.exclamationmark",
-                    description: Text("通信を確認して、もう一度お試しください。")
-                )
-            }
-        }
+    private var trimmedStationName: String {
+        stationName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func search() {
-        let submittedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !submittedQuery.isEmpty else { return }
-        state = .loading
-        results = []
-        Task {
-            do {
-                let newResults = try await stationSearch.searchStations(query: submittedQuery)
-                guard query.trimmingCharacters(in: .whitespacesAndNewlines) == submittedQuery else {
-                    return
-                }
-                results = newResults
-                state = .loaded
-            } catch is CancellationError {
-                return
-            } catch {
-                guard query.trimmingCharacters(in: .whitespacesAndNewlines) == submittedQuery else {
-                    return
-                }
-                state = .failed
-            }
-        }
-    }
-
-    private func save(_ result: StationSearchResult) {
+    private func save() {
+        guard !trimmedStationName.isEmpty else { return }
         if let savedPoint = savedPoints.first {
-            savedPoint.replace(name: result.name, coordinate: result.coordinate)
+            savedPoint.replace(name: trimmedStationName)
         } else {
-            modelContext.insert(
-                SavedDeparturePoint(name: result.name, coordinate: result.coordinate)
-            )
+            modelContext.insert(SavedDeparturePoint(name: trimmedStationName))
         }
-        results = []
-        query = ""
-        state = .idle
+        stationName = trimmedStationName
     }
-}
-
-private enum SearchState: Equatable {
-    case idle
-    case loading
-    case loaded
-    case failed
 }
