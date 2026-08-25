@@ -216,7 +216,7 @@ struct OfflineView: View {
 
         case .installed(let package, let distribution):
             installedPackageDetails(package)
-            if distribution.canInstall, presentation.showsUpdateAction {
+            if distribution.canUpdate, presentation.showsUpdateAction {
                 developmentBundleNotice(distribution)
                 Button {
                     Task { await model.install() }

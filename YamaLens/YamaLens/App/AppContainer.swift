@@ -133,14 +133,35 @@ struct AppContainer {
             return manager
         }
 #endif
-        // 配布URLと公開鍵が確定するまでは、ローカル状態の確認と削除だけを有効にする。
-        return OfflinePackageManagementService(
-            packageID: primarySelection.packageID,
-            store: store,
-            activeStagingIdentifiers: {
-                await downloader.activeStagingIdentifiers()
-            }
-        )
+        do {
+            let sourceResolver = try OfflinePackageDistribution.tanzawaSourceResolver()
+            let validator = OfflinePackageValidator(
+                publicKeys: OfflinePackageVerificationKeys.all
+            )
+            return OfflinePackageManagementService(
+                packageID: OfflinePackageDistribution.tanzawaPackageID,
+                store: store,
+                installer: OfflinePackageInstaller(
+                    store: store,
+                    validator: validator,
+                    fileDownloader: downloader
+                ),
+                sourceResolver: sourceResolver,
+                activeStagingIdentifiers: {
+                    await downloader.activeStagingIdentifiers()
+                }
+            )
+        } catch {
+            Logger(subsystem: "com.kiiisy.YamaLens", category: "OfflinePackage")
+                .fault("The production package distribution is invalid")
+            return OfflinePackageManagementService(
+                packageID: primarySelection.packageID,
+                store: store,
+                activeStagingIdentifiers: {
+                    await downloader.activeStagingIdentifiers()
+                }
+            )
+        }
     }
 
 #if DEBUG

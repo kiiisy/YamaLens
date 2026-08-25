@@ -2,6 +2,7 @@ import Foundation
 
 nonisolated enum OfflinePackageInstallationError: Error, Equatable, Sendable {
     case packageIdentityMismatch
+    case packageVersionMismatch
     case insufficientStorage(requiredBytes: Int64, availableBytes: Int64)
 }
 
@@ -131,6 +132,10 @@ actor OfflinePackageInstaller {
             let manifest = try validator.validatePackageMetadata(at: stagingURL)
             guard manifest.packageID == source.packageID else {
                 throw OfflinePackageInstallationError.packageIdentityMismatch
+            }
+            if let expectedContentVersion = source.expectedContentVersion,
+               manifest.contentVersion != expectedContentVersion {
+                throw OfflinePackageInstallationError.packageVersionMismatch
             }
             let totalBytes = manifest.files.reduce(Int64(0)) { $0 + $1.byteCount }
             var completedBytes: Int64 = 0

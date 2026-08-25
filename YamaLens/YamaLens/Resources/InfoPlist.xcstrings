@@ -1,7 +1,20 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YamaLens"
+          }
+        }
+      }
+    },
     "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -12,6 +25,7 @@
       }
     },
     "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Privacy - Location When In Use Usage Description",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -22,6 +36,7 @@
       }
     },
     "NSMotionUsageDescription" : {
+      "comment" : "Privacy - Motion Usage Description",
       "localizations" : {
         "ja" : {
           "stringUnit" : {

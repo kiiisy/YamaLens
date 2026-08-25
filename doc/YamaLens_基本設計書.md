@@ -302,7 +302,7 @@ score = 0.45 * bearingScore
 | --- | --- | --- |
 | 配布地域 | 丹沢のみ | 個人利用MVPでは、丹沢以外を利用者向けの保存候補として表示しない。 |
 | 配布元 | Cloudflare R2 | Standardストレージを独自ドメインのHTTPS URLで公開する。アプリには読取り用URLだけを持ち、R2の書込み認証情報は含めない。 |
-| 手動更新 | 有効 | ユーザー操作でmanifestを確認し、更新があれば署名・整合性検証後に切り替える。 |
+| 手動更新 | 有効 | ユーザー操作で `tanzawa/release.json` と `release.sig` を確認し、新しい内容版があれば署名・整合性検証後に切り替える。同じ版なら再ダウンロードしない。 |
 | 自動ダウンロード | MVP後 | 追加時は初期値オフ、Wi-Fi時のみを初期値とし、モバイル通信は明示許可にする。 |
 
 個人利用MVPでは丹沢パックだけを手動で管理し、容量不足時もアプリが無断で削除しない。複数地域・自動保存を追加した後は、古く使用頻度の低い自動保存パックを削除候補として提示する。
@@ -314,7 +314,7 @@ score = 0.45 * bearingScore
 `bootstrap.sqlite` は `Data/Bootstrap/tanzawa-bootstrap-v1.json` を入力として、`Tools/OfflinePackageBuilder/build_bootstrap.py` で生成・検証する。アプリはBundle内のDBを読み取り専用で開き、`integrity_check`、schemaVersion、必須の山レコードを確認してから利用する。開発用データは丹沢の中心6座と、富士山等の周辺候補11座を区別して収録する。正式な配布データとする前に `Data/SourceManifests/tanzawa-bootstrap-v1.yaml` に従って国土地理院の一次情報との照合と利用手続の確認を完了する。
 
 ```text
-tanzawa/1.0.0/
+https://packages.yamalens.com/tanzawa/1.0.1/
 ├─ manifest.json
 ├─ manifest.sig
 ├─ catalog.sqlite

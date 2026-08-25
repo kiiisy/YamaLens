@@ -15,6 +15,10 @@ nonisolated enum OfflinePackageDistributionAvailability: Equatable, Sendable {
     var canInstall: Bool {
         self != .unavailable
     }
+
+    var canUpdate: Bool {
+        self == .available
+    }
 }
 
 nonisolated struct OfflinePackageManagementSnapshot: Equatable, Sendable {

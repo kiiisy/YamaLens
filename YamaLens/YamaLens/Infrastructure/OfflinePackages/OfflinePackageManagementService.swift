@@ -5,6 +5,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
     private let store: OfflinePackageStore
     private let installer: OfflinePackageInstaller?
     private let source: OfflinePackageSource?
+    private let sourceResolver: (any OfflinePackageSourceResolving)?
     private let availableDistribution: OfflinePackageDistributionAvailability
     private let now: @Sendable () -> Date
     private let activeStagingIdentifiers: @Sendable () async -> Set<String>
@@ -14,6 +15,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
         store: OfflinePackageStore,
         installer: OfflinePackageInstaller? = nil,
         source: OfflinePackageSource? = nil,
+        sourceResolver: (any OfflinePackageSourceResolving)? = nil,
         availableDistribution: OfflinePackageDistributionAvailability = .available,
         now: @escaping @Sendable () -> Date = { .now },
         activeStagingIdentifiers: @escaping @Sendable () async -> Set<String> = { [] }
@@ -22,6 +24,7 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
         self.store = store
         self.installer = installer
         self.source = source
+        self.sourceResolver = sourceResolver
         self.availableDistribution = availableDistribution
         self.now = now
         self.activeStagingIdentifiers = activeStagingIdentifiers
@@ -52,10 +55,16 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
     func install(
         progress: @escaping @Sendable (OfflinePackageOperationProgress) async -> Void
     ) async throws -> OfflinePackageSummary {
-        guard let installer, let source else {
+        guard let installer else {
             throw OfflinePackageManagementFailure.distributionUnavailable
         }
         do {
+            let source = try await resolvedSource()
+            if let stored = try await store.activePackageSummary(packageID: packageID),
+               let expectedContentVersion = source.expectedContentVersion,
+               !isNewer(expectedContentVersion, than: stored.contentVersion) {
+                return Self.summary(from: stored)
+            }
             _ = try await installer.install(from: source, progress: progress)
             guard let stored = try await store.activePackageSummary(packageID: packageID) else {
                 throw OfflinePackageManagementFailure.internalFailure
@@ -75,7 +84,28 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
     }
 
     private var distributionAvailability: OfflinePackageDistributionAvailability {
-        installer != nil && source != nil ? availableDistribution : .unavailable
+        installer != nil && (source != nil || sourceResolver != nil)
+            ? availableDistribution
+            : .unavailable
+    }
+
+    private func resolvedSource() async throws -> OfflinePackageSource {
+        if let source {
+            return source
+        }
+        guard let sourceResolver else {
+            throw OfflinePackageManagementFailure.distributionUnavailable
+        }
+        return try await sourceResolver.resolveSource()
+    }
+
+    private func isNewer(_ candidate: String, than installed: String) -> Bool {
+        let candidateParts = candidate.split(separator: ".").compactMap { Int($0) }
+        let installedParts = installed.split(separator: ".").compactMap { Int($0) }
+        guard candidateParts.count == 3, installedParts.count == 3 else {
+            return false
+        }
+        return candidateParts.lexicographicallyPrecedes(installedParts, by: >)
     }
 
     private nonisolated static func summary(
@@ -112,6 +142,8 @@ actor OfflinePackageManagementService: OfflinePackageManaging {
         if let failure = error as? OfflinePackageInstallationError {
             switch failure {
             case .packageIdentityMismatch:
+                return .invalidData
+            case .packageVersionMismatch:
                 return .invalidData
             case .insufficientStorage(let requiredBytes, let availableBytes):
                 return .insufficientStorage(

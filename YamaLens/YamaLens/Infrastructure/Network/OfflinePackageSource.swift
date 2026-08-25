@@ -9,9 +9,14 @@ nonisolated enum OfflinePackageSourceError: Error, Equatable, Sendable {
 nonisolated struct OfflinePackageSource: Equatable, Sendable {
     let packageID: String
     let baseURL: URL
+    let expectedContentVersion: String?
     private let allowsDevelopmentBundleURL: Bool
 
-    init(packageID: String, baseURL: URL) throws {
+    init(
+        packageID: String,
+        baseURL: URL,
+        expectedContentVersion: String? = nil
+    ) throws {
         guard Self.isSafeIdentifier(packageID) else {
             throw OfflinePackageSourceError.invalidPackageID
         }
@@ -21,8 +26,12 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
         guard baseURL.absoluteString.utf8.count <= 2_048 else {
             throw OfflinePackageSourceError.URLTooLong
         }
+        guard expectedContentVersion.map(Self.isSemanticVersion) ?? true else {
+            throw OfflinePackageSourceError.invalidBaseURL
+        }
         self.packageID = packageID
         self.baseURL = baseURL
+        self.expectedContentVersion = expectedContentVersion
         allowsDevelopmentBundleURL = false
     }
 
@@ -42,6 +51,7 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
         return Self(
             packageID: packageID,
             baseURL: standardizedURL,
+            expectedContentVersion: nil,
             allowsDevelopmentBundleURL: true
         )
     }
@@ -73,10 +83,12 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
     private init(
         packageID: String,
         baseURL: URL,
+        expectedContentVersion: String?,
         allowsDevelopmentBundleURL: Bool
     ) {
         self.packageID = packageID
         self.baseURL = baseURL
+        self.expectedContentVersion = expectedContentVersion
         self.allowsDevelopmentBundleURL = allowsDevelopmentBundleURL
     }
 
@@ -109,5 +121,13 @@ nonisolated struct OfflinePackageSource: Equatable, Sendable {
         return value.unicodeScalars.allSatisfy { allowed.contains($0) }
             && !value.contains("..")
             && value != "."
+    }
+
+    private static func isSemanticVersion(_ value: String) -> Bool {
+        let parts = value.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3 else { return false }
+        return parts.allSatisfy { part in
+            !part.isEmpty && part.allSatisfy(\.isNumber)
+        }
     }
 }
