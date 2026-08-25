@@ -200,7 +200,7 @@ private struct YamaLensRootView: View {
                     )
                         .tabItem {
                             Image(systemName: "person.crop.circle")
-                                .accessibilityLabel("マイ")
+                                .accessibilityLabel("記録")
                         }
                         .tag(YamaTab.my)
                 }

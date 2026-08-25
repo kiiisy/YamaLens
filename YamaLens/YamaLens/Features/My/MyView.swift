@@ -65,6 +65,13 @@ struct MyView: View {
                     pointOfInterestRepository: pointOfInterestRepository
                 )
             }
+            .navigationDestination(for: MyMountainCollection.self) { collection in
+                MyMountainCollectionView(
+                    collection: collection,
+                    mountains: mountains,
+                    records: records
+                )
+            }
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsPlaceholderView(
                     showsTerrainHorizon: $showsTerrainHorizon,
@@ -84,7 +91,7 @@ struct MyView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("マイ")
+                Text("記録")
                     .font(.largeTitle.bold())
                     .foregroundStyle(YamaColor.primaryText)
                 Text("自分の山とオフライン情報")
@@ -108,11 +115,20 @@ struct MyView: View {
 
     private var summary: some View {
         HStack(spacing: 0) {
-            metric(value: summited.count, label: "登頂済み", icon: "flag.fill")
+            NavigationLink(value: MyMountainCollection.summited) {
+                metric(value: summited.count, label: "登頂済み", icon: "flag.fill")
+            }
+            .buttonStyle(.plain)
             Divider().overlay(.white.opacity(0.12)).frame(height: 50)
-            metric(value: favorites.count, label: "お気に入り", icon: "star.fill")
+            NavigationLink(value: MyMountainCollection.favorites) {
+                metric(value: favorites.count, label: "お気に入り", icon: "star.fill")
+            }
+            .buttonStyle(.plain)
             Divider().overlay(.white.opacity(0.12)).frame(height: 50)
-            metric(value: recent.count, label: "最近見た", icon: "clock.fill")
+            NavigationLink(value: MyMountainCollection.recent) {
+                metric(value: recent.count, label: "最近見た", icon: "clock.fill")
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 18)
         .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -134,28 +150,31 @@ struct MyView: View {
 
     private var librarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            YamaSectionHeader(title: "山の記録")
-            libraryRow(title: "お気に入り", count: favorites.count, icon: "star.fill", color: YamaColor.amber)
-            libraryRow(title: "登頂済み", count: summited.count, icon: "flag.fill", color: YamaColor.moss)
-            libraryRow(title: "最近見た山", count: recent.count, icon: "clock.fill", color: YamaColor.alpineTeal)
+            YamaSectionHeader(title: "保存した山", subtitle: "端末内に保存したお気に入りと閲覧履歴")
+            libraryRow(collection: .favorites, count: favorites.count, icon: "star.fill", color: YamaColor.amber)
+            libraryRow(collection: .summited, count: summited.count, icon: "flag.fill", color: YamaColor.moss)
+            libraryRow(collection: .recent, count: recent.count, icon: "clock.fill", color: YamaColor.alpineTeal)
         }
     }
 
-    private func libraryRow(title: String, count: Int, icon: String, color: Color) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .foregroundStyle(color)
-                .frame(width: 42, height: 42)
-                .background(color.opacity(0.12), in: Circle())
-            Text(title).font(.headline).foregroundStyle(YamaColor.primaryText)
-            Spacer()
-            Text("\(count)件").font(.subheadline).foregroundStyle(YamaColor.secondaryText)
-            Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(YamaColor.secondaryText)
+    private func libraryRow(collection: MyMountainCollection, count: Int, icon: String, color: Color) -> some View {
+        NavigationLink(value: collection) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+                    .frame(width: 42, height: 42)
+                    .background(color.opacity(0.12), in: Circle())
+                Text(collection.title).font(.headline).foregroundStyle(YamaColor.primaryText)
+                Spacer()
+                Text("\(count)件").font(.subheadline).foregroundStyle(YamaColor.secondaryText)
+                Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(YamaColor.secondaryText)
+            }
+            .frame(minHeight: 62)
+            .padding(.horizontal, 14)
+            .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .frame(minHeight: 62)
-        .padding(.horizontal, 14)
-        .background(YamaColor.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(collection.title)、\(count)件")
     }
 
     private var offlineSection: some View {
