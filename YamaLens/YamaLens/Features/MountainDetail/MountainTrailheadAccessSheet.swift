@@ -162,7 +162,7 @@ struct MountainTrailheadAccessSheet: View {
                     guard let point = selectedAccessPoints.first else { return }
                     routeDestination = MountainRouteDestination(
                         point: point,
-                        suggestedMode: accessMode.travelMode
+                        travelMode: accessMode.travelMode
                     )
                 } label: {
                     Label(accessMode.mapButtonTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
@@ -199,7 +199,7 @@ struct MountainTrailheadAccessSheet: View {
         Button {
             routeDestination = MountainRouteDestination(
                 point: point,
-                suggestedMode: accessMode.travelMode
+                travelMode: accessMode.travelMode
             )
         } label: {
             HStack(spacing: 12) {
@@ -378,6 +378,7 @@ struct MountainTrailheadAccessSheet: View {
         guard let url = ExternalMapURLBuilder.googleMapsURL(for: search) else { return }
         openURL(url)
     }
+
 }
 
 private enum TrailheadAccessMode: Hashable {

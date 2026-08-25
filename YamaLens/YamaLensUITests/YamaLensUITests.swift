@@ -239,6 +239,7 @@ final class YamaLensUITests: XCTestCase {
                 .waitForExistence(timeout: 2)
         )
         XCTAssertTrue(app.staticTexts["現在地"].exists)
+        XCTAssertFalse(app.staticTexts["移動手段"].exists)
         XCTAssertTrue(app.buttons["route-open-maps-button"].exists)
     }
 

@@ -3,7 +3,7 @@ import SwiftUI
 
 nonisolated struct MountainRouteDestination: Identifiable, Equatable, Sendable {
     let point: MountainPointOfInterest
-    let suggestedMode: ExternalMapTravelMode
+    let travelMode: ExternalMapTravelMode
 
     var id: String { point.id }
 }
@@ -15,13 +15,7 @@ struct MountainRouteSheet: View {
     @Query private var savedDeparturePoints: [SavedDeparturePoint]
     @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
     @State private var selectedOrigin = RouteOriginSelection.currentLocation
-    @State private var travelMode: ExternalMapTravelMode
     @State private var showsMapChoice = false
-
-    init(destination: MountainRouteDestination) {
-        self.destination = destination
-        _travelMode = State(initialValue: destination.suggestedMode)
-    }
 
     var body: some View {
         Form {
@@ -38,10 +32,9 @@ struct MountainRouteSheet: View {
                     subtitle: "位置情報は地図アプリ側で使用",
                     selection: .currentLocation
                 )
-                if let savedPoint = savedDeparturePoints.first,
-                   !savedPoint.name.isEmpty {
+                if let savedStationName {
                     originButton(
-                        title: savedPoint.name,
+                        title: savedStationName,
                         subtitle: "よく使う出発駅",
                         selection: .savedStation
                     )
@@ -52,18 +45,6 @@ struct MountainRouteSheet: View {
                         Label("よく使う出発駅を登録", systemImage: "tram")
                     }
                 }
-            }
-
-            Section("移動手段") {
-                Picker("移動手段", selection: $travelMode) {
-                    Label("公共交通", systemImage: "bus.fill")
-                        .tag(ExternalMapTravelMode.publicTransport)
-                    Label("車", systemImage: "car.fill")
-                        .tag(ExternalMapTravelMode.driving)
-                    Label("徒歩", systemImage: "figure.walk")
-                        .tag(ExternalMapTravelMode.walking)
-                }
-                .pickerStyle(.segmented)
             }
 
             Section {
@@ -77,7 +58,7 @@ struct MountainRouteSheet: View {
                 .tint(YamaColor.forest)
                 .accessibilityIdentifier("route-open-maps-button")
             } footer: {
-                Text("YamaLensは経路、所要時間、運行状況を計算しません。")
+                Text("登山口で選んだアクセス手段を使用します。YamaLensは経路、所要時間、運行状況を計算しません。")
             }
         }
         .scrollContentBackground(.hidden)
@@ -100,6 +81,16 @@ struct MountainRouteSheet: View {
         }
         .accessibilityIdentifier("mountain-route-sheet")
         .preferredColorScheme(.dark)
+    }
+
+    private var savedStationName: String? {
+        guard let name = savedDeparturePoints.first?.name
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty
+        else {
+            return nil
+        }
+        return name
     }
 
     private func originButton(
@@ -134,12 +125,8 @@ struct MountainRouteSheet: View {
         case .currentLocation:
             origin = .currentLocation
         case .savedStation:
-            guard let savedPoint = savedDeparturePoints.first,
-                  !savedPoint.name.isEmpty
-            else {
-                return nil
-            }
-            origin = .savedStation(ExternalMapPlace(name: savedPoint.name, coordinate: nil))
+            guard let savedStationName else { return nil }
+            origin = .savedStation(ExternalMapPlace(name: savedStationName, coordinate: nil))
         }
         return ExternalMapRoute(
             origin: origin,
@@ -147,7 +134,7 @@ struct MountainRouteSheet: View {
                 name: destination.point.name,
                 coordinate: destination.point.coordinate
             ),
-            travelMode: travelMode
+            travelMode: destination.travelMode
         )
     }
 
