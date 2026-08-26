@@ -230,6 +230,14 @@ struct AppContainer {
     private static func developmentOfflinePackageSelections()
         -> [DevelopmentOfflinePackageSelection] {
 #if DEBUG
+        if let terrainProfile = DevelopmentTanzawaTerrainProfile.selected(
+            from: ProcessInfo.processInfo.arguments,
+            storedRawValue: UserDefaults.standard.string(
+                forKey: DevelopmentTanzawaTerrainProfile.selectionStorageKey
+            )
+        ) {
+            return [.tanzawaTerrainTest(terrainProfile)]
+        }
         if ProcessInfo.processInfo.arguments.contains("-ar-test-pack-takao-jinba") {
             return [.takaoJinbaARTest]
         }
@@ -409,6 +417,62 @@ struct AppContainer {
 #endif
 }
 
+nonisolated enum DevelopmentTanzawaTerrainProfile: String, CaseIterable, Sendable {
+    case detailed
+    case standard
+    case compact
+
+    static let selectionStorageKey = "development.tanzawaTerrainProfile"
+
+    static func selected(from arguments: [String]) -> Self? {
+        guard let argumentIndex = arguments.firstIndex(of: "-tanzawa-terrain-profile"),
+              arguments.indices.contains(argumentIndex + 1) else {
+            return nil
+        }
+        return Self(rawValue: arguments[argumentIndex + 1])
+    }
+
+    /// Xcodeの起動引数を優先し、ない場合だけ開発用設定に保存した選択を使う。
+    static func selected(from arguments: [String], storedRawValue: String?) -> Self? {
+        selected(from: arguments) ?? Self(rawValue: storedRawValue ?? "")
+    }
+
+    var title: String {
+        switch self {
+        case .detailed:
+            return "詳細（約4m）"
+        case .standard:
+            return "標準（約8m）"
+        case .compact:
+            return "軽量（約16m）"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .detailed:
+            return "約4m中心・現行の比較基準"
+        case .standard:
+            return "約8m中心・容量と精度の中間"
+        case .compact:
+            return "約16m中心・容量を優先"
+        }
+    }
+
+    var packageDirectoryName: String {
+        "tanzawa-\(rawValue)-v1"
+    }
+
+    var packageID: String {
+        switch self {
+        case .detailed:
+            return "jp.kanagawa.tanzawa"
+        case .standard, .compact:
+            return "jp.kanagawa.tanzawa.terrain-\(rawValue)-test"
+        }
+    }
+}
+
 private struct DevelopmentOfflinePackageSelection {
     let packageID: String
     let bundleSubdirectory: String
@@ -428,6 +492,31 @@ private struct DevelopmentOfflinePackageSelection {
             west: 138.95
         )
     )
+
+    static func tanzawaTerrainTest(
+        _ terrainProfile: DevelopmentTanzawaTerrainProfile
+    ) -> DevelopmentOfflinePackageSelection {
+        DevelopmentOfflinePackageSelection(
+            packageID: terrainProfile.packageID,
+            bundleSubdirectory: "DevelopmentOfflinePackages/\(terrainProfile.packageDirectoryName)",
+            presentation: OfflinePackagePresentation(
+                regionTitle: "丹沢山地",
+                packageTitle: "丹沢 \(terrainProfile.title) 地形テストパック",
+                packageSubtitle: "地形粒度の比較用・施設・出典データ",
+                installButtonTitle: "\(terrainProfile.title) パックを保存",
+                cameraContextTitle: "丹沢・\(terrainProfile.title)・地形比較",
+                isARTestOnly: false
+            ),
+            terrainCoverage: TerrainPackageCoverage(
+                packageID: terrainProfile.packageID,
+                displayName: "丹沢・\(terrainProfile.title)",
+                north: 35.60,
+                south: 35.30,
+                east: 139.30,
+                west: 138.95
+            )
+        )
+    }
 
     static let takaoJinbaARTest = DevelopmentOfflinePackageSelection(
         packageID: "jp.tokyo.takao-jinba.ar-test",

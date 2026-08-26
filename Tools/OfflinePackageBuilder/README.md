@@ -85,20 +85,82 @@ python3 Tools/OfflinePackageBuilder/apply_facility_catalog_review.py \
 
 ## 0. 正式な開発用原本を取得する
 
-YamaLensの初期取得範囲は次の多解像度構成とする。
+丹沢では、同じ山頂・施設データに対して地形の粒度だけを切り替えて比較できる。`--profile` はアプリの設定ではなく、Mac上で取得・生成するパックのプロファイルを選ぶ指定である。既存の公開版は変更されない。
 
-- 丹沢詳細域: 北緯35.30〜35.60度、東経138.95〜139.30度。DEM5A、DEM5B、DEM5Cをズーム15（約4m）、欠損補完用DEM10Bをズーム14（約8m）で取得する。
-- 周辺粗地形: 北緯34.75〜35.95度、東経138.62〜139.33度。富士山、箱根、奥多摩、大菩薩、伊豆方面までの見通し確認用としてDEM10Bをズーム11（約62m）で取得する。
+| プロファイル | 丹沢詳細域 | 周辺地形 | 取得計画の件数 | 用途 |
+| --- | --- | --- | ---: | --- |
+| `detailed` | DEM5A/B/C: z15（約4m）、DEM10B補完: z14（約8m） | DEM10B: z11（約62m） | 3,700 | 現行版。比較の基準 |
+| `standard` | DEM5A/B/C: z14（約8m）、DEM10B補完: z14 | DEM10B: z11（約62m） | 1,201 | 容量と見通し判定を比較する候補 |
+| `compact` | DEM10B: z13（約16m） | DEM10B: z10（約124m） | 96 | 容量優先の比較候補 |
+
+実測した容量・読み込み時間・固定リプレイ／現地の見通し判定を比較するまでは、`detailed` を既定とする。`standard` や `compact` を公開版へ切り替える場合は、実データの内容版を上げ、Source Manifestへ選択プロファイルと測定結果を記録する。
 
 まず、追跡対象外の取得計画を生成する。
 
 ```sh
 python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py plan \
   --config Data/OfflinePackages/tanzawa-dem-acquisition-v1.json \
+  --profile detailed \
   --output Data/Generated/GSI/tanzawa-dem-acquisition-v1.json
 ```
 
-生成結果は3,700件のURLになる。内訳とURLが想定どおりであることを確認後、明示操作で取得する。国土地理院の標高タイルは公開HTTPS URLから取得するため、基盤地図情報ダウンロードサービスのID・パスワードは使用しない。
+生成結果は`detailed`なら3,700件、`standard`なら1,201件、`compact`なら96件のURLになる。計画ファイルには選択した `terrainProfile` も記録される。内訳とURLが想定どおりであることを確認後、明示操作で取得する。国土地理院の標高タイルは公開HTTPS URLから取得するため、基盤地図情報ダウンロードサービスのID・パスワードは使用しない。
+
+比較用パックは、既存の詳細版の原本や生成物を混ぜない。たとえば軽量版は別ディレクトリに計画を作る。
+
+```sh
+python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py plan \
+  --config Data/OfflinePackages/tanzawa-dem-acquisition-v1.json \
+  --profile compact \
+  --output Data/Generated/GSI/tanzawa-compact-v1/acquisition-plan.json
+```
+
+`standard` を作る場合は `compact` を `standard` に置き換える。取得、索引化、パック生成も同じ `tanzawa-compact-v1` の部分を対応する名前に置き換え、出力先を分ける。パック設定の `contentVersion` とSource Manifestの選択プロファイルも一致させる。
+
+標準・軽量の比較用パックには、それぞれ次の設定を使用する。両方とも開発用であり、R2の配布一覧は更新しない。
+
+| プロファイル | パック設定 | Source Manifest | Debug用生成先 |
+| --- | --- | --- | --- |
+| `standard` | `Data/OfflinePackages/tanzawa-standard-v1.json` | `gsi-dem-tanzawa-standard-test-v1.yaml` | `Data/Generated/tanzawa-standard-v1/package` |
+| `compact` | `Data/OfflinePackages/tanzawa-compact-v1.json` | `gsi-dem-tanzawa-compact-test-v1.yaml` | `Data/Generated/tanzawa-compact-v1/package` |
+
+取得後の生成は、対象プロファイルごとに次の順で行う。
+
+```sh
+python3 Tools/OfflinePackageBuilder/build_detailed_pack.py index \
+  --source DEM10B=Data/Generated/GSI/tanzawa-compact-v1/DEM10B \
+  --output Data/Generated/tanzawa-compact-v1/terrain-index.json
+
+python3 Tools/OfflinePackageBuilder/build_detailed_pack.py build \
+  --config Data/OfflinePackages/tanzawa-compact-v1.json \
+  --terrain-index Data/Generated/tanzawa-compact-v1/terrain-index.json \
+  --private-key /path/outside/repository/yamalens-pack-development.pem \
+  --output Data/Generated/tanzawa-compact-v1/package
+
+Tools/OfflinePackageBuilder/stage_development_pack.sh tanzawa-compact-v1
+```
+
+`standard` は4種類の `--source`（DEM5A、DEM5B、DEM5C、DEM10B）を指定する。実際のコマンドはこのREADMEの「入力索引を作る」を参照する。
+
+### Debugで地形プロファイルを比較する
+
+各プロファイルの完成パックは、次の名前でDebug用Resourceへ同梱する。既存の詳細版を上書きせず、3種類を並べて置く。
+
+```sh
+Tools/OfflinePackageBuilder/stage_development_pack.sh tanzawa-detailed-v1
+Tools/OfflinePackageBuilder/stage_development_pack.sh tanzawa-standard-v1
+Tools/OfflinePackageBuilder/stage_development_pack.sh tanzawa-compact-v1
+```
+
+XcodeのSchemeの「Arguments Passed On Launch」に、次の1組だけを追加してDebug起動する。アプリ内で利用者向けに切り替える設定ではなく、起動ごとに1種類へ固定する開発用の比較機能である。標準・軽量は正式丹沢パックと異なるDebug専用パックIDで保存するため、各プロファイルを一度導入すれば、以後は削除せずに往復できる。
+
+```text
+-tanzawa-terrain-profile detailed
+-tanzawa-terrain-profile standard
+-tanzawa-terrain-profile compact
+```
+
+カメラ画面の地形表示とオフラインパック画面に、選択中の「詳細（約4m）」「標準（約8m）」「軽量（約16m）」を表示する。比較前に、対象の4ファイルが同梱済みであることを確認する。未生成のプロファイルを指定した場合は、開発用パックを導入できない状態として表示する。
 
 ```sh
 python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py fetch \
@@ -107,6 +169,8 @@ python3 Tools/OfflinePackageBuilder/acquire_gsi_tiles.py fetch \
 ```
 
 取得は並列化せず、既定でリクエスト間を0.2秒空ける。提供範囲外の404は `acquisition-inventory.json` の `unavailable` に記録する。取得済みの正常ファイルは再利用し、異常な既存ファイルや途中ファイルを自動上書きしない。
+
+長時間の取得を区切る場合は、`fetch` に `--maximum-requests 100` を付ける。同じコマンドを繰り返すと既存の正常ファイルを再利用して続きから取得し、全件完了した最後の実行でだけ `acquisition-inventory.json` を作成する。
 
 この取得物は、開発・容量測定・現地試験の正式原本として扱える。ただし商用配布用パックへ進める前に、地理院タイルの保存・加工・再配布形態について測量法上の申請要否を確認し、Source Manifestの利用手続欄を確定する。
 

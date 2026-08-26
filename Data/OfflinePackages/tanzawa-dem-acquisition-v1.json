@@ -1,8 +1,11 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "provider": "国土地理院",
   "sourceInformationURL": "https://maps.gsi.go.jp/development/ichiran.html#dem",
-  "layers": [
+  "defaultProfile": "detailed",
+  "profiles": {
+    "detailed": {
+      "layers": [
     {
       "id": "tanzawa-detail-dem5a",
       "dataset": "DEM5A",
@@ -43,5 +46,71 @@
       "zoom": 11,
       "bounds": { "north": 35.95, "south": 34.75, "east": 139.33, "west": 138.62 }
     }
-  ]
+      ]
+    },
+    "standard": {
+      "layers": [
+        {
+          "id": "tanzawa-standard-dem5a",
+          "dataset": "DEM5A",
+          "tileSet": "dem5a_png",
+          "extension": "png",
+          "zoom": 14,
+          "bounds": { "north": 35.60, "south": 35.30, "east": 139.30, "west": 138.95 }
+        },
+        {
+          "id": "tanzawa-standard-dem5b",
+          "dataset": "DEM5B",
+          "tileSet": "dem5b_png",
+          "extension": "png",
+          "zoom": 14,
+          "bounds": { "north": 35.60, "south": 35.30, "east": 139.30, "west": 138.95 }
+        },
+        {
+          "id": "tanzawa-standard-dem5c",
+          "dataset": "DEM5C",
+          "tileSet": "dem5c_png",
+          "extension": "png",
+          "zoom": 14,
+          "bounds": { "north": 35.60, "south": 35.30, "east": 139.30, "west": 138.95 }
+        },
+        {
+          "id": "tanzawa-standard-fallback-dem10b",
+          "dataset": "DEM10B",
+          "tileSet": "dem_png",
+          "extension": "png",
+          "zoom": 14,
+          "bounds": { "north": 35.60, "south": 35.30, "east": 139.30, "west": 138.95 }
+        },
+        {
+          "id": "surrounding-coarse-dem10b",
+          "dataset": "DEM10B",
+          "tileSet": "dem_png",
+          "extension": "png",
+          "zoom": 11,
+          "bounds": { "north": 35.95, "south": 34.75, "east": 139.33, "west": 138.62 }
+        }
+      ]
+    },
+    "compact": {
+      "layers": [
+        {
+          "id": "tanzawa-compact-dem10b",
+          "dataset": "DEM10B",
+          "tileSet": "dem_png",
+          "extension": "png",
+          "zoom": 13,
+          "bounds": { "north": 35.60, "south": 35.30, "east": 139.30, "west": 138.95 }
+        },
+        {
+          "id": "surrounding-compact-dem10b",
+          "dataset": "DEM10B",
+          "tileSet": "dem_png",
+          "extension": "png",
+          "zoom": 10,
+          "bounds": { "north": 35.95, "south": 34.75, "east": 139.33, "west": 138.62 }
+        }
+      ]
+    }
+  }
 }

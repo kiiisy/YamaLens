@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 
 
 FORMAT_VERSION = 1
+PROFILED_CONFIG_FORMAT_VERSION = 2
 GSI_HOST = "cyberjapandata.gsi.go.jp"
 ALLOWED_DATASETS = {"DEM5A", "DEM5B", "DEM5C", "DEM10B"}
 ALLOWED_TILE_SETS = {
@@ -37,6 +38,10 @@ def parse_arguments() -> argparse.Namespace:
 
     plan_parser = subparsers.add_parser("plan", help="Create a deterministic URL and path list.")
     plan_parser.add_argument("--config", required=True, type=Path)
+    plan_parser.add_argument(
+        "--profile",
+        help="Select a named terrain profile from a formatVersion 2 configuration.",
+    )
     plan_parser.add_argument("--output", required=True, type=Path)
 
     fetch_parser = subparsers.add_parser(
@@ -46,6 +51,11 @@ def parse_arguments() -> argparse.Namespace:
     fetch_parser.add_argument("--plan", required=True, type=Path)
     fetch_parser.add_argument("--destination", required=True, type=Path)
     fetch_parser.add_argument("--interval", type=float, default=0.2)
+    fetch_parser.add_argument(
+        "--maximum-requests",
+        type=int,
+        help="Stop safely after this many new HTTP requests; run the same command again to resume.",
+    )
     return parser.parse_args()
 
 
@@ -87,13 +97,37 @@ def latitude_to_tile_y(latitude: float, zoom: int) -> int:
     )
 
 
-def create_plan(config_path: Path, output_path: Path) -> dict[str, Any]:
-    config = require_mapping(load_json(config_path), "config")
-    if config.get("formatVersion") != FORMAT_VERSION:
+def layers_for_profile(config: dict[str, Any], requested_profile: str | None) -> tuple[list[Any], str | None]:
+    format_version = config.get("formatVersion")
+    if format_version == FORMAT_VERSION:
+        if requested_profile is not None:
+            raise ValueError("--profile requires a formatVersion 2 acquisition config")
+        layers = config.get("layers")
+        if not isinstance(layers, list) or not layers:
+            raise ValueError("layers must be a non-empty array")
+        return layers, None
+
+    if format_version != PROFILED_CONFIG_FORMAT_VERSION:
         raise ValueError("unsupported acquisition config formatVersion")
-    layers = config.get("layers")
+    profiles = require_mapping(config.get("profiles"), "profiles")
+    default_profile = require_text(config.get("defaultProfile"), "defaultProfile")
+    profile_id = requested_profile or default_profile
+    if profile_id not in profiles:
+        raise ValueError(f"unknown terrain profile: {profile_id}")
+    profile = require_mapping(profiles[profile_id], f"profiles.{profile_id}")
+    layers = profile.get("layers")
     if not isinstance(layers, list) or not layers:
-        raise ValueError("layers must be a non-empty array")
+        raise ValueError(f"terrain profile {profile_id} must contain a non-empty layers array")
+    return layers, profile_id
+
+
+def create_plan(
+    config_path: Path,
+    output_path: Path,
+    requested_profile: str | None = None,
+) -> dict[str, Any]:
+    config = require_mapping(load_json(config_path), "config")
+    layers, profile_id = layers_for_profile(config, requested_profile)
 
     entries: list[dict[str, Any]] = []
     seen_paths: set[str] = set()
@@ -156,6 +190,8 @@ def create_plan(config_path: Path, output_path: Path) -> dict[str, Any]:
         "tileCount": len(entries),
         "tiles": entries,
     }
+    if profile_id is not None:
+        plan["terrainProfile"] = profile_id
     if output_path.exists():
         raise ValueError(f"refusing to replace an existing acquisition plan: {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -205,9 +241,16 @@ def validated_plan_entries(plan_path: Path) -> list[dict[str, Any]]:
     return entries
 
 
-def fetch_plan(plan_path: Path, destination: Path, interval: float) -> dict[str, Any]:
+def fetch_plan(
+    plan_path: Path,
+    destination: Path,
+    interval: float,
+    maximum_requests: int | None = None,
+) -> dict[str, Any] | None:
     if not math.isfinite(interval) or interval < 0.1:
         raise ValueError("interval must be at least 0.1 seconds")
+    if maximum_requests is not None and maximum_requests < 1:
+        raise ValueError("maximumRequests must be at least 1")
     destination = destination.expanduser().resolve()
     destination.mkdir(parents=True, exist_ok=True)
     if destination.is_symlink():
@@ -215,6 +258,7 @@ def fetch_plan(plan_path: Path, destination: Path, interval: float) -> dict[str,
     entries = validated_plan_entries(plan_path)
     acquired: list[dict[str, Any]] = []
     unavailable: list[str] = []
+    requests_made = 0
     for index, entry in enumerate(entries):
         target = destination.joinpath(*Path(entry["relativePath"]).parts)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -226,10 +270,13 @@ def fetch_plan(plan_path: Path, destination: Path, interval: float) -> dict[str,
                 )
                 continue
             raise ValueError(f"existing source is invalid; refusing to replace it: {target}")
+        if maximum_requests is not None and requests_made >= maximum_requests:
+            return None
         request = urllib.request.Request(
             entry["url"],
             headers={"User-Agent": "YamaLens-development-dem-acquisition/1.0"},
         )
+        requests_made += 1
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 payload = response.read(MAXIMUM_SOURCE_BYTES + 1)
@@ -273,10 +320,18 @@ def main() -> int:
     arguments = parse_arguments()
     try:
         if arguments.command == "plan":
-            plan = create_plan(arguments.config, arguments.output)
+            plan = create_plan(arguments.config, arguments.output, arguments.profile)
             print(f"acquisition plan created: {arguments.output} ({plan['tileCount']} tiles)")
         else:
-            inventory = fetch_plan(arguments.plan, arguments.destination, arguments.interval)
+            inventory = fetch_plan(
+                arguments.plan,
+                arguments.destination,
+                arguments.interval,
+                arguments.maximum_requests,
+            )
+            if inventory is None:
+                print("acquisition batch completed; rerun the same command to resume")
+                return 0
             print(
                 f"acquisition completed: {len(inventory['acquired'])} acquired, "
                 f"{len(inventory['unavailable'])} unavailable"

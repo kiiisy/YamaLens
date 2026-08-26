@@ -1,0 +1,35 @@
+{
+  "allowedBounds": {
+    "east": 139.58,
+    "north": 36.04,
+    "south": 34.59,
+    "west": 138.5
+  },
+  "catalogInput": "../Bootstrap/tanzawa-bootstrap-v1.json",
+  "contentVersion": "0.2.0",
+  "createdAt": "2026-08-26T00:00:00Z",
+  "formatVersion": 1,
+  "keyID": "yamalens-pack-development-01",
+  "minimumAppVersion": "0.1.0",
+  "packageID": "jp.kanagawa.tanzawa.terrain-compact-test",
+  "schemaVersion": 1,
+  "sourceLinks": [
+    {
+      "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）",
+      "checkedAt": "2026-08-26",
+      "id": "gsi-elevation-tiles",
+      "isPrimary": true,
+      "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "processingNote": "軽量地形比較用。丹沢詳細域はズーム13、周辺域はズーム10のDEM10Bを用い、1m単位のInt16標高格子へ丸めた後、タイル単位でLZFSE圧縮する。",
+      "provider": "国土地理院",
+      "title": "標高タイル（基盤地図情報数値標高モデル）",
+      "url": "https://maps.gsi.go.jp/development/ichiran.html#dem"
+    }
+  ],
+  "sourceManifestIDs": [
+    "gsi-dem-tanzawa-compact-test-v1",
+    "tanzawa-bootstrap-v1"
+  ],
+  "sourceManifestDirectory": "../SourceManifests",
+  "terrainSourceLinkID": "gsi-elevation-tiles"
+}

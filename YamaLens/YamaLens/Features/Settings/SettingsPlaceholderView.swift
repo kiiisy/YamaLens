@@ -12,6 +12,10 @@ struct SettingsPlaceholderView: View {
     let offlinePackagePresentation: OfflinePackagePresentation
     @AppStorage("externalMaps.application") private var mapApplicationRawValue = ExternalMapApplication.appleMaps.rawValue
     @AppStorage("externalBrowser.application") private var browserApplicationRawValue = ExternalBrowserApplication.defaultBrowser.rawValue
+#if DEBUG
+    @AppStorage(DevelopmentTanzawaTerrainProfile.selectionStorageKey)
+    private var developmentTerrainProfileRawValue = ""
+#endif
     @Query private var savedDeparturePoints: [SavedDeparturePoint]
 
     private var mapApplication: ExternalMapApplication {
@@ -21,6 +25,13 @@ struct SettingsPlaceholderView: View {
     private var browserApplication: ExternalBrowserApplication {
         ExternalBrowserApplication(rawValue: browserApplicationRawValue) ?? .defaultBrowser
     }
+
+#if DEBUG
+    private var developmentTerrainProfileTitle: String {
+        DevelopmentTanzawaTerrainProfile(rawValue: developmentTerrainProfileRawValue)?.title
+            ?? "未選択"
+    }
+#endif
 
     init(
         showsTerrainHorizon: Binding<Bool> = .constant(true),
@@ -141,6 +152,24 @@ struct SettingsPlaceholderView: View {
                     }
                 }
 
+#if DEBUG
+                Section {
+                    NavigationLink {
+                        DevelopmentTerrainProfileSettingsView()
+                    } label: {
+                        SettingsLink(
+                            title: "地形精度の比較",
+                            value: developmentTerrainProfileTitle,
+                            systemImage: "square.3.layers.3d.down.right"
+                        )
+                    }
+                } header: {
+                    Text("地形テスト")
+                } footer: {
+                    Text("Debugビルドだけの現地検証用です。選択後はアプリを終了して開き直してください。通常版には表示されません。")
+                }
+#endif
+
                 Section("このiPhone内のデータ") {
                     Text("山ノート、お気に入り、登頂済み、出発駅はこのiPhone内に保存されます。クラウド同期とバックアップはMVPでは行いません。")
                         .font(.footnote)
@@ -160,6 +189,66 @@ struct SettingsPlaceholderView: View {
         .preferredColorScheme(.dark)
     }
 }
+
+#if DEBUG
+private struct DevelopmentTerrainProfileSettingsView: View {
+    @AppStorage(DevelopmentTanzawaTerrainProfile.selectionStorageKey)
+    private var selectedProfileRawValue = ""
+    @State private var isRestartNoticePresented = false
+
+    private var selectedProfile: DevelopmentTanzawaTerrainProfile? {
+        DevelopmentTanzawaTerrainProfile(rawValue: selectedProfileRawValue)
+    }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(DevelopmentTanzawaTerrainProfile.allCases, id: \.self) { profile in
+                    Button {
+                        selectedProfileRawValue = profile.rawValue
+                        isRestartNoticePresented = true
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(profile.title)
+                                Text(profile.description)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if selectedProfile == profile {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(YamaColor.alpineTeal)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel(profile.title)
+                    .accessibilityValue(
+                        selectedProfile == profile ? "選択中" : "未選択"
+                    )
+                    .accessibilityAddTraits(
+                        selectedProfile == profile ? .isSelected : []
+                    )
+                    .accessibilityIdentifier("development-terrain-profile-\(profile.rawValue)")
+                }
+            } header: {
+                Text("丹沢の地形データ")
+            } footer: {
+                Text("3種類を同じ地点・同じ向きで比べるための開発用操作です。あらかじめ各パックを保存しておくと、現地では通信なしで切り替えられます。")
+            }
+        }
+        .navigationTitle("地形精度の比較")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("再起動が必要です", isPresented: $isRestartNoticePresented) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("選択を保存しました。アプリを完全に終了してから開き直すと、選択した地形データで候補を計算します。")
+        }
+    }
+}
+#endif
 
 private struct PermissionHelpView: View {
     @Environment(\.openURL) private var openURL
