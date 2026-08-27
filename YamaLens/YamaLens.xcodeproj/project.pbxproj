@@ -443,7 +443,12 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				EXCLUDED_SOURCE_FILE_NAMES = "manifest.json manifest.sig catalog.sqlite terrain.lzfse";
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					manifest.json,
+					manifest.sig,
+					catalog.sqlite,
+					terrain.lzfse,
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Configuration/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "カメラ映像に山の候補を重ねて表示するために使用します。映像は保存・送信しません。";

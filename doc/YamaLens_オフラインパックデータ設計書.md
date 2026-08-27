@@ -38,6 +38,12 @@
 | 施設（POI） | **0件** | 現行の配布済み詳細パックには未収録 |
 | 出典リンク | 1件 | 国土地理院の標高タイル |
 
+### 2.0.1 施設入り詳細候補
+
+`Data/Generated/tanzawa-detailed-candidate-v1/package` に、現行の施設カタログを使う `contentVersion 1.3.0` の候補を生成した。容量は約57MiBで、山頂17座、施設20件、施設詳細36件を含む。地形は既存の詳細版と同じ1453タイルである。
+
+この候補は既存の60MB開発パックを上書きせず、R2の配布一覧にも未登録である。現在の開発用署名鍵で検証済みだが、国土地理院データの配布手続確認と本番署名鍵への切替が済むまで正式配布版にはしない。
+
 ### 2.1 山頂の収録範囲
 
 `core` は丹沢として詳細情報を整備する対象、`surroundingCandidate` は丹沢から見える可能性があり、AR候補の取り違えを抑えるための周辺候補である。周辺候補を入れても、その山域の施設・詳細情報まで対応済みという意味にはしない。
@@ -87,6 +93,7 @@ Data/Bootstrap/               Data/Generated/GSI/（Git管理外）
 | 山・施設の正本JSON | `Data/Bootstrap/tanzawa-bootstrap-v1.json` |
 | 地形取得プロファイル | `Data/OfflinePackages/tanzawa-dem-acquisition-v1.json` |
 | 詳細パックの設定 | `Data/OfflinePackages/tanzawa-detailed-v1.json` |
+| 施設入り詳細候補の設定 | `Data/OfflinePackages/tanzawa-detailed-candidate-v1.json` |
 | 出典・取得記録 | `Data/SourceManifests/*.yaml` |
 | 生成・署名ツール | `Tools/OfflinePackageBuilder/` |
 

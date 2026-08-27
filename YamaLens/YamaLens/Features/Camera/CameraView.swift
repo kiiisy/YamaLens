@@ -197,7 +197,8 @@ struct CameraView: View {
             }
             .padding(.horizontal, 14)
             .padding(.top, 12)
-            .padding(.bottom, 84)
+            // タブバーとの間隔を保ちつつ、候補トレイをラベル領域から離す。
+            .padding(.bottom, 64)
         }
         .alert(
             "保存せずに診断記録を破棄しますか？",
@@ -511,7 +512,7 @@ struct CameraView: View {
             case .insufficientAccuracy, .unavailable:
                 recoveryCard(
                     title: "現在地を確認できません",
-                    message: "空が見える場所で、もう一度取得してください。",
+                    message: "屋内・地下ではGPSを取得できないことがあります。空が見える場所で、もう一度取得してください。",
                     actionTitle: "もう一度試す",
                     action: requestLocation
                 )

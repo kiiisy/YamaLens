@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "packageID": "jp.kanagawa.tanzawa",
+  "contentVersion": "1.3.0",
+  "createdAt": "2026-08-26T00:00:00Z",
+  "minimumAppVersion": "0.1.0",
+  "schemaVersion": 1,
+  "keyID": "yamalens-pack-development-01",
+  "catalogInput": "../Bootstrap/tanzawa-bootstrap-v1.json",
+  "sourceManifestDirectory": "../SourceManifests",
+  "sourceManifestIDs": [
+    "gsi-dem-tanzawa-v1",
+    "tanzawa-bootstrap-v1"
+  ],
+  "terrainSourceLinkID": "gsi-elevation-tiles",
+  "allowedBounds": {
+    "north": 36.05,
+    "south": 34.6,
+    "east": 139.65,
+    "west": 138.5
+  },
+  "sourceLinks": [
+    {
+      "id": "gsi-elevation-tiles",
+      "provider": "国土地理院",
+      "title": "標高タイル（基盤地図情報数値標高モデル）",
+      "url": "https://maps.gsi.go.jp/development/ichiran.html#dem",
+      "licenseURL": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "attributionText": "出典：国土地理院ウェブサイト（標高タイルをYamaLens向けに加工）",
+      "checkedAt": "2026-08-26",
+      "processingNote": "ズーム15ではDEM5A、DEM5B、DEM5Cの順で欠損セルを補完し、残る欠損は対応するズーム14の親DEM10Bを2×2展開して補完する。1m単位のInt16標高格子へ丸めた後、タイル単位でLZFSE圧縮する。",
+      "isPrimary": true
+    }
+  ]
+}

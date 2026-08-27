@@ -244,6 +244,28 @@ package/
 - 地形offset、サイズ、展開後SHA-256の一致
 - Ed25519署名生成と公開鍵による再検証
 
+### 3.1 丹沢の正式候補を再生成する
+
+現行の正式候補は、施設20件を含む `tanzawa-bootstrap-v1.json` と、現地比較の基準である詳細地形を組み合わせる。既存の60MB開発パックを上書きせず、候補専用の出力先へ生成する。
+
+```sh
+python3 Tools/OfflinePackageBuilder/build_detailed_pack.py build \
+  --config Data/OfflinePackages/tanzawa-detailed-candidate-v1.json \
+  --terrain-index Data/Generated/tanzawa-detailed-v1/terrain-index.json \
+  --private-key /path/outside/repository/yamalens-pack-development.pem \
+  --output Data/Generated/tanzawa-detailed-candidate-v1/package
+```
+
+この候補は、署名、SQLite、地形ファイル、出典を含む完成パックである。ただし、`gsi-dem-tanzawa-v1.yaml` の測量法上の手続確認が完了するまでは、R2の配布一覧へ登録しない。正式公開前には、専用の本番署名鍵へ切り替え、アプリに対応する公開鍵を含めたうえで同じ手順を再実行する。
+
+候補の施設表示をDebugビルドで確認するときは、次を実行する。第2引数はアプリが参照する同梱名であり、古い開発パックを変更せず候補用bundleを追加する。
+
+```sh
+Tools/OfflinePackageBuilder/stage_development_pack.sh \
+  tanzawa-detailed-candidate-v1 \
+  tanzawa-detailed-v1
+```
+
 ## 4. 開発ビルドへ詳細パックを同梱する
 
 生成済みパックを、Debugビルドだけが参照するGit追跡外のResourceへ複製する。
