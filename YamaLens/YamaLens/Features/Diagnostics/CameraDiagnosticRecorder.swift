@@ -69,8 +69,9 @@ final class CameraDiagnosticRecorder {
         appendToSession(sample, force: force)
     }
 
-    func startRecording() {
-        guard !isRecording, !isSaving else { return }
+    @discardableResult
+    func startRecording() -> UUID? {
+        guard !isRecording, !isSaving else { return nil }
         let currentDate = now()
         let buffered = bufferedSamples.filter {
             currentDate.timeIntervalSince($0.recordedAt) <= policy.inMemoryBufferSeconds
@@ -92,6 +93,7 @@ final class CameraDiagnosticRecorder {
         didReachSampleLimit = false
         errorMessage = nil
         lastSavedAt = nil
+        return session?.id
     }
 
     func markIssue(_ kind: CameraDiagnosticEventKind) {
@@ -122,11 +124,14 @@ final class CameraDiagnosticRecorder {
         errorMessage = nil
     }
 
-    func saveRecording() async {
-        guard isRecording, !isSaving, let session else { return }
+    @discardableResult
+    func saveRecording(
+        videoAttachment: CameraDiagnosticVideoAttachment? = nil
+    ) async -> Bool {
+        guard isRecording, !isSaving, let session else { return false }
         guard !session.samples.isEmpty else {
             errorMessage = "位置と姿勢の観測後に保存してください。"
-            return
+            return false
         }
 
         isSaving = true
@@ -141,7 +146,8 @@ final class CameraDiagnosticRecorder {
             device: device,
             samples: session.samples,
             events: session.events,
-            confirmedMountainID: session.confirmedMountainID
+            confirmedMountainID: session.confirmedMountainID,
+            videoAttachment: videoAttachment
         )
 
         do {
@@ -151,11 +157,13 @@ final class CameraDiagnosticRecorder {
             didReachSampleLimit = false
             lastSavedAt = endedAt
             errorMessage = nil
+            return true
         } catch {
             self.session = session
             isRecording = true
             isSaving = false
             errorMessage = "診断ログを保存できませんでした。もう一度お試しください。"
+            return false
         }
     }
 

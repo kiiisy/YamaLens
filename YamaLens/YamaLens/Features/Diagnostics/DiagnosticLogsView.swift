@@ -17,16 +17,19 @@ struct DiagnosticLogsView: View {
 
     private let mountains: [Mountain]
     private let projector: MountainCameraProjector
+    private let shareFileProvider: any CameraDiagnosticShareFileProviding
     @State private var model: DiagnosticLogsScreenModel
     @State private var deleteTarget: DeleteTarget?
 
     init(
         repository: any CameraDiagnosticLogRepository,
+        shareFileProvider: any CameraDiagnosticShareFileProviding,
         mountains: [Mountain],
         projector: MountainCameraProjector
     ) {
         self.mountains = mountains
         self.projector = projector
+        self.shareFileProvider = shareFileProvider
         _model = State(initialValue: DiagnosticLogsScreenModel(repository: repository))
     }
 
@@ -34,7 +37,7 @@ struct DiagnosticLogsView: View {
         List {
             Section {
                 Label(
-                    "記録開始後の位置・方位・姿勢・候補だけを端末内へ保存します。カメラ映像は保存しません。",
+                    "既定では位置・方位・姿勢・候補だけを端末内へ保存します。映像は明示して添付した場合だけ、音声なしで最大30秒保存します。",
                     systemImage: "lock.iphone"
                 )
                 .font(.footnote)
@@ -136,7 +139,8 @@ struct DiagnosticLogsView: View {
             DiagnosticReplayView(
                 log: log,
                 mountains: mountains,
-                projector: projector
+                projector: projector,
+                shareFileProvider: shareFileProvider
             )
         } label: {
             VStack(alignment: .leading, spacing: 7) {
@@ -153,6 +157,14 @@ struct DiagnosticLogsView: View {
                 Text("\(log.samples.count)サンプル・\(durationText(log))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let videoAttachment = log.videoAttachment {
+                    Label(
+                        "映像添付 \(Duration.seconds(videoAttachment.durationSeconds).formatted(.units(allowed: [.seconds], width: .abbreviated)))",
+                        systemImage: "video"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
                 if let deletionDate = log.automaticDeletionDate {
                     Text("削除予定 \(deletionDate.formatted(date: .abbreviated, time: .omitted))")
                         .font(.caption)

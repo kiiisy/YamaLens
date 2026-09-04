@@ -23,6 +23,8 @@ struct YamaLensApp: App {
                 cameraObservationProvider: appDelegate.appContainer.cameraObservationProvider,
                 cameraPreview: appDelegate.appContainer.cameraPreview,
                 cameraDiagnosticLogRepository: appDelegate.appContainer.cameraDiagnosticLogRepository,
+                cameraDiagnosticShareFileProvider: appDelegate.appContainer.cameraDiagnosticShareFileProvider,
+                cameraDiagnosticVideoRecorder: appDelegate.appContainer.cameraDiagnosticVideoRecorder,
                 cameraDiagnosticDevice: appDelegate.appContainer.cameraDiagnosticDevice,
                 terrainVisibilityResolver: appDelegate.appContainer.terrainVisibilityResolver,
                 terrainHorizonResolver: appDelegate.appContainer.terrainHorizonResolver,
@@ -72,6 +74,8 @@ private struct YamaLensRootView: View {
     let proximityCalculator: MountainProximityCalculator
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let cameraDiagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)?
+    let cameraDiagnosticVideoRecorder: (any CameraDiagnosticVideoRecording)?
     let cameraProjector: MountainCameraProjector
     let mountainWeatherRepository: any MountainWeatherRepository
     let offlinePackagePresentation: OfflinePackagePresentation
@@ -95,6 +99,8 @@ private struct YamaLensRootView: View {
         cameraObservationProvider: any CameraObservationProvider,
         cameraPreview: AnyView,
         cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?,
+        cameraDiagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)?,
+        cameraDiagnosticVideoRecorder: (any CameraDiagnosticVideoRecording)?,
         cameraDiagnosticDevice: CameraDiagnosticDevice?,
         terrainVisibilityResolver: (any TerrainVisibilityResolving)?,
         terrainHorizonResolver: (any TerrainHorizonResolving)?,
@@ -136,13 +142,16 @@ private struct YamaLensRootView: View {
                 terrainVisibilityResolver: terrainVisibilityResolver,
                 terrainHorizonResolver: terrainHorizonResolver,
                 terrainPackageCoverages: terrainPackageCoverages,
-                diagnosticRecorder: diagnosticRecorder
+                diagnosticRecorder: diagnosticRecorder,
+                diagnosticVideoRecorder: cameraDiagnosticVideoRecorder
             )
         )
         _offlinePackageModel = State(
             initialValue: OfflinePackageScreenModel(manager: offlinePackageManager)
         )
         self.cameraDiagnosticLogRepository = cameraDiagnosticLogRepository
+        self.cameraDiagnosticShareFileProvider = cameraDiagnosticShareFileProvider
+        self.cameraDiagnosticVideoRecorder = cameraDiagnosticVideoRecorder
         self.cameraProjector = projector
     }
 
@@ -194,6 +203,7 @@ private struct YamaLensRootView: View {
                         mountainWeatherRepository: mountainWeatherRepository,
                         showsTerrainHorizon: $showsTerrainHorizon,
                         diagnosticLogRepository: cameraDiagnosticLogRepository,
+                        diagnosticShareFileProvider: cameraDiagnosticShareFileProvider,
                         cameraProjector: cameraProjector,
                         offlinePackageModel: offlinePackageModel,
                         offlinePackagePresentation: offlinePackagePresentation

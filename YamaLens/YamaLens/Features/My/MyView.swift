@@ -7,6 +7,7 @@ struct MyView: View {
     private let mountainWeatherRepository: any MountainWeatherRepository
     private let pointOfInterestRepository: any MountainPointOfInterestRepository
     private let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    private let diagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)?
     private let cameraProjector: MountainCameraProjector
     private let offlinePackageModel: OfflinePackageScreenModel
     private let offlinePackagePresentation: OfflinePackagePresentation
@@ -19,6 +20,7 @@ struct MyView: View {
         mountainWeatherRepository: any MountainWeatherRepository,
         showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
+        diagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)? = nil,
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
         offlinePackageModel: OfflinePackageScreenModel,
         offlinePackagePresentation: OfflinePackagePresentation = .tanzawa
@@ -28,6 +30,7 @@ struct MyView: View {
         self.mountainWeatherRepository = mountainWeatherRepository
         self.pointOfInterestRepository = pointOfInterestRepository
         self.diagnosticLogRepository = diagnosticLogRepository
+        self.diagnosticShareFileProvider = diagnosticShareFileProvider
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
         self.offlinePackagePresentation = offlinePackagePresentation
@@ -75,6 +78,7 @@ struct MyView: View {
                 SettingsPlaceholderView(
                     showsTerrainHorizon: $showsTerrainHorizon,
                     diagnosticLogRepository: diagnosticLogRepository,
+                    diagnosticShareFileProvider: diagnosticShareFileProvider,
                     mountains: mountains,
                     cameraProjector: cameraProjector,
                     offlinePackageModel: offlinePackageModel,

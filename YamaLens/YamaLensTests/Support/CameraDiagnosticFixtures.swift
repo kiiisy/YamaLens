@@ -60,7 +60,8 @@ extension CameraDiagnosticLog {
     static func diagnosticLog(
         id: UUID,
         startedAt: Date,
-        isRetained: Bool = false
+        isRetained: Bool = false,
+        videoAttachment: CameraDiagnosticVideoAttachment? = nil
     ) -> CameraDiagnosticLog {
         CameraDiagnosticLog(
             schemaVersion: CameraDiagnosticLog.currentSchemaVersion,
@@ -86,7 +87,8 @@ extension CameraDiagnosticLog {
                 ),
             ],
             events: [],
-            confirmedMountainID: nil
+            confirmedMountainID: nil,
+            videoAttachment: videoAttachment
         )
     }
 }

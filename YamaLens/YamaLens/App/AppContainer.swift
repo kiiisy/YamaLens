@@ -13,6 +13,8 @@ struct AppContainer {
     let cameraObservationProvider: any CameraObservationProvider
     let cameraPreview: AnyView
     let cameraDiagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let cameraDiagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)?
+    let cameraDiagnosticVideoRecorder: (any CameraDiagnosticVideoRecording)?
     let cameraDiagnosticDevice: CameraDiagnosticDevice?
     let terrainVisibilityResolver: (any TerrainVisibilityResolving)?
     let terrainHorizonResolver: (any TerrainHorizonResolving)?
@@ -78,11 +80,23 @@ struct AppContainer {
             terrainHorizonResolver = nil
             offlinePackageManager = UnavailableOfflinePackageManager()
         }
-        let cameraDependencies = Self.makeCameraDependencies()
+        let diagnosticVideoRecorder: ARCameraDiagnosticVideoRecorder?
+#if DEBUG
+        diagnosticVideoRecorder = ARCameraDiagnosticVideoRecorder()
+#else
+        diagnosticVideoRecorder = nil
+#endif
+        let cameraDependencies = Self.makeCameraDependencies(
+            diagnosticVideoRecorder: diagnosticVideoRecorder
+        )
         cameraObservationProvider = cameraDependencies.provider
         cameraPreview = cameraDependencies.preview
+        cameraDiagnosticVideoRecorder = diagnosticVideoRecorder
 #if DEBUG
         cameraDiagnosticLogRepository = FileCameraDiagnosticLogRepository()
+        let diagnosticShareFileProvider = FileCameraDiagnosticShareFileProvider()
+        cameraDiagnosticShareFileProvider = diagnosticShareFileProvider
+        Task { await diagnosticShareFileProvider.removeExpiredShareFiles() }
         cameraDiagnosticDevice = CameraDiagnosticDevice(
             appVersion: Bundle.main.object(
                 forInfoDictionaryKey: "CFBundleShortVersionString"
@@ -92,6 +106,7 @@ struct AppContainer {
         )
 #else
         cameraDiagnosticLogRepository = nil
+        cameraDiagnosticShareFileProvider = nil
         cameraDiagnosticDevice = nil
 #endif
     }
@@ -330,7 +345,9 @@ struct AppContainer {
         return CachedMountainWeatherRepository()
     }
 
-    private static func makeCameraDependencies() -> (
+    private static func makeCameraDependencies(
+        diagnosticVideoRecorder: ARCameraDiagnosticVideoRecorder?
+    ) -> (
         provider: any CameraObservationProvider,
         preview: AnyView
     ) {
@@ -373,7 +390,9 @@ struct AppContainer {
             return (provider, AnyView(YamaColor.canvas))
         }
 #endif
-        let adapter = ARCameraSessionAdapter()
+        let adapter = ARCameraSessionAdapter(
+            diagnosticVideoRecorder: diagnosticVideoRecorder
+        )
         return (adapter, AnyView(ARCameraPreview(adapter: adapter)))
     }
 

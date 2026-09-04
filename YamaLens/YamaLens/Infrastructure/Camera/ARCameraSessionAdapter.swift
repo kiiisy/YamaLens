@@ -11,13 +11,18 @@ final class ARCameraSessionAdapter: NSObject, CameraObservationProvider {
 
     private let headingManager = CLLocationManager()
     private let tuning: CandidateTuning
+    private let diagnosticVideoRecorder: ARCameraDiagnosticVideoRecorder?
     private var continuation: AsyncStream<CameraObservationUpdate>.Continuation?
     private var headingObservation: (degrees: Double, accuracy: Double, observedAt: Date)?
     private var isHeadingRecoveryPending = false
     private var lastEmissionTime: TimeInterval = 0
 
-    init(tuning: CandidateTuning = .default) {
+    init(
+        tuning: CandidateTuning = .default,
+        diagnosticVideoRecorder: ARCameraDiagnosticVideoRecorder? = nil
+    ) {
         self.tuning = tuning
+        self.diagnosticVideoRecorder = diagnosticVideoRecorder
         super.init()
         headingManager.delegate = self
         headingManager.headingFilter = 1
@@ -120,6 +125,7 @@ extension ARCameraSessionAdapter {
 
         Task { @MainActor [weak self] in
             guard let self, timestamp - lastEmissionTime >= 0.1 else { return }
+            diagnosticVideoRecorder?.receive(frame: frame)
             lastEmissionTime = timestamp
             headingManager.headingOrientation = headingOrientation(for: interfaceOrientation)
             guard let headingObservation else {

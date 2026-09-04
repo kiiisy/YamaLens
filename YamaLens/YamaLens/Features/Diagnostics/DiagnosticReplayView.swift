@@ -1,21 +1,38 @@
+import AVKit
 import SwiftUI
 
 struct DiagnosticReplayView: View {
+    private enum AttachedVideoState {
+        case idle
+        case loading
+        case available(URL)
+        case unavailable
+    }
+
     let log: CameraDiagnosticLog
     let mountains: [Mountain]
     let projector: MountainCameraProjector
+    let shareFileProvider: any CameraDiagnosticShareFileProviding
     private let frames: [CameraDiagnosticReplayFrame]
     @State private var sampleIndex = 0
     @State private var isPlaying = false
+    @State private var shareFormat: CameraDiagnosticShareFormat?
+    @State private var isSharePreviewPresented = false
+    @State private var isExactLocationConfirmationPresented = false
+    @State private var shareFile: CameraDiagnosticShareFile?
+    @State private var shareErrorMessage: String?
+    @State private var attachedVideoState: AttachedVideoState = .idle
 
     init(
         log: CameraDiagnosticLog,
         mountains: [Mountain],
-        projector: MountainCameraProjector
+        projector: MountainCameraProjector,
+        shareFileProvider: any CameraDiagnosticShareFileProviding
     ) {
         self.log = log
         self.mountains = mountains
         self.projector = projector
+        self.shareFileProvider = shareFileProvider
         var calculator = CameraDiagnosticReplayCalculator(projector: projector)
         frames = calculator.replay(samples: log.samples, mountains: mountains)
     }
@@ -29,7 +46,17 @@ struct DiagnosticReplayView: View {
             } header: {
                 Text("候補の再計算")
             } footer: {
-                Text("緑は現在の候補計算、橙は記録時のラベル位置です。カメラ映像は保存されていません。")
+                Text(replayFooterText)
+            }
+
+            if log.videoAttachment != nil {
+                Section {
+                    attachedVideoContent
+                } header: {
+                    Text("添付したカメラ映像")
+                } footer: {
+                    Text("AR候補ラベルや診断UIを重ねていない、記録時のカメラ映像です。音声は含みません。")
+                }
             }
 
             Section("タイムライン") {
@@ -118,9 +145,157 @@ struct DiagnosticReplayView: View {
         }
         .navigationTitle("ログをリプレイ")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        presentSharePreview(for: .anonymizedSummary)
+                    } label: {
+                        Label("匿名化サマリーを共有", systemImage: "doc.text")
+                    }
+                    Button {
+                        presentSharePreview(for: .replayLogWithExactLocation)
+                    } label: {
+                        Label("リプレイ用ログを共有", systemImage: "location")
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("診断ログを共有")
+                .accessibilityIdentifier("diagnostic-log-share-menu")
+            }
+        }
+        .sheet(isPresented: $isSharePreviewPresented) {
+            sharePreview
+        }
+        .sheet(item: $shareFile) { shareFile in
+            DiagnosticLogShareSheet(fileURLs: shareFile.allURLs) {
+                Task {
+                    await shareFileProvider.removeShareFile(shareFile)
+                    self.shareFile = nil
+                }
+            }
+        }
+        .alert("正確な位置を含めて共有しますか？", isPresented: $isExactLocationConfirmationPresented) {
+            Button("共有する") {
+                prepareShareFile(format: .replayLogWithExactLocation)
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text(replayShareConfirmationMessage)
+        }
+        .alert("共有ファイルを作成できませんでした", isPresented: shareErrorBinding) {
+            Button("閉じる", role: .cancel) { shareErrorMessage = nil }
+        } message: {
+            Text(shareErrorMessage ?? "もう一度お試しください。")
+        }
         .task(id: isPlaying) {
             guard isPlaying else { return }
             await playFromCurrentPosition()
+        }
+        .task(id: log.id) {
+            await loadAttachedVideo()
+        }
+    }
+
+    @ViewBuilder
+    private var sharePreview: some View {
+        NavigationStack {
+            Form {
+                Section("共有する内容") {
+                    if shareFormat == .anonymizedSummary {
+                        Label("記録時間・端末情報・精度の範囲・候補の山ID", systemImage: "doc.text")
+                        Text("正確な位置、記録時刻、カメラ映像、メモ、検索履歴は含みません。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label("記録時刻・正確な位置・方位・姿勢・候補", systemImage: "location")
+                        if log.videoAttachment != nil {
+                            Label("添付映像（音声なし・最大30秒）", systemImage: "video")
+                        }
+                        Text(log.videoAttachment == nil
+                            ? "リプレイと候補計算の調査に使えます。カメラ映像、メモ、検索履歴は含みません。"
+                            : "リプレイと候補計算の調査に使えます。添付映像も一緒に共有されます。メモと検索履歴は含みません。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Section("このログ") {
+                    LabeledContent("サンプル数", value: "\(log.samples.count)")
+                    LabeledContent("記録時間", value: durationText)
+                }
+            }
+            .navigationTitle("共有内容を確認")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
+                        isSharePreviewPresented = false
+                        shareFormat = nil
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("共有") {
+                        guard let shareFormat else { return }
+                        isSharePreviewPresented = false
+                        switch shareFormat {
+                        case .anonymizedSummary:
+                            prepareShareFile(format: shareFormat)
+                        case .replayLogWithExactLocation:
+                            isExactLocationConfirmationPresented = true
+                        }
+                    }
+                    .accessibilityIdentifier("diagnostic-log-share-confirm")
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private var replayFooterText: String {
+        log.videoAttachment == nil
+            ? "緑は現在の候補計算、橙は記録時のラベル位置です。カメラ映像は保存されていません。"
+            : "緑は現在の候補計算、橙は記録時のラベル位置です。映像添付あり（音声なし・最大30秒）。"
+    }
+
+    @ViewBuilder
+    private var attachedVideoContent: some View {
+        switch attachedVideoState {
+        case .idle, .loading:
+            HStack {
+                ProgressView()
+                Text("カメラ映像を読み込んでいます")
+            }
+        case .available(let url):
+            VideoPlayer(player: AVPlayer(url: url))
+                .frame(minHeight: 260)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityLabel("添付したカメラ映像")
+        case .unavailable:
+            ContentUnavailableView(
+                "カメラ映像を開けません",
+                systemImage: "video.slash",
+                description: Text("映像が削除されたか、端末のロック中は利用できません。")
+            )
+        }
+    }
+
+    private var replayShareConfirmationMessage: String {
+        log.videoAttachment == nil
+            ? "このリプレイ用ログには、記録時刻、正確な位置、方位、姿勢、候補が含まれます。カメラ映像、メモ、検索履歴は含まれません。"
+            : "このリプレイ用ログには、記録時刻、正確な位置、方位、姿勢、候補と添付映像が含まれます。映像には周囲の人や建物などが写る場合があります。メモと検索履歴は含まれません。"
+    }
+
+    private func loadAttachedVideo() async {
+        guard log.videoAttachment != nil else {
+            attachedVideoState = .unavailable
+            return
+        }
+        attachedVideoState = .loading
+        if let url = await shareFileProvider.videoURL(for: log) {
+            attachedVideoState = .available(url)
+        } else {
+            attachedVideoState = .unavailable
         }
     }
 
@@ -247,6 +422,37 @@ struct DiagnosticReplayView: View {
     private var elapsedText: String {
         Duration.seconds(currentSample.elapsedSeconds)
             .formatted(.units(allowed: [.minutes, .seconds], width: .abbreviated))
+    }
+
+    private var durationText: String {
+        Duration.seconds(max(0, log.endedAt.timeIntervalSince(log.startedAt)))
+            .formatted(.units(allowed: [.minutes, .seconds], width: .abbreviated))
+    }
+
+    private var shareErrorBinding: Binding<Bool> {
+        Binding(
+            get: { shareErrorMessage != nil },
+            set: { if !$0 { shareErrorMessage = nil } }
+        )
+    }
+
+    private func presentSharePreview(for format: CameraDiagnosticShareFormat) {
+        shareFormat = format
+        isSharePreviewPresented = true
+    }
+
+    private func prepareShareFile(format: CameraDiagnosticShareFormat) {
+        Task {
+            do {
+                shareFile = try await shareFileProvider.prepareShareFile(
+                    for: log,
+                    format: format
+                )
+                shareFormat = nil
+            } catch {
+                shareErrorMessage = "共有用ファイルを作成できませんでした。端末の空き容量を確認して、もう一度お試しください。"
+            }
+        }
     }
 
     private func mountainName(for id: String) -> String {

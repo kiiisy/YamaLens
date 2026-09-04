@@ -6,6 +6,7 @@ struct SettingsPlaceholderView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var showsTerrainHorizon: Bool
     let diagnosticLogRepository: (any CameraDiagnosticLogRepository)?
+    let diagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)?
     let mountains: [Mountain]
     let cameraProjector: MountainCameraProjector
     let offlinePackageModel: OfflinePackageScreenModel
@@ -36,6 +37,7 @@ struct SettingsPlaceholderView: View {
     init(
         showsTerrainHorizon: Binding<Bool> = .constant(true),
         diagnosticLogRepository: (any CameraDiagnosticLogRepository)? = nil,
+        diagnosticShareFileProvider: (any CameraDiagnosticShareFileProviding)? = nil,
         mountains: [Mountain] = [],
         cameraProjector: MountainCameraProjector = MountainCameraProjector(),
         offlinePackageModel: OfflinePackageScreenModel,
@@ -43,6 +45,7 @@ struct SettingsPlaceholderView: View {
     ) {
         _showsTerrainHorizon = showsTerrainHorizon
         self.diagnosticLogRepository = diagnosticLogRepository
+        self.diagnosticShareFileProvider = diagnosticShareFileProvider
         self.mountains = mountains
         self.cameraProjector = cameraProjector
         self.offlinePackageModel = offlinePackageModel
@@ -131,7 +134,7 @@ struct SettingsPlaceholderView: View {
                     }
                 }
 
-                if let diagnosticLogRepository {
+                if let diagnosticLogRepository, let diagnosticShareFileProvider {
                     Section {
                         Toggle(isOn: $showsTerrainHorizon) {
                             SettingsLabel(title: "稜線を表示", systemImage: "waveform.path")
@@ -139,6 +142,7 @@ struct SettingsPlaceholderView: View {
                         NavigationLink {
                             DiagnosticLogsView(
                                 repository: diagnosticLogRepository,
+                                shareFileProvider: diagnosticShareFileProvider,
                                 mountains: mountains,
                                 projector: cameraProjector
                             )
@@ -148,7 +152,7 @@ struct SettingsPlaceholderView: View {
                     } header: {
                         Text("開発用")
                     } footer: {
-                        Text("Debugビルドでだけ表示されます。診断ログは明示的に保存した場合だけ端末内へ残り、カメラ映像は保存しません。")
+                    Text("Debugビルドでだけ表示されます。診断ログは明示的に保存した場合だけ端末内へ残ります。映像は明示して添付した場合だけ、音声なしで最大30秒保存します。")
                     }
                 }
 

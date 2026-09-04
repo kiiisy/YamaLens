@@ -211,6 +211,19 @@ struct CameraView: View {
         } message: {
             Text("記録中の位置・方位・姿勢・候補は端末内に残りません。")
         }
+        .alert(
+            "映像を保存できませんでした",
+            isPresented: Binding(
+                get: { model.diagnosticVideoFailureMessage != nil },
+                set: { if !$0 { model.clearDiagnosticVideoFailureMessage() } }
+            )
+        ) {
+            Button("閉じる", role: .cancel) {
+                model.clearDiagnosticVideoFailureMessage()
+            }
+        } message: {
+            Text(model.diagnosticVideoFailureMessage ?? "もう一度お試しください。")
+        }
     }
 
     private func diagnosticControls(
@@ -251,6 +264,8 @@ struct CameraView: View {
                         .accessibilityLabel("診断記録を破棄")
                         .accessibilityIdentifier("camera-diagnostic-discard")
                     }
+
+                    diagnosticVideoStatus
 
                     HStack(spacing: 8) {
                         Menu {
@@ -301,8 +316,19 @@ struct CameraView: View {
             } else {
                 HStack {
                     Spacer()
-                    Button {
-                        model.startDiagnosticRecording()
+                    Menu {
+                        Button {
+                            model.startDiagnosticRecording(includingVideo: false)
+                        } label: {
+                            Label("観測ログのみ", systemImage: "list.bullet.rectangle")
+                        }
+                        if model.canRecordDiagnosticVideo {
+                            Button {
+                                model.startDiagnosticRecording(includingVideo: true)
+                            } label: {
+                                Label("映像を添付（最大30秒）", systemImage: "video")
+                            }
+                        }
                     } label: {
                         Label("診断記録", systemImage: "record.circle")
                             .font(.caption.weight(.semibold))
@@ -310,7 +336,7 @@ struct CameraView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.white)
-                    .accessibilityHint("直前\(Int(CameraDiagnosticPolicy.default.inMemoryBufferSeconds))秒の観測を含めて、位置・方位・姿勢・候補の記録を開始します")
+                    .accessibilityHint("観測ログのみ、または最大30秒の映像を添付して診断記録を開始します")
                     .accessibilityIdentifier("camera-diagnostic-start")
                 }
             }
@@ -326,6 +352,31 @@ struct CameraView: View {
         }
         return candidates.first { $0.mountain.id == mountainID }?.mountain.name
             ?? "目視した山を選択済み"
+    }
+
+    @ViewBuilder
+    private var diagnosticVideoStatus: some View {
+        switch model.diagnosticVideoRecordingState {
+        case .notRequested:
+            EmptyView()
+        case .preparing:
+            Label("映像を準備中", systemImage: "video")
+                .font(.caption)
+                .foregroundStyle(YamaColor.secondaryText)
+        case .recording:
+            Label("映像添付中・最大30秒", systemImage: "video.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+                .accessibilityLabel("映像を添付中、最大30秒")
+        case .finishing:
+            Label("映像の上限に到達・診断ログを保存してください", systemImage: "video.badge.checkmark")
+                .font(.caption)
+                .foregroundStyle(YamaColor.secondaryText)
+        case .failed:
+            Label("映像を開始できませんでした", systemImage: "exclamationmark.triangle")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(YamaColor.amber)
+        }
     }
 
     private var headingRecoveryNotice: some View {

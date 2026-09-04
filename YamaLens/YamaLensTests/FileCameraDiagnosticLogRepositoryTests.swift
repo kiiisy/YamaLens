@@ -76,6 +76,33 @@ struct FileCameraDiagnosticLogRepositoryTests {
         #expect(try await repository.fetchLogs().isEmpty)
     }
 
+    @Test("診断ログを削除すると添付映像も削除する")
+    func deletesAttachedVideoWithLog() async throws {
+        let directory = testDirectory(named: "video-delete")
+        try resetDirectory(directory)
+        defer { removeTestDirectory(directory) }
+        let id = UUID.diagnosticID(7)
+        let videoFileName = id.uuidString.lowercased() + ".mov"
+        let repository = FileCameraDiagnosticLogRepository(directoryURL: directory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let videoURL = directory.appending(path: videoFileName)
+        try Data([0x00]).write(to: videoURL)
+        try await repository.save(
+            .diagnosticLog(
+                id: id,
+                startedAt: .diagnosticReference,
+                videoAttachment: CameraDiagnosticVideoAttachment(
+                    fileName: videoFileName,
+                    durationSeconds: 1
+                )
+            )
+        )
+
+        try await repository.delete(id: id)
+
+        #expect(!FileManager.default.fileExists(atPath: videoURL.path))
+    }
+
     @Test("全削除は保持中ログも削除する")
     func deletesAllLogsIncludingRetainedLogs() async throws {
         let directory = testDirectory(named: "delete-all")
@@ -128,6 +155,30 @@ struct FileCameraDiagnosticLogRepositoryTests {
 #else
         #expect(protection == .complete)
 #endif
+    }
+
+    @Test("映像添付のないschema 1ログも読み込める")
+    func readsSchemaOneLogWithoutVideoAttachment() async throws {
+        let directory = testDirectory(named: "schema-one")
+        try resetDirectory(directory)
+        defer { removeTestDirectory(directory) }
+        let id = UUID.diagnosticID(8)
+        let log = CameraDiagnosticLog.diagnosticLog(id: id, startedAt: .diagnosticReference)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let currentData = try encoder.encode(log)
+        var object = try #require(JSONSerialization.jsonObject(with: currentData) as? [String: Any])
+        object["schemaVersion"] = 1
+        object.removeValue(forKey: "videoAttachment")
+        let schemaOneData = try JSONSerialization.data(withJSONObject: object)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try schemaOneData.write(to: directory.appending(path: id.uuidString.lowercased() + ".json"))
+        let repository = FileCameraDiagnosticLogRepository(directoryURL: directory)
+
+        let loaded = try #require(try await repository.fetchLogs().first)
+
+        #expect(loaded.schemaVersion == 1)
+        #expect(loaded.videoAttachment == nil)
     }
 
     private func testDirectory(named name: String) -> URL {

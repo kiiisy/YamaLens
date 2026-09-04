@@ -45,6 +45,7 @@ final class CameraScreenModel {
     private let now: @MainActor () -> Date
     private var candidateStabilizer: CameraCandidateStabilizer
     let diagnosticRecorder: CameraDiagnosticRecorder?
+    private let diagnosticVideoRecorder: (any CameraDiagnosticVideoRecording)?
     private var locationState: CurrentLocationState = .notRequested
     private var lastObservation: CameraPoseObservation?
     private var lastObservationEvaluationDate: Date?
@@ -68,6 +69,12 @@ final class CameraScreenModel {
     private(set) var terrainHorizonState: TerrainHorizonDisplayState = .hidden
     private(set) var terrainHorizonSegments: [[ViewportPoint]] = []
     private(set) var activeTerrainPackageDisplayName: String?
+    private(set) var diagnosticVideoRecordingState: CameraDiagnosticVideoRecordingState = .notRequested
+    private(set) var diagnosticVideoFailureMessage: String?
+
+    var canRecordDiagnosticVideo: Bool {
+        diagnosticVideoRecorder != nil
+    }
 
     init(
         provider: any CameraObservationProvider,
@@ -80,6 +87,7 @@ final class CameraScreenModel {
         terrainPackageCoverageSelector: TerrainPackageCoverageSelector = TerrainPackageCoverageSelector(),
         terrainHorizonProjector: TerrainHorizonProjector = TerrainHorizonProjector(),
         diagnosticRecorder: CameraDiagnosticRecorder? = nil,
+        diagnosticVideoRecorder: (any CameraDiagnosticVideoRecording)? = nil,
         now: @escaping @MainActor () -> Date = { .now }
     ) {
         self.provider = provider
@@ -93,6 +101,7 @@ final class CameraScreenModel {
         self.terrainHorizonProjector = terrainHorizonProjector
         candidateStabilizer = CameraCandidateStabilizer(tuning: tuning)
         self.diagnosticRecorder = diagnosticRecorder
+        self.diagnosticVideoRecorder = diagnosticVideoRecorder
         self.now = now
     }
 
@@ -133,6 +142,9 @@ final class CameraScreenModel {
         pauseForDetail()
         manualHeadingCorrectionDegrees = 0
         diagnosticRecorder?.discardRecording()
+        diagnosticVideoRecorder?.discardRecording()
+        diagnosticVideoRecordingState = .notRequested
+        diagnosticVideoFailureMessage = nil
     }
 
     func pauseForDetail() {
@@ -189,6 +201,7 @@ final class CameraScreenModel {
     }
 
     func receive(_ observation: CameraPoseObservation) {
+        updateDiagnosticVideoRecordingState()
         receive(observation, evaluatedAt: now())
     }
 
@@ -272,6 +285,7 @@ final class CameraScreenModel {
     }
 
     func receive(_ update: CameraObservationUpdate) {
+        updateDiagnosticVideoRecordingState()
         switch update {
         case .pose(let observation):
             receive(observation)
@@ -305,17 +319,42 @@ final class CameraScreenModel {
         locationRefreshRequestID += 1
     }
 
-    func startDiagnosticRecording() {
-        diagnosticRecorder?.startRecording()
+    func startDiagnosticRecording(includingVideo: Bool) {
+        guard let diagnosticLogID = diagnosticRecorder?.startRecording() else { return }
+        diagnosticVideoFailureMessage = nil
+        guard includingVideo else {
+            diagnosticVideoRecordingState = .notRequested
+            return
+        }
+        guard let diagnosticVideoRecorder else {
+            diagnosticVideoRecordingState = .failed
+            return
+        }
+        diagnosticVideoRecorder.startRecording(for: diagnosticLogID)
+        updateDiagnosticVideoRecordingState()
     }
 
     func saveDiagnosticRecording() async {
         recordCurrentDiagnosticSnapshot()
-        await diagnosticRecorder?.saveRecording()
+        let wasVideoRequested = diagnosticVideoRecordingState != .notRequested
+        let videoAttachment = await diagnosticVideoRecorder?.stopRecording()
+        let didSave = await diagnosticRecorder?.saveRecording(
+            videoAttachment: videoAttachment
+        ) ?? false
+        if !didSave {
+            diagnosticVideoRecorder?.discardRecording()
+        }
+        if didSave, wasVideoRequested, videoAttachment == nil {
+            diagnosticVideoFailureMessage = "映像を保存できませんでした。観測ログのみ保存しました。もう一度お試しください。"
+        }
+        diagnosticVideoRecordingState = .notRequested
     }
 
     func discardDiagnosticRecording() {
         diagnosticRecorder?.discardRecording()
+        diagnosticVideoRecorder?.discardRecording()
+        diagnosticVideoRecordingState = .notRequested
+        diagnosticVideoFailureMessage = nil
     }
 
     func markDiagnosticIssue(_ kind: CameraDiagnosticEventKind) {
@@ -324,6 +363,14 @@ final class CameraScreenModel {
 
     func setDiagnosticConfirmedMountain(_ mountainID: String?) {
         diagnosticRecorder?.setConfirmedMountainID(mountainID)
+    }
+
+    private func updateDiagnosticVideoRecordingState() {
+        diagnosticVideoRecordingState = diagnosticVideoRecorder?.recordingState ?? .notRequested
+    }
+
+    func clearDiagnosticVideoFailureMessage() {
+        diagnosticVideoFailureMessage = nil
     }
 
     private func reprojectLastObservation() {

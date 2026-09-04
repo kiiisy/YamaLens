@@ -7,6 +7,7 @@ nonisolated struct CameraDiagnosticPolicy: Equatable, Sendable {
     let maximumUnretainedLogCount: Int
     let maximumUnretainedLogAgeDays: Int
     let maximumLogByteCount: Int
+    let maximumVideoDurationSeconds: TimeInterval
 
     static let `default` = CameraDiagnosticPolicy(
         samplingIntervalSeconds: 0.2,
@@ -14,7 +15,8 @@ nonisolated struct CameraDiagnosticPolicy: Equatable, Sendable {
         maximumSampleCount: 1_500,
         maximumUnretainedLogCount: 20,
         maximumUnretainedLogAgeDays: 30,
-        maximumLogByteCount: 10 * 1_024 * 1_024
+        maximumLogByteCount: 10 * 1_024 * 1_024,
+        maximumVideoDurationSeconds: 30
     )
 
     var maximumRecordingDurationSeconds: TimeInterval {
@@ -27,7 +29,8 @@ nonisolated struct CameraDiagnosticPolicy: Equatable, Sendable {
 }
 
 nonisolated struct CameraDiagnosticLog: Codable, Equatable, Identifiable, Sendable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
+    static let minimumSupportedSchemaVersion = 1
 
     let schemaVersion: Int
     let id: UUID
@@ -38,6 +41,8 @@ nonisolated struct CameraDiagnosticLog: Codable, Equatable, Identifiable, Sendab
     let samples: [CameraDiagnosticSample]
     let events: [CameraDiagnosticEvent]
     let confirmedMountainID: String?
+    /// Debug時に利用者が明示して添付した、端末内動画ファイルへの参照。
+    let videoAttachment: CameraDiagnosticVideoAttachment?
 
     var automaticDeletionDate: Date? {
         guard !isRetained else { return nil }
@@ -58,9 +63,15 @@ nonisolated struct CameraDiagnosticLog: Codable, Equatable, Identifiable, Sendab
             device: device,
             samples: samples,
             events: events,
-            confirmedMountainID: confirmedMountainID
+            confirmedMountainID: confirmedMountainID,
+            videoAttachment: videoAttachment
         )
     }
+}
+
+nonisolated struct CameraDiagnosticVideoAttachment: Codable, Equatable, Sendable {
+    let fileName: String
+    let durationSeconds: TimeInterval
 }
 
 nonisolated struct CameraDiagnosticDevice: Codable, Equatable, Sendable {

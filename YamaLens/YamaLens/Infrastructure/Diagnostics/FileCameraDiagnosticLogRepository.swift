@@ -58,15 +58,16 @@ actor FileCameraDiagnosticLogRepository: CameraDiagnosticLogRepository {
 
     func delete(id: UUID) async throws {
         let directoryURL = try preparedDirectoryURL()
-        let url = fileURL(for: id, in: directoryURL)
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        try FileManager.default.removeItem(at: url)
+        try removeFiles(for: id, in: directoryURL)
     }
 
     func deleteAll() async throws {
         let directoryURL = try preparedDirectoryURL()
         for url in try logFileURLs(in: directoryURL) {
-            try FileManager.default.removeItem(at: url)
+            guard let id = UUID(uuidString: url.deletingPathExtension().lastPathComponent) else {
+                continue
+            }
+            try removeFiles(for: id, in: directoryURL)
         }
     }
 
@@ -112,7 +113,10 @@ actor FileCameraDiagnosticLogRepository: CameraDiagnosticLogRepository {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let log = try decoder.decode(CameraDiagnosticLog.self, from: data)
-        guard log.schemaVersion == CameraDiagnosticLog.currentSchemaVersion else {
+        guard
+            log.schemaVersion >= CameraDiagnosticLog.minimumSupportedSchemaVersion,
+            log.schemaVersion <= CameraDiagnosticLog.currentSchemaVersion
+        else {
             throw CameraDiagnosticLogStoreError.unsupportedSchema
         }
         guard !log.samples.isEmpty, log.endedAt >= log.startedAt else {
@@ -155,15 +159,21 @@ actor FileCameraDiagnosticLogRepository: CameraDiagnosticLogRepository {
         let idsToDelete = countOverflowIDs.union(expiredIDs)
 
         for id in idsToDelete {
-            let url = fileURL(for: id, in: directoryURL)
-            if FileManager.default.fileExists(atPath: url.path) {
-                try FileManager.default.removeItem(at: url)
-            }
+            try removeFiles(for: id, in: directoryURL)
         }
         return logs.filter { !idsToDelete.contains($0.id) }
     }
 
     private func fileURL(for id: UUID, in directoryURL: URL) -> URL {
         directoryURL.appending(path: id.uuidString.lowercased() + ".json")
+    }
+
+    private func removeFiles(for id: UUID, in directoryURL: URL) throws {
+        for extensionName in ["json", "mov"] {
+            let url = directoryURL.appending(path: id.uuidString.lowercased() + "." + extensionName)
+            if FileManager.default.fileExists(atPath: url.path) {
+                try FileManager.default.removeItem(at: url)
+            }
+        }
     }
 }
